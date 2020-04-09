@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Locale;
 
 import org.hipparchus.ode.AbstractIntegrator;
@@ -14,6 +15,9 @@ import org.hipparchus.ode.nonstiff.LutherIntegrator;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
+import org.orekit.data.LazyLoadedDataContext;
+import org.orekit.data.NetworkCrawler;
+import org.orekit.data.ZipJarCrawler;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
@@ -45,10 +49,14 @@ public class TLENumericalPropagator {
         try {
         	
             // configure Orekit
-            final File orekitData = new File("orekit-data");          
+            final URL utcTaiData = new URL("https://hpiers.obspm.fr/eoppc/bul/bulc/UTC-TAI.history");
+            final URL eopData = new URL("ftp://ftp.iers.org/products/eop/rapid/daily/finals.daily"); 
             final DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
-            manager.addProvider(new DirectoryCrawler(orekitData));
-
+            manager.addProvider(new NetworkCrawler(utcTaiData));
+            //this one isn't needed for this to work
+            manager.addProvider(new NetworkCrawler(eopData));
+            
+            System.out.println(manager.getProviders());
 
             //read tle file
             final File tleData = new File("04_07_2020.txt");            
@@ -105,7 +113,6 @@ public class TLENumericalPropagator {
             //set initial state
             final SpacecraftState initialState = new SpacecraftState(initialOrbit);
             numerical.setInitialState(initialState);
-            System.out.println(numerical.getMu());
 
             // Extrapolation loop
             int cpt = 1;
