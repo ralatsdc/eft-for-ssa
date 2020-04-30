@@ -7,7 +7,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Locale;
-import java.util.Random;
 
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.hipparchus.linear.DiagonalMatrix;
@@ -80,14 +79,14 @@ public class TLENumericalPropagator {
     public static void main(final String[] args) throws IOException {
         try {
         	
-            // configure Orekit
+            // Configure Orekit
             final URL utcTaiData = new URL("https://hpiers.obspm.fr/eoppc/bul/bulc/UTC-TAI.history");
             final URL eopData = new URL("ftp://ftp.iers.org/products/eop/rapid/daily/finals.daily"); 
             final DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
             manager.addProvider(new NetworkCrawler(utcTaiData));
             manager.addProvider(new NetworkCrawler(eopData));
 
-            //read tle file
+            // Read TLE file
             final File tleData = new File("04_07_2020.txt");            
             
             BufferedReader tleReader;
@@ -99,7 +98,7 @@ public class TLENumericalPropagator {
 				System.out.println(line2);	
 				TLE tle = new TLE(line1, line2);
 			 
-            // gravitation coefficient
+            // Gravitation coefficient
             final double mu = Constants.IERS2010_EARTH_MU;
 
             // Initial orbit parameters
@@ -129,7 +128,7 @@ public class TLENumericalPropagator {
             // Step duration in seconds
             final double stepT = 60.;
 
-            //establishing topocentric frame
+            // Establish topocentric frame
             double longitude = FastMath.toRadians(45.);
             double latitude  = FastMath.toRadians(25.);
             double altitude  = 0.;
@@ -140,30 +139,28 @@ public class TLENumericalPropagator {
             										earthFrame);
             TopocentricFrame staF = new TopocentricFrame(earth, station, "station");
 
-            //initialize ground station using topocentric frame
+            // Initialize ground station
             final GroundStation groundStation = new GroundStation(staF);
             groundStation.getPrimeMeridianOffsetDriver().setReferenceDate(initialDate);
             groundStation.getPolarOffsetXDriver().setReferenceDate(initialDate);
             groundStation.getPolarOffsetYDriver().setReferenceDate(initialDate);
 
-            //set initial state
+            // Set initial state
             final SpacecraftState initialState = new SpacecraftState(initialOrbit);
             SpacecraftState finalState = null;
             
-            //initialize orbit estimation variables
+            // Initialize orbit estimation variables
             Vector3D initialPosition = null;
             Vector3D finalPosition = null;
 
-            // Setting up propagator
+            // Set up propagator
             final EulerIntegrator euler = new EulerIntegrator(stepT);
             final KeplerianPropagator propagator = new KeplerianPropagator(initialOrbit);
-            //final NumericalPropagator propagator = new NumericalPropagator(euler);
-            //propagator.setInitialState(initialState);   
 
-            //set propagator index of satellite
+            // Set propagator index of satellite
             final ObservableSatellite satelliteIndex = new ObservableSatellite(0);
  
-            //build the least squares estimator
+            // Least squares estimator setup
             final GaussNewtonOptimizer GNOptimizer = new GaussNewtonOptimizer();
             final EulerIntegratorBuilder eulerBuilder = new EulerIntegratorBuilder(stepT);
             final double positionScale = 1.;
@@ -173,12 +170,12 @@ public class TLENumericalPropagator {
             leastSquares.setMaxEvaluations(100);
             leastSquares.setParametersConvergenceThreshold(.001);
             
-            //Setting up random number generator
+            // Random number generator set up
             final int small = 0;
             final ISAACRandom randomNumGenerator = new ISAACRandom();
             final GaussianRandomGenerator gaussianGenerator = new GaussianRandomGenerator(randomNumGenerator);
 
-            //setting up azel builder
+            // Set up Az/El builder
             final double[] angularMatrix = new double[] {0.000001, 0.000001};
             final DiagonalMatrix angularCovarianceMatrix = new DiagonalMatrix(angularMatrix);
             final CorrelatedRandomVectorGenerator angularNoiseGenerator = new CorrelatedRandomVectorGenerator(angularCovarianceMatrix, small, gaussianGenerator);
@@ -187,7 +184,7 @@ public class TLENumericalPropagator {
             final AngularAzElBuilder azElBuilder = new AngularAzElBuilder(angularNoiseGenerator, groundStation, azElSigmas, azElBaseWeights, satelliteIndex);
             azElBuilder.init(initialDate, finalDate);
             
-            //setting up range builder
+            // Set up range builder
             final double[] rangeMatrix = new double[] {1, 1};
             final DiagonalMatrix rangeCovarianceMatrix = new DiagonalMatrix(rangeMatrix);
             final CorrelatedRandomVectorGenerator rangeNoiseGenerator = new CorrelatedRandomVectorGenerator(rangeCovarianceMatrix, small, gaussianGenerator);
@@ -204,20 +201,20 @@ public class TLENumericalPropagator {
 
                 final SpacecraftState currentState = propagator.propagate(extrapDate);
                 
-                //Adding Az/El measurement
+                // Add Az/El measurement
                 SpacecraftState[] states = new SpacecraftState[] {currentState};
                 AngularAzEl azel = azElBuilder.build(states);
                 leastSquares.addMeasurement(azel);
                
-                //Adding Range measurement
+                // Add Range measurement
                 Range range = rangeBuilder.build(states);
                 leastSquares.addMeasurement(range);
               
-                //printResults
+                // Print Results
                 System.out.format(Locale.US, "step %2d %s %s%n",
                         cpt++, currentState.getDate(), currentState.getOrbit());
                 
-                //Get first and last measurements for IOD
+                // Get first and last measurements for IOD
                 if (extrapDate.compareTo(initialDate) == 0) {
                 	initialPosition = getPositionFromAzEl(azel, range, staF, inertialFrame, extrapDate);
                 }
@@ -227,16 +224,16 @@ public class TLENumericalPropagator {
 
             }
             
-            //Initial Orbit Estimation           
+            // Initial Orbit Determination           
             final IodLambert lambert = new IodLambert(mu);
-            //Posigrade and number of revolutions are set as guesses for now, but will need to be calculated later
+            // Posigrade and number of revolutions are set as guesses for now, but will need to be calculated later
             final boolean posigrade = true;
             final int nRev = 0;
             final KeplerianOrbit orbitEstimation = lambert.estimate(inertialFrame, posigrade, nRev, initialPosition, initialDate, finalPosition, finalDate);
             System.out.println("Lambert IOD Estimation: ");
             System.out.println(orbitEstimation.toString());
             
-            //least squares fit            
+            // Least squares fit            
             AbstractIntegratedPropagator[] lSPropagators = leastSquares.estimate();
             System.out.println("Least Squares Estimation: ");
             System.out.println(lSPropagators[0].getInitialState()); 
