@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Locale;
 
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
@@ -159,16 +160,6 @@ public class TLENumericalPropagator {
 
             // Set propagator index of satellite
             final ObservableSatellite satelliteIndex = new ObservableSatellite(0);
- 
-            // Least squares estimator setup
-            final GaussNewtonOptimizer GNOptimizer = new GaussNewtonOptimizer();
-            final EulerIntegratorBuilder eulerBuilder = new EulerIntegratorBuilder(stepT);
-            final double positionScale = 1.;
-            final NumericalPropagatorBuilder propBuilder = new NumericalPropagatorBuilder(initialOrbit, eulerBuilder, PositionAngle.MEAN, positionScale);
-            final BatchLSEstimator leastSquares = new BatchLSEstimator(GNOptimizer, propBuilder);            
-            leastSquares.setMaxIterations(100);
-            leastSquares.setMaxEvaluations(100);
-            leastSquares.setParametersConvergenceThreshold(.001);
             
             // Random number generator set up
             final int small = 0;
@@ -176,6 +167,7 @@ public class TLENumericalPropagator {
             final GaussianRandomGenerator gaussianGenerator = new GaussianRandomGenerator(randomNumGenerator);
 
             // Set up Az/El builder
+            // TODO: Understand why sigma doesn't change the value
             final double[] angularMatrix = new double[] {0.000001, 0.000001};
             final DiagonalMatrix angularCovarianceMatrix = new DiagonalMatrix(angularMatrix);
             final CorrelatedRandomVectorGenerator angularNoiseGenerator = new CorrelatedRandomVectorGenerator(angularCovarianceMatrix, small, gaussianGenerator);
@@ -183,6 +175,8 @@ public class TLENumericalPropagator {
             final double[] azElBaseWeights = new double[] {1, 1};
             final AngularAzElBuilder azElBuilder = new AngularAzElBuilder(angularNoiseGenerator, groundStation, azElSigmas, azElBaseWeights, satelliteIndex);
             azElBuilder.init(initialDate, finalDate);
+            // Container to hold Az/El measurements
+            ArrayList<AngularAzEl> azElContainer = new ArrayList<AngularAzEl>();
             
             // Set up range builder
             final double[] rangeMatrix = new double[] {1, 1};
@@ -192,6 +186,8 @@ public class TLENumericalPropagator {
             final double baseWeight = 1.;
             final RangeBuilder rangeBuilder = new RangeBuilder(rangeNoiseGenerator, groundStation, false, sigma, baseWeight, satelliteIndex);
             rangeBuilder.init(initialDate, finalDate);
+            // Container to hold range measurements
+            ArrayList<Range> rangeContainer = new ArrayList<Range>();
             
             // Extrapolation loop
             int cpt = 1;
@@ -201,14 +197,14 @@ public class TLENumericalPropagator {
 
                 final SpacecraftState currentState = propagator.propagate(extrapDate);
                 
-                // Add Az/El measurement
+                // Add Az/El measurement to container
                 SpacecraftState[] states = new SpacecraftState[] {currentState};
                 AngularAzEl azel = azElBuilder.build(states);
-                leastSquares.addMeasurement(azel);
+                azElContainer.add(azel);
                
-                // Add Range measurement
+                // Add Range measurement to container
                 Range range = rangeBuilder.build(states);
-                leastSquares.addMeasurement(range);
+                rangeContainer.add(range);
               
                 // Print Results
                 System.out.format(Locale.US, "step %2d %s %s%n",
@@ -226,14 +222,27 @@ public class TLENumericalPropagator {
             
             // Initial Orbit Determination           
             final IodLambert lambert = new IodLambert(mu);
-            // Posigrade and number of revolutions are set as guesses for now, but will need to be calculated later
+            // TODO: Posigrade and number of revolutions are set as guesses for now, but will need to be calculated later
             final boolean posigrade = true;
             final int nRev = 0;
             final KeplerianOrbit orbitEstimation = lambert.estimate(inertialFrame, posigrade, nRev, initialPosition, initialDate, finalPosition, finalDate);
             System.out.println("Lambert IOD Estimation: ");
             System.out.println(orbitEstimation.toString());
+ 
+            // Least squares estimator setup
+            final GaussNewtonOptimizer GNOptimizer = new GaussNewtonOptimizer();
+            final EulerIntegratorBuilder eulerBuilder = new EulerIntegratorBuilder(stepT);
+            final double positionScale = 1.;
+            final NumericalPropagatorBuilder propBuilder = new NumericalPropagatorBuilder(orbitEstimation, eulerBuilder, PositionAngle.MEAN, positionScale);
+            final BatchLSEstimator leastSquares = new BatchLSEstimator(GNOptimizer, propBuilder);            
+            leastSquares.setMaxIterations(1000);
+            leastSquares.setMaxEvaluations(1000);
+            leastSquares.setParametersConvergenceThreshold(.001);
+            // Add measurements
+            azElContainer.forEach(measurement->leastSquares.addMeasurement(measurement));
+            rangeContainer.forEach(measurement->leastSquares.addMeasurement(measurement));
             
-            // Least squares fit            
+            // Run least squares fit            
             AbstractIntegratedPropagator[] lSPropagators = leastSquares.estimate();
             System.out.println("Least Squares Estimation: ");
             System.out.println(lSPropagators[0].getInitialState()); 
