@@ -36,6 +36,7 @@ import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
 import org.orekit.frames.TopocentricFrame;
 import org.orekit.frames.Transform;
+import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.Orbit;
 import org.orekit.orbits.PositionAngle;
@@ -45,6 +46,7 @@ import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.propagation.conversion.EulerIntegratorBuilder;
 import org.orekit.propagation.conversion.NumericalPropagatorBuilder;
 import org.orekit.propagation.integration.AbstractIntegratedPropagator;
+import org.orekit.propagation.numerical.NumericalPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.IERSConventions;
 import org.orekit.utils.Constants;
@@ -102,9 +104,9 @@ public class TLENumericalPropagator {
             // Gravitation coefficient
             final double mu = Constants.IERS2010_EARTH_MU;
 
-            // Initial orbit parameters
+            // Keplerian Initial orbit parameters
             final double a = Math.cbrt(mu / (Math.pow(tle.getMeanMotion(), 2)));
-			final double e = tle.getE(); // eccentricity
+ 			final double e = tle.getE(); // eccentricity
             final double i = tle.getI(); // inclination
             final double omega = tle.getPerigeeArgument(); // perigee argument
             final double raan = tle.getRaan(); // right ascension of ascending node
@@ -117,9 +119,12 @@ public class TLENumericalPropagator {
             final AbsoluteDate initialDate = tle.getDate();
              
             // Orbit construction as Keplerian
-            final Orbit initialOrbit = new KeplerianOrbit(a, e, i, omega, raan, lM, PositionAngle.MEAN,
+            final Orbit initialKeplerianOrbit = new KeplerianOrbit(a, e, i, omega, raan, lM, PositionAngle.MEAN,
                                                          inertialFrame, initialDate, mu);
-            
+
+            // Orbit construction as Equinoctial
+            final Orbit initialOrbit = new EquinoctialOrbit(initialKeplerianOrbit);
+ 
             // Overall duration in seconds for extrapolation
             final double duration = 600.;
 
@@ -156,7 +161,9 @@ public class TLENumericalPropagator {
 
             // Set up propagator
             final EulerIntegrator euler = new EulerIntegrator(stepT);
-            final KeplerianPropagator propagator = new KeplerianPropagator(initialOrbit);
+            final KeplerianPropagator kPropagator = new KeplerianPropagator(initialOrbit);
+            final NumericalPropagator nPropagator = new NumericalPropagator(euler);
+            nPropagator.setInitialState(initialState);
 
             // Set propagator index of satellite
             final ObservableSatellite satelliteIndex = new ObservableSatellite(0);
@@ -195,7 +202,7 @@ public class TLENumericalPropagator {
                  extrapDate.compareTo(finalDate) <= 0;
                  extrapDate = extrapDate.shiftedBy(stepT))  {
 
-                final SpacecraftState currentState = propagator.propagate(extrapDate);
+                final SpacecraftState currentState = nPropagator.propagate(extrapDate);
                 
                 // Add Az/El measurement to container
                 SpacecraftState[] states = new SpacecraftState[] {currentState};
