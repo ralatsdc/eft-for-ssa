@@ -1,12 +1,17 @@
 package io.springbok.eft_for_ssa;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
 
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.hipparchus.linear.DiagonalMatrix;
@@ -91,9 +96,10 @@ public class TrackletCreator {
 		final double sigmaP = 1.;
 		final double sigmaV = 1.;
 		final double baseWeight = 1.;
-		ArrayList<PV> PVContainer = new ArrayList<PV>();			
-		final PVBuilder PVBuilder = new PVBuilder(null, sigmaP, sigmaV, baseWeight, satelliteIndex);
+		final PVBuilder pvBuilder = new PVBuilder(null, sigmaP, sigmaV, baseWeight, satelliteIndex);
 		
+		ArrayList<String> messageContainer = new ArrayList<String>();			
+
 		// Start propagating each TLE
 		tles.forEach((tle) -> {
 			
@@ -119,31 +125,86 @@ public class TrackletCreator {
 			// Stop date
 			final AbsoluteDate finalDate = initialDate.shiftedBy(duration);
 			
+			// 12 hour steps, plus or minute ~ 5 minutes
+			double randomizedStep = largeStep + (gaussianGenerator.nextNormalizedDouble() * 150);
+			
 			// Extrapolation loop - 12 hour increments
 			for (AbsoluteDate extrapDate = initialDate;
 				 extrapDate.compareTo(finalDate) <= 0;
-				 extrapDate = extrapDate.shiftedBy(largeStep))  {
+				 extrapDate = extrapDate.shiftedBy(randomizedStep))  {
 
-				// 3 readings separated by 1 minute
-				for (int i1 = 0; i1 < 3; i1++) {
-					AbsoluteDate currentDate = extrapDate.shiftedBy(smallStep * i1);
-					final SpacecraftState currentState = nPropagator.propagate(currentDate);
-					// Add Az/El measurement to container
-					SpacecraftState[] states = new SpacecraftState[] {currentState};
-					PV pv = PVBuilder.build(states);
-					PVContainer.add(pv);
-				}
+				String message = createMessage(extrapDate, smallStep, nPropagator, pvBuilder, tle);
+				messageContainer.add(message);
 			}
 		});
 		
-		PVContainer.forEach(PV-> {
-			System.out.println(PV);
-			System.out.println(PV.getDate());
-			System.out.println(PV.getPosition());
-			System.out.println(PV.getVelocity());
-		});
-		System.out.println("tles: " + tles.size());
-		System.out.println("tracklet output: " + PVContainer.size());
+		Collections.sort(messageContainer);
+		
+		messageContainer.forEach(message -> {
+			System.out.println(message);
+		});	
+		
+		createFile(messageContainer);
+		
+		System.out.println("TLEs processed: " + tles.size());
+		System.out.println("Messages created: " + messageContainer.size());
+	}
+	
+	static void createFile (ArrayList<String> messageContainer) {
+		LocalDateTime date = java.time.LocalDateTime.now();
+		String name = "output/" + date + "_tracklet_messages.txt";
+		try {
+				FileWriter writer = new FileWriter(name);
+				System.out.println(name + " created");
+				BufferedWriter bufferedwriter = new BufferedWriter(writer);
+				
+				messageContainer.forEach(message -> {
+					try {
+						bufferedwriter.write(message);
+						bufferedwriter.newLine();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				});
+				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	}
+	
+	static String createMessage (AbsoluteDate extrapDate, double smallStep, NumericalPropagator nPropagator, PVBuilder pvBuilder, TLE tle) {
+		
+		// Message format:
+		// msgTime, sensorId, objectId, obsTime1, x1, y1, z1, rcs1, obsTime2, x2, y2, z2, rcs2, obsTime3, x3, y3, z3, rcs3
+		String message;
+		
+		// Message set to always come in ten minutes after first observation
+		AbsoluteDate msgTime = extrapDate.shiftedBy(600); 
+		// Set sensor ID
+		int sensorId = 0;
+		// Set object ID
+		int objectId = tle.getSatelliteNumber();
+		
+		message = msgTime.toString() + ", " + sensorId + ", " + objectId;
+		
+			// 3 readings separated by 1 minute
+			for (int i1 = 0; i1 < 3; i1++) {
+				AbsoluteDate currentDate = extrapDate.shiftedBy(smallStep * i1);
+				final SpacecraftState currentState = nPropagator.propagate(currentDate);
+				// Add Az/El measurement to container
+				SpacecraftState[] states = new SpacecraftState[] {currentState};
+				PV pv = pvBuilder.build(states);
+				Vector3D position = pv.getPosition();
+				
+				double rcs = Math.random() * 10;
+				
+				String obs = currentDate.toString() + ", " + position.getX()+ ", " + position.getY() + ", " + position.getZ() + ", " + rcs;
+				
+				message = message + ", " + obs;
+			}
+		return message;
 	}
 
 	static ArrayList<TLE> convertTLES (File tleData) throws IOException{
