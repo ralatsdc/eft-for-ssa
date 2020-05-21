@@ -8,10 +8,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Random;
 
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.hipparchus.linear.DiagonalMatrix;
@@ -19,35 +18,26 @@ import org.hipparchus.ode.nonstiff.EulerIntegrator;
 import org.hipparchus.random.CorrelatedRandomVectorGenerator;
 import org.hipparchus.random.GaussianRandomGenerator;
 import org.hipparchus.random.ISAACRandom;
-import org.hipparchus.util.FastMath;
-import org.orekit.bodies.BodyShape;
-import org.orekit.bodies.GeodeticPoint;
-import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.NetworkCrawler;
 import org.orekit.estimation.measurements.ObservableSatellite;
 import org.orekit.estimation.measurements.PV;
-import org.orekit.estimation.measurements.generation.AngularAzElBuilder;
 import org.orekit.estimation.measurements.generation.PVBuilder;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
-import org.orekit.frames.TopocentricFrame;
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.Orbit;
 import org.orekit.orbits.PositionAngle;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.analytical.KeplerianPropagator;
 import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.propagation.numerical.NumericalPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
-import org.orekit.utils.IERSConventions;
 
 public class TrackletCreator {
 	
-	static String inputPath = "tles/globalstar_tles_05_18_2020.txt";
-	
+	static String inputPath = "tles/globalstar_tles_05_18_2020.txt";	
 	
 	public static void main(final String[] args) throws Exception {
 
@@ -96,7 +86,7 @@ public class TrackletCreator {
 		final double sigmaP = 1.;
 		final double sigmaV = 1.;
 		final double baseWeight = 1.;
-		final PVBuilder pvBuilder = new PVBuilder(null, sigmaP, sigmaV, baseWeight, satelliteIndex);
+		final PVBuilder pvBuilder = new PVBuilder(PVNoiseGenerator, sigmaP, sigmaV, baseWeight, satelliteIndex);
 		
 		ArrayList<String> messageContainer = new ArrayList<String>();			
 
@@ -151,7 +141,7 @@ public class TrackletCreator {
 	}
 	
 	static void createFile (ArrayList<String> messageContainer) {
-		LocalDateTime date = java.time.LocalDateTime.now();
+		LocalDate date = java.time.LocalDate.now();
 		String name = "output/" + date + "_tracklet_messages.txt";
 		try {
 				FileWriter writer = new FileWriter(name);
