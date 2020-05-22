@@ -86,7 +86,7 @@ public class TrackletCreator {
 		final double sigmaP = 1.;
 		final double sigmaV = 1.;
 		final double baseWeight = 1.;
-		final PVBuilder pvBuilder = new PVBuilder(PVNoiseGenerator, sigmaP, sigmaV, baseWeight, satelliteIndex);
+		final PVBuilder pvBuilder = new PVBuilder(null, sigmaP, sigmaV, baseWeight, satelliteIndex);
 		
 		ArrayList<String> messageContainer = new ArrayList<String>();			
 
@@ -115,7 +115,7 @@ public class TrackletCreator {
 			// Stop date
 			final AbsoluteDate finalDate = initialDate.shiftedBy(duration);
 			
-			// 12 hour steps, plus or minute ~ 5 minutes
+			// 12 hour steps, plus or minus ~ 5 minutes
 			double randomizedStep = largeStep + (gaussianGenerator.nextNormalizedDouble() * 150);
 			
 			// Extrapolation loop - 12 hour increments
@@ -157,6 +157,8 @@ public class TrackletCreator {
 						e.printStackTrace();
 					}
 				});
+
+				bufferedwriter.close();
 				
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -177,7 +179,7 @@ public class TrackletCreator {
 		// Set object ID
 		int objectId = tle.getSatelliteNumber();
 		
-		message = msgTime.toString() + ", " + sensorId + ", " + objectId;
+		message = msgTime.toString() + "," + sensorId + "," + objectId;
 		
 			// 3 readings separated by 1 minute
 			for (int i1 = 0; i1 < 3; i1++) {
@@ -190,9 +192,9 @@ public class TrackletCreator {
 				
 				double rcs = Math.random() * 10;
 				
-				String obs = currentDate.toString() + ", " + position.getX()+ ", " + position.getY() + ", " + position.getZ() + ", " + rcs;
+				String obs = currentDate.toString() + "," + position.getX()+ "," + position.getY() + "," + position.getZ() + "," + rcs;
 				
-				message = message + ", " + obs;
+				message = message + "," + obs;
 			}
 		return message;
 	}

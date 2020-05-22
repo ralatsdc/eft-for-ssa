@@ -1,15 +1,13 @@
 package io.springbok.eft_for_ssa;
 
-import java.io.Serializable;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.orekit.estimation.measurements.ObservableSatellite;
 import org.orekit.estimation.measurements.Position;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.time.DateComponents;
-import org.orekit.time.TimeComponents;
+import org.orekit.time.TimeScale;
+import org.orekit.time.TimeScalesFactory;
 
 public class Tracklet {
 
@@ -18,6 +16,7 @@ public class Tracklet {
 	private int objectId;
 	private ArrayList<Position> positions;
 	private ArrayList<Double> rcsArr;
+	private static TimeScale utc = TimeScalesFactory.getUTC();
 
 	/**
 	 * Creates a Tracklet with the given parameters.
@@ -59,7 +58,8 @@ public class Tracklet {
 
 		try {
 
-			tracklet.msgTime = new AbsoluteDate();
+			
+			tracklet.msgTime = new AbsoluteDate(tokens[0], utc);
 			tracklet.sensorId = Integer.parseInt(tokens[1]);
 			tracklet.objectId = Integer.parseInt(tokens[2]);
 			
@@ -68,10 +68,10 @@ public class Tracklet {
 			
 			ObservableSatellite satelliteIndex = new ObservableSatellite(0);
 			
-			for (int i = 2; i < tokens.length; i = i + 5) {
+			for (int i = 3; i < tokens.length; i = i + 5) {
 				
-				AbsoluteDate date = new AbsoluteDate();
-				double x = Double.parseDouble(tokens[i+1]);
+				AbsoluteDate date = new AbsoluteDate(tokens[i], utc);
+				double x = Double.parseDouble(tokens[(i+1)]);
 				double y = Double.parseDouble(tokens[i+2]);
 				double z = Double.parseDouble(tokens[i+3]);
 				Vector3D vector = new Vector3D(x, y, z);	
