@@ -6,11 +6,16 @@ import java.util.ArrayList;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.api.common.state.ValueState;
+import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.metrics.util.SystemResourcesCounter;
+import org.apache.flink.streaming.api.TimerService;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.util.Collector;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.hipparchus.optim.nonlinear.vector.leastsquares.GaussNewtonOptimizer;
 import org.orekit.data.NetworkCrawler;
@@ -28,6 +33,8 @@ import org.orekit.propagation.conversion.EulerIntegratorBuilder;
 import org.orekit.propagation.conversion.NumericalPropagatorBuilder;
 import org.orekit.propagation.integration.AbstractIntegratedPropagator;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScale;
+import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 
 public class TrackletReader {
@@ -38,6 +45,9 @@ public class TrackletReader {
 	
 	// Gravitation coefficient
 	final static double mu = Constants.IERS2010_EARTH_MU;
+	
+	// Time Scale
+	final static TimeScale utc = TimeScalesFactory.getUTC();
 
 	// Inertial frame
 	final static Frame inertialFrame = FramesFactory.getGCRF();
@@ -54,11 +64,15 @@ public class TrackletReader {
 	final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 	
 	DataStream<Tracklet> tracklets = env.readFile(formatter, inputPath)
-			.map(new TrackletCounter());
+			.map(new Counter());
 	
-	DataStream<Tracklet> filteredTracklets = tracklets.filter(new LowPositionFilter());
+	DataStream<Tracklet> filteredTracklets = tracklets
+			.filter(new LowPositionFilter());
 	
-	DataStream<Orbit> orbits = filteredTracklets.map(new CreateOrbit());
+	DataStream<Orbit> orbits = filteredTracklets
+			.map(new CreateOrbit())
+			.keyBy(orbit -> orbit.getDate())
+			.process(new OrbitTimeout());
 	
 	orbits.print();	
 	
@@ -125,10 +139,38 @@ public class TrackletReader {
 		}
 	}
 
-	private static class TrackletCounter extends RichMapFunction<Tracklet, Tracklet> {
+	public static class OrbitTimeout extends KeyedProcessFunction<AbsoluteDate, Orbit, Orbit> {
+		
+		private ValueState<Orbit> orbitState;
+
+		@Override
+		public void open(Configuration config) {
+			ValueStateDescriptor<Orbit> orbitDescriptor = 
+					new ValueStateDescriptor<>("saved orbit", Orbit.class);
+			orbitState = getRuntimeContext().getState(orbitDescriptor);
+		}
+
+		@Override
+		public void processElement(Orbit orbit, Context context, Collector<Orbit> out) throws Exception {
+			TimerService timerService = context.timerService();
+			
+			orbitState.update(orbit);
+			
+			// State (Orbit) timeout in milliseconds
+			double timeout = (120 * 60 * 1000);
+			timerService.registerEventTimeTimer(orbit.getDate().shiftedBy(timeout).toDate(utc).getTime());
+		}
+
+		@Override
+		public void onTimer(long timestamp, OnTimerContext context, Collector<Orbit> out) throws Exception {
+			orbitState.clear();
+		}
+	}
+
+	private static class Counter<T> extends RichMapFunction<T, T> {
 		private transient org.apache.flink.metrics.Counter counter;
 		
-		@Override
+		
 		public void open(Configuration config) {
 			this.counter = getRuntimeContext()
 					.getMetricGroup()
@@ -136,7 +178,7 @@ public class TrackletReader {
 		}
 
 		@Override
-		public Tracklet map(Tracklet value) throws Exception {
+		public T map(T value) throws Exception {
 			this.counter.inc();
 //			System.out.println(this.counter.getCount());
 			return value;
