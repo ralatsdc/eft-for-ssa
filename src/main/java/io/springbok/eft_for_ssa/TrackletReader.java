@@ -5,24 +5,35 @@ import java.util.ArrayList;
 
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.metrics.util.SystemResourcesCounter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.windowing.time.Time;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
+import org.hipparchus.optim.nonlinear.vector.leastsquares.GaussNewtonOptimizer;
 import org.orekit.data.NetworkCrawler;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.estimation.iod.IodLambert;
+import org.orekit.estimation.leastsquares.BatchLSEstimator;
 import org.orekit.estimation.measurements.Position;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
 import org.orekit.orbits.Orbit;
+import org.orekit.orbits.PositionAngle;
+import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.conversion.EulerIntegratorBuilder;
+import org.orekit.propagation.conversion.NumericalPropagatorBuilder;
+import org.orekit.propagation.integration.AbstractIntegratedPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
 
 public class TrackletReader {
 
 
-	static String inputPath = "output/2020-05-22_tracklet_messages.txt";
+	static String inputPath = "output/2020-05-25_tracklet_messages.txt";
 	static TrackletFormatter formatter = new TrackletFormatter(inputPath);
 	
 	// Gravitation coefficient
@@ -42,18 +53,19 @@ public class TrackletReader {
 
 	final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 	
-	DataStream<Tracklet> tracklets = env.readFile(formatter, inputPath);
+	DataStream<Tracklet> tracklets = env.readFile(formatter, inputPath)
+			.map(new TrackletCounter());
 	
 	DataStream<Tracklet> filteredTracklets = tracklets.filter(new LowPositionFilter());
 	
 	DataStream<Orbit> orbits = filteredTracklets.map(new CreateOrbit());
 	
-	orbits.print();
+	orbits.print();	
 	
 	env.execute();
 		
 	}
-
+	
 	private static class LowPositionFilter implements FilterFunction<Tracklet> {
 
 		@Override
@@ -74,6 +86,8 @@ public class TrackletReader {
 			
 			ArrayList<Position> positions = tracklet.getPositions();
 			
+			Orbit orbit;
+			
             // Orbit Determination           
             final IodLambert lambert = new IodLambert(mu);
             // TODO: Posigrade and number of revolutions are set as guesses for now, but will need to be calculated later
@@ -83,20 +97,49 @@ public class TrackletReader {
             final AbsoluteDate initialDate = positions.get(0).getDate();
             final Vector3D finalPosition = positions.get(positions.size() - 1).getPosition();
             final AbsoluteDate finalDate = positions.get(positions.size() - 1).getDate();
-            final Orbit orbit = lambert.estimate(inertialFrame, posigrade, nRev, initialPosition, initialDate, finalPosition, finalDate);
+            final Orbit orbitEstimation = lambert.estimate(inertialFrame, posigrade, nRev, initialPosition, initialDate, finalPosition, finalDate);
+            
+            if (positions.size() > 2) {
+            	
+				// Least squares estimator setup
+				final GaussNewtonOptimizer GNOptimizer = new GaussNewtonOptimizer();
+				final EulerIntegratorBuilder eulerBuilder = new EulerIntegratorBuilder(60);
+				final double positionScale = 1.;
+				final NumericalPropagatorBuilder propBuilder = new NumericalPropagatorBuilder(orbitEstimation, eulerBuilder, PositionAngle.MEAN, positionScale);
+				final BatchLSEstimator leastSquares = new BatchLSEstimator(GNOptimizer, propBuilder);            
+				leastSquares.setMaxIterations(1000);
+				leastSquares.setMaxEvaluations(1000);
+				leastSquares.setParametersConvergenceThreshold(.001);
+				// Add measurements
+				positions.forEach(measurement->leastSquares.addMeasurement(measurement));
+				
+				// Run least squares fit            
+				AbstractIntegratedPropagator[] lsPropagators = leastSquares.estimate();
+				orbit = lsPropagators[0].getInitialState().getOrbit();
+
+            } else {
+            	orbit = orbitEstimation;
+            }
 			
 			return orbit;
 		}
 	}
-	
 
-//	private static DataStream<Integer> toInt(DataStream<String> input) {
-//		DataStream<Integer> num = input.map(new MapFunction<String, Integer>() {
-//			
-//			public Integer map(String value) {
-//				return Integer.parseInt(value);
-//			}
-//		});	
-//	}
+	private static class TrackletCounter extends RichMapFunction<Tracklet, Tracklet> {
+		private transient org.apache.flink.metrics.Counter counter;
+		
+		@Override
+		public void open(Configuration config) {
+			this.counter = getRuntimeContext()
+					.getMetricGroup()
+					.counter("trackletCounter");
+		}
 
+		@Override
+		public Tracklet map(Tracklet value) throws Exception {
+			this.counter.inc();
+//			System.out.println(this.counter.getCount());
+			return value;
+		}
+	}
 }

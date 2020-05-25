@@ -181,9 +181,11 @@ public class TrackletCreator {
 		
 		message = msgTime.toString() + "," + sensorId + "," + objectId;
 		
+		int positionReadingNum = (int) (Math.random() * 10) + 1;
+		
 			// 3 readings separated by 1 minute
-			for (int i1 = 0; i1 < 3; i1++) {
-				AbsoluteDate currentDate = extrapDate.shiftedBy(smallStep * i1);
+			for (int i = 0; i < positionReadingNum; i++) {
+				AbsoluteDate currentDate = extrapDate.shiftedBy(smallStep * i);
 				final SpacecraftState currentState = nPropagator.propagate(currentDate);
 				// Add Az/El measurement to container
 				SpacecraftState[] states = new SpacecraftState[] {currentState};
