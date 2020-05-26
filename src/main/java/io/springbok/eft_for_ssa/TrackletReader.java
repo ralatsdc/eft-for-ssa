@@ -45,9 +45,6 @@ public class TrackletReader {
 	
 	// Gravitation coefficient
 	final static double mu = Constants.IERS2010_EARTH_MU;
-	
-	// Time Scale
-	final static TimeScale utc = TimeScalesFactory.getUTC();
 
 	// Inertial frame
 	final static Frame inertialFrame = FramesFactory.getGCRF();
@@ -67,11 +64,13 @@ public class TrackletReader {
 			.map(new Counter());
 	
 	DataStream<Tracklet> filteredTracklets = tracklets
-			.filter(new LowPositionFilter());
+			.filter(new LowPositionFilter())
+			.keyBy(tracklet -> tracklet.getId())
+			.process(new ProcessTracklets());
 	
-	DataStream<Orbit> orbits = filteredTracklets
+	DataStream<KeyedOrbit> orbits = filteredTracklets
 			.map(new CreateOrbit())
-			.keyBy(orbit -> orbit.getDate())
+			.keyBy(orbit -> orbit.getId())
 			.process(new OrbitTimeout());
 	
 	orbits.print();	
@@ -93,10 +92,27 @@ public class TrackletReader {
 			else {return false;}
 		}
 	}
+	
+	private static class ProcessTracklets extends KeyedProcessFunction<Long, Tracklet, Tracklet> {
 
-	private static class CreateOrbit implements MapFunction<Tracklet, Orbit> {
+		private ValueState<Tracklet> trackletState;
 
-		public Orbit map(Tracklet tracklet) throws Exception {
+		@Override
+		public void open(Configuration config) {
+			ValueStateDescriptor<Tracklet> trackletDescriptor = 
+					new ValueStateDescriptor<>("saved tracklet", Tracklet.class);
+			trackletState = getRuntimeContext().getState(trackletDescriptor);
+		}
+
+		@Override
+		public void processElement(Tracklet tracklet, Context context, Collector<Tracklet> out) throws Exception {
+			out.collect(tracklet);
+		}
+	}
+
+	private static class CreateOrbit implements MapFunction<Tracklet, KeyedOrbit> {
+
+		public KeyedOrbit map(Tracklet tracklet) throws Exception {
 			
 			ArrayList<Position> positions = tracklet.getPositions();
 			
@@ -135,34 +151,46 @@ public class TrackletReader {
             	orbit = orbitEstimation;
             }
 			
-			return orbit;
+            KeyedOrbit keyedOrbit = new KeyedOrbit(orbit);
+			return keyedOrbit;
 		}
 	}
 
-	public static class OrbitTimeout extends KeyedProcessFunction<AbsoluteDate, Orbit, Orbit> {
+	public static class OrbitTimeout extends KeyedProcessFunction<Long, KeyedOrbit, KeyedOrbit> {
 		
-		private ValueState<Orbit> orbitState;
+		private ValueState<KeyedOrbit> orbitState;
 
 		@Override
 		public void open(Configuration config) {
-			ValueStateDescriptor<Orbit> orbitDescriptor = 
-					new ValueStateDescriptor<>("saved orbit", Orbit.class);
+			ValueStateDescriptor<KeyedOrbit> orbitDescriptor = 
+					new ValueStateDescriptor<>("saved orbit", KeyedOrbit.class);
 			orbitState = getRuntimeContext().getState(orbitDescriptor);
 		}
 
 		@Override
-		public void processElement(Orbit orbit, Context context, Collector<Orbit> out) throws Exception {
+		public void processElement(KeyedOrbit orbit, Context context, Collector<KeyedOrbit> out) throws Exception {
 			TimerService timerService = context.timerService();
+	
+			// Time Scale
+			final TimeScale utc = TimeScalesFactory.getUTC();
 			
 			orbitState.update(orbit);
 			
 			// State (Orbit) timeout in milliseconds
 			double timeout = (120 * 60 * 1000);
-			timerService.registerEventTimeTimer(orbit.getDate().shiftedBy(timeout).toDate(utc).getTime());
+			timerService.registerEventTimeTimer(orbit
+					.getOrbit()
+					.getDate()
+					.shiftedBy(timeout)
+					.toDate(utc)
+					.getTime());
+			
+			out.collect(orbit);
 		}
 
 		@Override
-		public void onTimer(long timestamp, OnTimerContext context, Collector<Orbit> out) throws Exception {
+		public void onTimer(long timestamp, OnTimerContext context, Collector<KeyedOrbit> out) throws Exception {
+			// Notify the tracklet that created the orbit
 			orbitState.clear();
 		}
 	}

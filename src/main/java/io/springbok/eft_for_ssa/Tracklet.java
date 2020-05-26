@@ -11,6 +11,8 @@ import org.orekit.time.TimeScalesFactory;
 
 public class Tracklet {
 
+	private static long increment = 0;
+	private long trackletId;
 	private AbsoluteDate msgTime;
 	private int sensorId;
 	private int objectId;
@@ -28,6 +30,7 @@ public class Tracklet {
 		this.objectId = objectId;
 		this.positions = positions;
 		this.rcsArr = rcsArr;
+		this.trackletId = increment++;
 			
 	}
 	
@@ -84,6 +87,7 @@ public class Tracklet {
 			
 			tracklet.positions = positions;
 			tracklet.rcsArr = rcsArr;
+			tracklet.trackletId = increment++;
 			
 		} catch (NumberFormatException nfe) {
 			throw new RuntimeException("Invalid record: " + line, nfe);
@@ -102,5 +106,9 @@ public class Tracklet {
 
 	public ArrayList<Position> getPositions() {
 		return positions;
+	}
+	
+	public long getId() {
+		return trackletId;
 	}
 }
