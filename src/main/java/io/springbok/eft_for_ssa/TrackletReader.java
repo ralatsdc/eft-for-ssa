@@ -1,26 +1,21 @@
 package io.springbok.eft_for_ssa;
 
-import java.net.URL;
-import java.util.ArrayList;
-
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.runtime.metrics.util.SystemResourcesCounter;
 import org.apache.flink.streaming.api.TimerService;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
-import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.hipparchus.optim.nonlinear.vector.leastsquares.GaussNewtonOptimizer;
-import org.orekit.data.NetworkCrawler;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
+import org.orekit.data.NetworkCrawler;
 import org.orekit.estimation.iod.IodLambert;
 import org.orekit.estimation.leastsquares.BatchLSEstimator;
 import org.orekit.estimation.measurements.Position;
@@ -28,7 +23,6 @@ import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
 import org.orekit.orbits.Orbit;
 import org.orekit.orbits.PositionAngle;
-import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.conversion.EulerIntegratorBuilder;
 import org.orekit.propagation.conversion.NumericalPropagatorBuilder;
 import org.orekit.propagation.integration.AbstractIntegratedPropagator;
@@ -36,6 +30,9 @@ import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
+
+import java.net.URL;
+import java.util.ArrayList;
 
 public class TrackletReader {
 
@@ -151,7 +148,7 @@ public class TrackletReader {
             	orbit = orbitEstimation;
             }
 			
-            KeyedOrbit keyedOrbit = new KeyedOrbit(orbit);
+            KeyedOrbit keyedOrbit = new KeyedOrbit(orbit, tracklet);
 			return keyedOrbit;
 		}
 	}

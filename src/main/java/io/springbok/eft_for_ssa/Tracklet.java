@@ -1,13 +1,13 @@
 package io.springbok.eft_for_ssa;
 
-import java.util.ArrayList;
-
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.orekit.estimation.measurements.ObservableSatellite;
 import org.orekit.estimation.measurements.Position;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
+
+import java.util.ArrayList;
 
 public class Tracklet {
 
@@ -18,6 +18,8 @@ public class Tracklet {
 	private int objectId;
 	private ArrayList<Position> positions;
 	private ArrayList<Double> rcsArr;
+	private ArrayList<Long> orbitsCreated;
+
 	private static TimeScale utc = TimeScalesFactory.getUTC();
 
 	/**
@@ -31,6 +33,7 @@ public class Tracklet {
 		this.positions = positions;
 		this.rcsArr = rcsArr;
 		this.trackletId = increment++;
+		this.orbitsCreated = new ArrayList<>();
 			
 	}
 	
@@ -88,12 +91,21 @@ public class Tracklet {
 			tracklet.positions = positions;
 			tracklet.rcsArr = rcsArr;
 			tracklet.trackletId = increment++;
+			tracklet.orbitsCreated = new ArrayList<>();
 			
 		} catch (NumberFormatException nfe) {
 			throw new RuntimeException("Invalid record: " + line, nfe);
 		}
 
 		return tracklet;
+	}
+
+	public void addOrbit(long orbitId){
+		this.orbitsCreated.add(orbitId);
+	}
+
+	public void removeOrbit(long orbitId){
+		this.orbitsCreated.remove(orbitId);
 	}
 
 	public AbsoluteDate getMsgTime() {
