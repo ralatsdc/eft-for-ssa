@@ -6,6 +6,6 @@ public class OrbitRouter implements Router<KeyedOrbit> {
 
 	@Override
 	public void route(KeyedOrbit message, Downstream<KeyedOrbit> downstream) {
-		downstream.forward(OrbitState.TYPE, message.getStringId(), message);
+		downstream.forward(OrbitStatefulFunction.TYPE, message.getStringId(), message);
 	}
 }

@@ -1,14 +1,5 @@
 package io.springbok.eft_for_ssa;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Locale;
-
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.hipparchus.linear.DiagonalMatrix;
 import org.hipparchus.ode.nonstiff.EulerIntegrator;
@@ -48,8 +39,13 @@ import org.orekit.propagation.conversion.NumericalPropagatorBuilder;
 import org.orekit.propagation.integration.AbstractIntegratedPropagator;
 import org.orekit.propagation.numerical.NumericalPropagator;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.utils.IERSConventions;
 import org.orekit.utils.Constants;
+import org.orekit.utils.IERSConventions;
+
+import java.io.*;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Locale;
 
 /** Orekit tutorial for slave mode propagation.
  * <p>This tutorial shows a basic usage of the slave mode in which the user drives all propagation steps.<p>
@@ -251,8 +247,10 @@ public class TLENumericalPropagator {
             
             // Run least squares fit            
             AbstractIntegratedPropagator[] lSPropagators = leastSquares.estimate();
-            System.out.println("Least Squares Estimation: ");
-            System.out.println(lSPropagators[0].getInitialState()); 
+//            System.out.println("Least Squares Estimation: ");
+//            System.out.println(lSPropagators[0].getInitialState());
+
+            System.out.println(ObjectSizeFetcher.getObjectSize(orbitEstimation));
 
 			}catch (FileNotFoundException e1) {
 				// TODO Auto-generated catch block

@@ -1,20 +1,18 @@
 package io.springbok.eft_for_ssa;
 
-import static org.junit.Assert.assertTrue;
-
-import org.junit.Test;
-
 /**
  * Unit test for simple App.
  */
 public class AppTest 
 {
-    /**
-     * Rigorous Test :-)
-     */
-    @Test
-    public void shouldAnswerWithTrue()
-    {
-        assertTrue( true );
-    }
+//    @Test
+//    public void run() throws Exception {
+//        Harness harness =
+//                new Harness()
+//                        .withKryoMessageSerializer()
+//                        .withSupplyingIngress(MyConstants.REQUEST_INGRESS, new MessageGenerator())
+//                        .withPrintingEgress(MyConstants.RESULT_EGRESS);
+//
+//        harness.start();
+//    }
 }

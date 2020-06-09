@@ -1,7 +1,6 @@
 package io.springbok.eft_for_ssa;
 
 import org.orekit.orbits.Orbit;
-
 import java.util.ArrayList;
 
 public class KeyedOrbit {

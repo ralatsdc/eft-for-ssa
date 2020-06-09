@@ -18,7 +18,7 @@ public class Tracklet {
 	private int objectId;
 	private ArrayList<Position> positions;
 	private ArrayList<Double> rcsArr;
-	private ArrayList<Long> orbitsCreated;
+	private ArrayList<Long> orbitsIds;
 
 	private static TimeScale utc = TimeScalesFactory.getUTC();
 
@@ -33,7 +33,7 @@ public class Tracklet {
 		this.positions = positions;
 		this.rcsArr = rcsArr;
 		this.trackletId = increment++;
-		this.orbitsCreated = new ArrayList<>();
+		this.orbitsIds = new ArrayList<>();
 			
 	}
 	
@@ -91,7 +91,7 @@ public class Tracklet {
 			tracklet.positions = positions;
 			tracklet.rcsArr = rcsArr;
 			tracklet.trackletId = increment++;
-			tracklet.orbitsCreated = new ArrayList<>();
+			tracklet.orbitsIds = new ArrayList<>();
 			
 		} catch (NumberFormatException nfe) {
 			throw new RuntimeException("Invalid record: " + line, nfe);
@@ -101,11 +101,11 @@ public class Tracklet {
 	}
 
 	public void addOrbit(long orbitId){
-		this.orbitsCreated.add(orbitId);
+		this.orbitsIds.add(orbitId);
 	}
 
 	public void removeOrbit(long orbitId){
-		this.orbitsCreated.remove(orbitId);
+		this.orbitsIds.remove(orbitId);
 	}
 
 	public AbsoluteDate getMsgTime() {
@@ -122,5 +122,9 @@ public class Tracklet {
 	
 	public long getId() {
 		return trackletId;
+	}
+
+	public ArrayList<Long> getOrbitIds() {
+		return orbitsIds;
 	}
 }

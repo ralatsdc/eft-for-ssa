@@ -8,35 +8,34 @@ import org.apache.flink.statefun.sdk.state.PersistedValue;
 
 import java.util.ArrayList;
 
-public class OrbitIdManager implements StatefulFunction {
+public class OrbitIdStatefulFunction implements StatefulFunction {
 
 	public static final FunctionType TYPE = new FunctionType("springbok", "tracklet");
 	@Persisted
-	private final PersistedValue<ArrayList> savedIdList = PersistedValue.of("idList", ArrayList.class);
+	private final PersistedValue<ArrayList> savedOrbitIdList = PersistedValue.of("idList", ArrayList.class);
 
 	@Override
 	public void invoke(Context context, Object input) {
 
-		// This is the bottleneck, so it should be as fast as possible
-		// TODO: optimize this
 		if (input instanceof AddOrbitMessage){
-			ArrayList idList = savedIdList.get();
+			ArrayList idList = savedOrbitIdList.get();
 			AddOrbitMessage orbitMessage = (AddOrbitMessage) input;
 			KeyedOrbit orbit = orbitMessage.getOrbit();
 
 			// Send to all existing orbits to do calculation
+			// TODO: deal with flink requiring string IDs and keyedorbits and tracklets incrementing long IDs
 			idList.forEach(id ->{
-				context.send(OrbitState.TYPE, id.toString(), orbit);
+				context.send(OrbitStatefulFunction.TYPE, id.toString(), new CompareOrbitsMessage(orbit));
 			});
 
 			idList.add(orbit.getId());
-			savedIdList.set(idList);
+			savedOrbitIdList.set(idList);
 		}
 		if (input instanceof RemoveOrbitMessage) {
-			ArrayList idList = savedIdList.get();
+			ArrayList idList = savedOrbitIdList.get();
 			RemoveOrbitMessage orbitMessage = (RemoveOrbitMessage) input;
 			idList.remove(orbitMessage.getOrbitId());
-			savedIdList.set(idList);
+			savedOrbitIdList.set(idList);
 		}
 	}
 }
