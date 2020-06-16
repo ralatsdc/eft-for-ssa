@@ -1,14 +1,14 @@
 package io.springbok.eft_for_ssa;
 
+import org.apache.flink.api.common.io.FileInputFormat;
+import org.apache.flink.core.fs.FileInputSplit;
+import org.apache.flink.core.fs.FileSystem;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
-
-import org.apache.flink.api.common.io.FileInputFormat;
-import org.apache.flink.core.fs.FileInputSplit;
-import org.apache.flink.core.fs.FileSystem;
 
 public class TrackletFormatter extends FileInputFormat<Tracklet> {
 	

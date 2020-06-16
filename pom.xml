@@ -38,7 +38,13 @@
     <dependency>
     	<groupId>org.apache.flink</groupId>
     	<artifactId>flink-core</artifactId>
-    	<version>1.10.1</version>
+    	<versiton>1.10.1</versit aon>
+    </dependency>
+    <dependency>
+      <groupId>com.google.auto.service</groupId>
+      <artifactId>auto-service</artifactId>
+      <version>1.0-rc7</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
     	<groupId>org.apache.flink</groupId>
@@ -49,6 +55,12 @@
     	<groupId>org.apache.flink</groupId>
     	<artifactId>flink-streaming-java_2.12</artifactId>
     	<version>1.10.1</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-streaming-core -->
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-streaming-core</artifactId>
+      <version>0.9.1</version>
     </dependency>
     <dependency>
     	<groupId>org.slf4j</groupId>
@@ -70,6 +82,12 @@
           <artifactId>statefun-flink-io</artifactId>
           <version>2.0.0</version>
       </dependency>
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>statefun-flink-harness</artifactId>
+      <version>2.1.0</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

@@ -120,7 +120,7 @@ public class Tracklet {
 		return positions;
 	}
 	
-	public long getId() {
+	public Long getId() {
 		return trackletId;
 	}
 

@@ -32,7 +32,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
 			context.send(OrbitIdStatefulFunction.TYPE, "manager", new AddOrbitMessage(orbit));
 
 			KeyedOrbit response = orbit;
-			context.send(IO.EGRESS_ID, response);
+			context.send(Identifiers.EGRESS_ID, response);
 		}
 
 		if (input instanceof DelayedDeleteMessage){

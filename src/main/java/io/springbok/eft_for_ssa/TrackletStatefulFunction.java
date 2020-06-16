@@ -8,7 +8,7 @@ import org.apache.flink.statefun.sdk.state.PersistedValue;
 
 public class TrackletStatefulFunction implements StatefulFunction {
 
-	public static final FunctionType TYPE = new FunctionType("springbok", "tracklet");
+	public static final FunctionType TYPE = new FunctionType("springbok", "tracklet-stateful-function");
 	@Persisted
 	private final PersistedValue<Tracklet> trackletState = PersistedValue.of("tracklet", Tracklet.class);
 
