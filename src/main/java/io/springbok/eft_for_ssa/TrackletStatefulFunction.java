@@ -21,6 +21,7 @@ public class TrackletStatefulFunction implements StatefulFunction {
 			// Add id to tracklet
 			tracklet.addOrbit(orbit.getId());
 			trackletState.set(tracklet);
+			context.send(IO.STRING_EGRESS_ID, "Tracklet Saved: " + trackletState.get().toString());
 			// Send to orbit state for save
 			context.send(OrbitStatefulFunction.TYPE, String.valueOf(orbit.getId()), new NewOrbitMessage(orbit));
 		}

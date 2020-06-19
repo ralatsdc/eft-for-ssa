@@ -18,7 +18,7 @@ public class OrbitIdStatefulFunction implements StatefulFunction {
 	public void invoke(Context context, Object input) {
 
 		if (input instanceof AddOrbitMessage){
-			ArrayList idList = savedOrbitIdList.get();
+			ArrayList idList = savedOrbitIdList.getOrDefault(new ArrayList<Long>());
 			AddOrbitMessage orbitMessage = (AddOrbitMessage) input;
 			KeyedOrbit orbit = orbitMessage.getOrbit();
 

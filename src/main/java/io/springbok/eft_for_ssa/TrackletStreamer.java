@@ -34,7 +34,7 @@ import org.orekit.utils.Constants;
 import java.net.URL;
 import java.util.ArrayList;
 
-public class TrackletReader {
+public class TrackletStreamer {
 
 
 	static String inputPath = "output/2020-05-25_tracklet_messages.txt";

@@ -38,7 +38,7 @@
     <dependency>
     	<groupId>org.apache.flink</groupId>
     	<artifactId>flink-core</artifactId>
-    	<versiton>1.10.1</versit aon>
+    	<version>1.10.1</version>
     </dependency>
     <dependency>
       <groupId>com.google.auto.service</groupId>
@@ -70,17 +70,12 @@
     <dependency>
       <groupId>org.apache.flink</groupId>
       <artifactId>statefun-sdk</artifactId>
-      <version>2.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.flink</groupId>
-      <artifactId>statefun-sdk</artifactId>
-      <version>2.0.0</version>
+      <version>2.1.0</version>
     </dependency>
       <dependency>
           <groupId>org.apache.flink</groupId>
           <artifactId>statefun-flink-io</artifactId>
-          <version>2.0.0</version>
+          <version>2.1.0</version>
       </dependency>
     <dependency>
       <groupId>org.apache.flink</groupId>
@@ -88,6 +83,35 @@
       <version>2.1.0</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>statefun-flink-distribution</artifactId>
+      <version>2.1.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>statefun-flink-distribution</artifactId>
+      <version>2.1.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+      <version>2.1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>statefun-flink-distribution</artifactId>
+      <version>2.1.0</version>
+      <scope>compile</scope>
+    </dependency>
+      <dependency>
+          <groupId>org.apache.flink</groupId>
+          <artifactId>statefun-flink-harness</artifactId>
+          <version>2.1.0</version>
+          <scope>compile</scope>
+      </dependency>
   </dependencies>
 
   <build>

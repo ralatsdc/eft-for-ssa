@@ -2,9 +2,7 @@ package io.springbok.eft_for_ssa;
 
 import com.google.auto.service.AutoService;
 import org.apache.flink.statefun.flink.io.datastream.SinkFunctionSpec;
-import org.apache.flink.statefun.flink.io.datastream.SourceFunctionSpec;
 import org.apache.flink.statefun.sdk.io.EgressSpec;
-import org.apache.flink.statefun.sdk.io.IngressSpec;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
 
@@ -21,14 +19,17 @@ public class Module implements StatefulFunctionModule
 		binder.bindFunctionProvider(OrbitStatefulFunction.TYPE, unused -> new OrbitStatefulFunction());
 		binder.bindFunctionProvider(TrackletStatefulFunction.TYPE, unused -> new TrackletStatefulFunction());
 		binder.bindFunctionProvider(OrbitIdStatefulFunction.TYPE, unused -> new OrbitIdStatefulFunction());
+		binder.bindFunctionProvider(TrackletStatefulBuilder.TYPE, unused -> new TrackletStatefulBuilder());
 
 		// Ingress
-		IngressSpec<Tracklet> ingressSpec = new SourceFunctionSpec<>(Identifiers.INGRESS_ID, TrackletSource.getSource());
-		binder.bindIngress(ingressSpec);
-		binder.bindIngressRouter(Identifiers.INGRESS_ID, new TrackletRouter());
+		String kafkaAddress = (String)globalConfiguration.getOrDefault("kafka-address", "kafka-broker:9092");
+		IO ioModule = new IO(kafkaAddress);
+		binder.bindIngress(ioModule.getIngressSpec());
+
+		binder.bindIngressRouter(IO.INGRESS_ID, new LineRouter());
 
 		// Egress
-		EgressSpec<KeyedOrbit> egressSpec = new SinkFunctionSpec<>(Identifiers.EGRESS_ID, new PrintSinkFunction<>());
+		EgressSpec<KeyedOrbit> egressSpec = new SinkFunctionSpec<>(IO.EGRESS_ID, new PrintSinkFunction<>());
 		binder.bindEgress(egressSpec);
 	}
 }

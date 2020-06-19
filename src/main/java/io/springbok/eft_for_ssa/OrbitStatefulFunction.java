@@ -32,7 +32,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
 			context.send(OrbitIdStatefulFunction.TYPE, "manager", new AddOrbitMessage(orbit));
 
 			KeyedOrbit response = orbit;
-			context.send(Identifiers.EGRESS_ID, response);
+			context.send(IO.EGRESS_ID, response);
 		}
 
 		if (input instanceof DelayedDeleteMessage){
@@ -59,6 +59,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
 			if (CompareOrbits.compareAtRandom(recievedOrbit, orbit)){
 				// Get tracklets from current orbitState
 				CollectedTrackletsMessage collectedTrackletsMessage = new CollectedTrackletsMessage(recievedOrbit, orbit);
+				context.send(IO.STRING_EGRESS_ID, "Sending Orbit Comparison");
 				context.send(TrackletStatefulFunction.TYPE, collectedTrackletsMessage.getRoute(), collectedTrackletsMessage);
 			}
 		}
