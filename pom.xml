@@ -30,6 +30,88 @@
     	<artifactId>orekit</artifactId>
     	<version>10.1</version>
     </dependency>
+    <dependency>
+    	<groupId>org.apache.flink</groupId>
+    	<artifactId>flink-java</artifactId>
+    	<version>1.10.1</version>
+    </dependency>
+    <dependency>
+    	<groupId>org.apache.flink</groupId>
+    	<artifactId>flink-core</artifactId>
+    	<version>1.10.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.auto.service</groupId>
+      <artifactId>auto-service</artifactId>
+      <version>1.0-rc7</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+    	<groupId>org.apache.flink</groupId>
+    	<artifactId>flink-clients_2.12</artifactId>
+    	<version>1.10.1</version>
+    </dependency>
+    <dependency>
+    	<groupId>org.apache.flink</groupId>
+    	<artifactId>flink-streaming-java_2.12</artifactId>
+    	<version>1.10.1</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-streaming-core -->
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-streaming-core</artifactId>
+      <version>0.9.1</version>
+    </dependency>
+    <dependency>
+    	<groupId>org.slf4j</groupId>
+    	<artifactId>slf4j-simple</artifactId>
+    	<version>2.0.0-alpha1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>statefun-sdk</artifactId>
+      <version>2.1.0</version>
+    </dependency>
+      <dependency>
+          <groupId>org.apache.flink</groupId>
+          <artifactId>statefun-flink-io</artifactId>
+          <version>2.1.0</version>
+      </dependency>
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>statefun-flink-harness</artifactId>
+      <version>2.1.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>statefun-flink-distribution</artifactId>
+      <version>2.1.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>statefun-flink-distribution</artifactId>
+      <version>2.1.0</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+      <version>2.1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>statefun-flink-distribution</artifactId>
+      <version>2.1.0</version>
+      <scope>compile</scope>
+    </dependency>
+      <dependency>
+          <groupId>org.apache.flink</groupId>
+          <artifactId>statefun-flink-harness</artifactId>
+          <version>2.1.0</version>
+          <scope>compile</scope>
+      </dependency>
   </dependencies>
 
   <build>
@@ -76,5 +158,15 @@
         </plugin>
       </plugins>
     </pluginManagement>
+      <plugins>
+          <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-compiler-plugin</artifactId>
+              <configuration>
+                  <source>8</source>
+                  <target>8</target>
+              </configuration>
+          </plugin>
+      </plugins>
   </build>
 </project>
