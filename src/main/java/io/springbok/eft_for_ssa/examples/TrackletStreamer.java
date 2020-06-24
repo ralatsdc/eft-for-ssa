@@ -1,4 +1,4 @@
-package io.springbok.eft_for_ssa;
+package io.springbok.eft_for_ssa.examples;
 
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -36,177 +36,184 @@ import java.util.ArrayList;
 
 public class TrackletStreamer {
 
+  static String inputPath = "output/2020-05-25_tracklet_messages.txt";
+  static TrackletFormatter formatter = new TrackletFormatter(inputPath);
 
-	static String inputPath = "output/2020-05-25_tracklet_messages.txt";
-	static TrackletFormatter formatter = new TrackletFormatter(inputPath);
-	
-	// Gravitation coefficient
-	final static double mu = Constants.IERS2010_EARTH_MU;
+  // Gravitation coefficient
+  static final double mu = Constants.IERS2010_EARTH_MU;
 
-	// Inertial frame
-	final static Frame inertialFrame = FramesFactory.getGCRF();
-	
-	public static void main(final String[] args) throws Exception {
+  // Inertial frame
+  static final Frame inertialFrame = FramesFactory.getGCRF();
 
-	// Configure Orekit
-	final URL utcTaiData = new URL("https://hpiers.obspm.fr/eoppc/bul/bulc/UTC-TAI.history");
-	final URL eopData = new URL("ftp://ftp.iers.org/products/eop/rapid/daily/finals.daily"); 
-	final DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
-	manager.addProvider(new NetworkCrawler(utcTaiData));
-	manager.addProvider(new NetworkCrawler(eopData));
+  public static void main(final String[] args) throws Exception {
 
-	final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-	
-	DataStream<Tracklet> tracklets = env.readFile(formatter, inputPath)
-			.map(new Counter());
-	
-	DataStream<Tracklet> filteredTracklets = tracklets
-			.filter(new LowPositionFilter())
-			.keyBy(tracklet -> tracklet.getId())
-			.process(new ProcessTracklets());
-	
-	DataStream<KeyedOrbit> orbits = filteredTracklets
-			.map(new CreateOrbit())
-			.keyBy(orbit -> orbit.getId())
-			.process(new OrbitTimeout());
-	
-	orbits.print();	
-	
-	env.execute();
-		
-	}
-	
-	private static class LowPositionFilter implements FilterFunction<Tracklet> {
+    // Configure Orekit
+    final URL utcTaiData = new URL("https://hpiers.obspm.fr/eoppc/bul/bulc/UTC-TAI.history");
+    final URL eopData = new URL("ftp://ftp.iers.org/products/eop/rapid/daily/finals.daily");
+    final DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
+    manager.addProvider(new NetworkCrawler(utcTaiData));
+    manager.addProvider(new NetworkCrawler(eopData));
 
-		@Override
-		public boolean filter(Tracklet tracklet) throws Exception {
-			
-			ArrayList<Position> positions = tracklet.getPositions();
-			
-			if (positions.size() > 1) {
-				return true;
-			}
-			else {return false;}
-		}
-	}
-	
-	private static class ProcessTracklets extends KeyedProcessFunction<Long, Tracklet, Tracklet> {
+    final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-		private ValueState<Tracklet> trackletState;
+    DataStream<Tracklet> tracklets = env.readFile(formatter, inputPath).map(new Counter());
 
-		@Override
-		public void open(Configuration config) {
-			ValueStateDescriptor<Tracklet> trackletDescriptor = 
-					new ValueStateDescriptor<>("saved tracklet", Tracklet.class);
-			trackletState = getRuntimeContext().getState(trackletDescriptor);
-		}
+    DataStream<Tracklet> filteredTracklets =
+        tracklets
+            .filter(new LowPositionFilter())
+            .keyBy(tracklet -> tracklet.getId())
+            .process(new ProcessTracklets());
 
-		@Override
-		public void processElement(Tracklet tracklet, Context context, Collector<Tracklet> out) throws Exception {
-			out.collect(tracklet);
-		}
-	}
+    DataStream<KeyedOrbit> orbits =
+        filteredTracklets
+            .map(new CreateOrbit())
+            .keyBy(orbit -> orbit.getId())
+            .process(new OrbitTimeout());
 
-	private static class CreateOrbit implements MapFunction<Tracklet, KeyedOrbit> {
+    orbits.print();
 
-		public KeyedOrbit map(Tracklet tracklet) throws Exception {
-			
-			ArrayList<Position> positions = tracklet.getPositions();
-			
-			Orbit orbit;
-			
-            // Orbit Determination           
-            final IodLambert lambert = new IodLambert(mu);
-            // TODO: Posigrade and number of revolutions are set as guesses for now, but will need to be calculated later
-            final boolean posigrade = true;
-            final int nRev = 0;
-            final Vector3D initialPosition = positions.get(0).getPosition();
-            final AbsoluteDate initialDate = positions.get(0).getDate();
-            final Vector3D finalPosition = positions.get(positions.size() - 1).getPosition();
-            final AbsoluteDate finalDate = positions.get(positions.size() - 1).getDate();
-            final Orbit orbitEstimation = lambert.estimate(inertialFrame, posigrade, nRev, initialPosition, initialDate, finalPosition, finalDate);
-            
-            if (positions.size() > 2) {
-            	
-				// Least squares estimator setup
-				final GaussNewtonOptimizer GNOptimizer = new GaussNewtonOptimizer();
-				final EulerIntegratorBuilder eulerBuilder = new EulerIntegratorBuilder(60);
-				final double positionScale = 1.;
-				final NumericalPropagatorBuilder propBuilder = new NumericalPropagatorBuilder(orbitEstimation, eulerBuilder, PositionAngle.MEAN, positionScale);
-				final BatchLSEstimator leastSquares = new BatchLSEstimator(GNOptimizer, propBuilder);            
-				leastSquares.setMaxIterations(1000);
-				leastSquares.setMaxEvaluations(1000);
-				leastSquares.setParametersConvergenceThreshold(.001);
-				// Add measurements
-				positions.forEach(measurement->leastSquares.addMeasurement(measurement));
-				
-				// Run least squares fit            
-				AbstractIntegratedPropagator[] lsPropagators = leastSquares.estimate();
-				orbit = lsPropagators[0].getInitialState().getOrbit();
+    env.execute();
+  }
 
-            } else {
-            	orbit = orbitEstimation;
-            }
-			
-            KeyedOrbit keyedOrbit = new KeyedOrbit(orbit, tracklet);
-			return keyedOrbit;
-		}
-	}
+  private static class LowPositionFilter implements FilterFunction<Tracklet> {
 
-	public static class OrbitTimeout extends KeyedProcessFunction<Long, KeyedOrbit, KeyedOrbit> {
-		
-		private ValueState<KeyedOrbit> orbitState;
+    @Override
+    public boolean filter(Tracklet tracklet) throws Exception {
 
-		@Override
-		public void open(Configuration config) {
-			ValueStateDescriptor<KeyedOrbit> orbitDescriptor = 
-					new ValueStateDescriptor<>("saved orbit", KeyedOrbit.class);
-			orbitState = getRuntimeContext().getState(orbitDescriptor);
-		}
+      ArrayList<Position> positions = tracklet.getPositions();
 
-		@Override
-		public void processElement(KeyedOrbit orbit, Context context, Collector<KeyedOrbit> out) throws Exception {
-			TimerService timerService = context.timerService();
-	
-			// Time Scale
-			final TimeScale utc = TimeScalesFactory.getUTC();
-			
-			orbitState.update(orbit);
-			
-			// State (Orbit) timeout in milliseconds
-			double timeout = (120 * 60 * 1000);
-			timerService.registerEventTimeTimer(orbit
-					.getOrbit()
-					.getDate()
-					.shiftedBy(timeout)
-					.toDate(utc)
-					.getTime());
-			
-			out.collect(orbit);
-		}
+      if (positions.size() > 1) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
 
-		@Override
-		public void onTimer(long timestamp, OnTimerContext context, Collector<KeyedOrbit> out) throws Exception {
-			// Notify the tracklet that created the orbit
-			orbitState.clear();
-		}
-	}
+  private static class ProcessTracklets extends KeyedProcessFunction<Long, Tracklet, Tracklet> {
 
-	private static class Counter<T> extends RichMapFunction<T, T> {
-		private transient org.apache.flink.metrics.Counter counter;
-		
-		
-		public void open(Configuration config) {
-			this.counter = getRuntimeContext()
-					.getMetricGroup()
-					.counter("trackletCounter");
-		}
+    private ValueState<Tracklet> trackletState;
 
-		@Override
-		public T map(T value) throws Exception {
-			this.counter.inc();
-//			System.out.println(this.counter.getCount());
-			return value;
-		}
-	}
+    @Override
+    public void open(Configuration config) {
+      ValueStateDescriptor<Tracklet> trackletDescriptor =
+          new ValueStateDescriptor<>("saved tracklet", Tracklet.class);
+      trackletState = getRuntimeContext().getState(trackletDescriptor);
+    }
+
+    @Override
+    public void processElement(Tracklet tracklet, Context context, Collector<Tracklet> out)
+        throws Exception {
+      out.collect(tracklet);
+    }
+  }
+
+  private static class CreateOrbit implements MapFunction<Tracklet, KeyedOrbit> {
+
+    public KeyedOrbit map(Tracklet tracklet) throws Exception {
+
+      ArrayList<Position> positions = tracklet.getPositions();
+
+      Orbit orbit;
+
+      // Orbit Determination
+      final IodLambert lambert = new IodLambert(mu);
+      // TODO: Posigrade and number of revolutions are set as guesses for now, but will need to be
+      // calculated later
+      final boolean posigrade = true;
+      final int nRev = 0;
+      final Vector3D initialPosition = positions.get(0).getPosition();
+      final AbsoluteDate initialDate = positions.get(0).getDate();
+      final Vector3D finalPosition = positions.get(positions.size() - 1).getPosition();
+      final AbsoluteDate finalDate = positions.get(positions.size() - 1).getDate();
+      final Orbit orbitEstimation =
+          lambert.estimate(
+              inertialFrame,
+              posigrade,
+              nRev,
+              initialPosition,
+              initialDate,
+              finalPosition,
+              finalDate);
+
+      if (positions.size() > 2) {
+
+        // Least squares estimator setup
+        final GaussNewtonOptimizer GNOptimizer = new GaussNewtonOptimizer();
+        final EulerIntegratorBuilder eulerBuilder = new EulerIntegratorBuilder(60);
+        final double positionScale = 1.;
+        final NumericalPropagatorBuilder propBuilder =
+            new NumericalPropagatorBuilder(
+                orbitEstimation, eulerBuilder, PositionAngle.MEAN, positionScale);
+        final BatchLSEstimator leastSquares = new BatchLSEstimator(GNOptimizer, propBuilder);
+        leastSquares.setMaxIterations(1000);
+        leastSquares.setMaxEvaluations(1000);
+        leastSquares.setParametersConvergenceThreshold(.001);
+        // Add measurements
+        positions.forEach(measurement -> leastSquares.addMeasurement(measurement));
+
+        // Run least squares fit
+        AbstractIntegratedPropagator[] lsPropagators = leastSquares.estimate();
+        orbit = lsPropagators[0].getInitialState().getOrbit();
+
+      } else {
+        orbit = orbitEstimation;
+      }
+
+      KeyedOrbit keyedOrbit = new KeyedOrbit(orbit, tracklet);
+      return keyedOrbit;
+    }
+  }
+
+  public static class OrbitTimeout extends KeyedProcessFunction<Long, KeyedOrbit, KeyedOrbit> {
+
+    private ValueState<KeyedOrbit> orbitState;
+
+    @Override
+    public void open(Configuration config) {
+      ValueStateDescriptor<KeyedOrbit> orbitDescriptor =
+          new ValueStateDescriptor<>("saved orbit", KeyedOrbit.class);
+      orbitState = getRuntimeContext().getState(orbitDescriptor);
+    }
+
+    @Override
+    public void processElement(KeyedOrbit orbit, Context context, Collector<KeyedOrbit> out)
+        throws Exception {
+      TimerService timerService = context.timerService();
+
+      // Time Scale
+      final TimeScale utc = TimeScalesFactory.getUTC();
+
+      orbitState.update(orbit);
+
+      // State (Orbit) timeout in milliseconds
+      double timeout = (120 * 60 * 1000);
+      timerService.registerEventTimeTimer(
+          orbit.getOrbit().getDate().shiftedBy(timeout).toDate(utc).getTime());
+
+      out.collect(orbit);
+    }
+
+    @Override
+    public void onTimer(long timestamp, OnTimerContext context, Collector<KeyedOrbit> out)
+        throws Exception {
+      // Notify the tracklet that created the orbit
+      orbitState.clear();
+    }
+  }
+
+  private static class Counter<T> extends RichMapFunction<T, T> {
+    private transient org.apache.flink.metrics.Counter counter;
+
+    public void open(Configuration config) {
+      this.counter = getRuntimeContext().getMetricGroup().counter("trackletCounter");
+    }
+
+    @Override
+    public T map(T value) throws Exception {
+      this.counter.inc();
+      //			System.out.println(this.counter.getCount());
+      return value;
+    }
+  }
 }

@@ -1,13 +1,14 @@
-package io.springbok.eft_for_ssa;
+package io.springbok.eft_for_ssa.examples;
 
 public class CompareOrbitsMessage {
 
-	KeyedOrbit orbit;
+  KeyedOrbit orbit;
 
-	CompareOrbitsMessage (KeyedOrbit orbit){
-		this.orbit = orbit;
-	}
-	public KeyedOrbit getOrbit() {
-		return orbit;
-	}
+  CompareOrbitsMessage(KeyedOrbit orbit) {
+    this.orbit = orbit;
+  }
+
+  public KeyedOrbit getOrbit() {
+    return orbit;
+  }
 }

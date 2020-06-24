@@ -1,4 +1,4 @@
-package io.springbok.eft_for_ssa;
+package io.springbok.eft_for_ssa.examples;
 
 import com.google.auto.service.AutoService;
 import org.apache.flink.statefun.flink.io.datastream.SinkFunctionSpec;
@@ -9,27 +9,31 @@ import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
 import java.util.Map;
 
 @AutoService(StatefulFunctionModule.class)
-public class Module implements StatefulFunctionModule
-{
+public class Module implements StatefulFunctionModule {
 
-	@Override
-	public void configure(Map<String, String> globalConfiguration, Binder binder) {
+  @Override
+  public void configure(Map<String, String> globalConfiguration, Binder binder) {
 
-		// Declare functions
-		binder.bindFunctionProvider(OrbitStatefulFunction.TYPE, unused -> new OrbitStatefulFunction());
-		binder.bindFunctionProvider(TrackletStatefulFunction.TYPE, unused -> new TrackletStatefulFunction());
-		binder.bindFunctionProvider(OrbitIdStatefulFunction.TYPE, unused -> new OrbitIdStatefulFunction());
-		binder.bindFunctionProvider(TrackletStatefulBuilder.TYPE, unused -> new TrackletStatefulBuilder());
+    // Declare functions
+    binder.bindFunctionProvider(OrbitStatefulFunction.TYPE, unused -> new OrbitStatefulFunction());
+    binder.bindFunctionProvider(
+        TrackletStatefulFunction.TYPE, unused -> new TrackletStatefulFunction());
+    binder.bindFunctionProvider(
+        OrbitIdStatefulFunction.TYPE, unused -> new OrbitIdStatefulFunction());
+    binder.bindFunctionProvider(
+        TrackletStatefulBuilder.TYPE, unused -> new TrackletStatefulBuilder());
 
-		// Ingress
-		String kafkaAddress = (String)globalConfiguration.getOrDefault("kafka-address", "kafka-broker:9092");
-		IO ioModule = new IO(kafkaAddress);
-		binder.bindIngress(ioModule.getIngressSpec());
+    // Ingress
+    String kafkaAddress =
+        (String) globalConfiguration.getOrDefault("kafka-address", "kafka-broker:9092");
+    IO ioModule = new IO(kafkaAddress);
+    binder.bindIngress(ioModule.getIngressSpec());
 
-		binder.bindIngressRouter(IO.INGRESS_ID, new LineRouter());
+    binder.bindIngressRouter(IO.INGRESS_ID, new LineRouter());
 
-		// Egress
-		EgressSpec<KeyedOrbit> egressSpec = new SinkFunctionSpec<>(IO.EGRESS_ID, new PrintSinkFunction<>());
-		binder.bindEgress(egressSpec);
-	}
+    // Egress
+    EgressSpec<KeyedOrbit> egressSpec =
+        new SinkFunctionSpec<>(IO.EGRESS_ID, new PrintSinkFunction<>());
+    binder.bindEgress(egressSpec);
+  }
 }

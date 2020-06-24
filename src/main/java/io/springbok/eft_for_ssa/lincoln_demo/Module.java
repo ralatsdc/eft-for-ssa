@@ -1,10 +1,7 @@
 package io.springbok.eft_for_ssa.lincoln_demo;
 
 import com.google.auto.service.AutoService;
-import org.apache.flink.statefun.flink.io.datastream.SinkFunctionSpec;
-import org.apache.flink.statefun.sdk.io.EgressSpec;
 import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
-import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
 
 import java.util.Map;
 
@@ -32,8 +29,8 @@ public class Module implements StatefulFunctionModule {
     binder.bindIngressRouter(IO.TRACKS_INGRESS_ID, new TrackRouter());
 
     // Egress
-    EgressSpec<String> egressSpec =
-        new SinkFunctionSpec<>(IO.DEFAULT_EGRESS_ID, new PrintSinkFunction<>());
-    binder.bindEgress(egressSpec);
+    //    EgressSpec<String> egressSpec =
+    //        new SinkFunctionSpec<>(IO.DEFAULT_EGRESS_ID, new PrintSinkFunction<>());
+    binder.bindEgress(ioModule.getEgressSpec());
   }
 }

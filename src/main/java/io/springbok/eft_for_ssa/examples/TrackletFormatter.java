@@ -1,4 +1,4 @@
-package io.springbok.eft_for_ssa;
+package io.springbok.eft_for_ssa.examples;
 
 import org.apache.flink.api.common.io.FileInputFormat;
 import org.apache.flink.core.fs.FileInputSplit;
@@ -11,45 +11,45 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 public class TrackletFormatter extends FileInputFormat<Tracklet> {
-	
-	private transient FileSystem fileSystem;
-    private transient BufferedReader reader;
-    private final String inputPath;
-    private String line;
 
-    public TrackletFormatter(String inputPath) {
-        this.inputPath = inputPath;
+  private transient FileSystem fileSystem;
+  private transient BufferedReader reader;
+  private final String inputPath;
+  private String line;
+
+  public TrackletFormatter(String inputPath) {
+    this.inputPath = inputPath;
+  }
+
+  @Override
+  public void open(FileInputSplit inputSplit) throws IOException {
+    FileSystem fileSystem = getFileSystem();
+    this.reader = new BufferedReader(new InputStreamReader(fileSystem.open(inputSplit.getPath())));
+    this.line = reader.readLine();
+  }
+
+  private FileSystem getFileSystem() {
+    if (fileSystem == null) {
+      try {
+        fileSystem = FileSystem.get(new URI(inputPath));
+      } catch (URISyntaxException | IOException e) {
+        throw new RuntimeException(e);
+      }
     }
+    return fileSystem;
+  }
 
-    @Override
-    public void open(FileInputSplit inputSplit) throws IOException {
-        FileSystem fileSystem = getFileSystem();
-        this.reader = new BufferedReader(new InputStreamReader(fileSystem.open(inputSplit.getPath())));
-        this.line = reader.readLine();
-    }
+  @Override
+  public boolean reachedEnd() throws IOException {
+    return line == null;
+  }
 
-    private FileSystem getFileSystem() {
-        if (fileSystem == null) {
-            try {
-                fileSystem = FileSystem.get(new URI(inputPath));
-            } catch (URISyntaxException | IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return fileSystem;
-    }
+  @Override
+  public Tracklet nextRecord(Tracklet tracklet) throws IOException {
 
-    @Override
-    public boolean reachedEnd() throws IOException {
-        return line == null;
-    }
+    tracklet = Tracklet.fromString(line);
+    line = reader.readLine();
 
-    @Override
-    public Tracklet nextRecord(Tracklet tracklet) throws IOException {
-
-    	tracklet = Tracklet.fromString(line); 
-        line = reader.readLine();
-
-        return tracklet;
-    }
+    return tracklet;
+  }
 }

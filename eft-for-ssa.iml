@@ -129,7 +129,7 @@
     <orderEntry type="library" name="Maven: org.apache.flink:flink-clients_2.11:1.10.1" level="project" />
     <orderEntry type="library" name="Maven: org.apache.flink:flink-optimizer_2.11:1.10.1" level="project" />
     <orderEntry type="library" name="Maven: com.google.protobuf:protobuf-java:3.7.1" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.flink:statefun-flink-harness:2.1.0" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.apache.flink:statefun-flink-harness:2.1.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.flink:statefun-flink-distribution:2.1.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.flink:statefun-flink-io-bundle:2.1.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.flink:statefun-flink-common:2.1.0" level="project" />
