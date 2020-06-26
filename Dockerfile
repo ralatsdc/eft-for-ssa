@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM flink-statefun:2.1-SNAPSHOT
+#FROM flink-statefun:2.1-SNAPSHOT
+#The Flink community is currently waiting for the official Docker images to be published to Docker Hub. In the meantime, Ververica has volunteered to make Stateful Function's images available via their public registry:
+FROM ververica/flink-statefun:2.1.0
 
 RUN mkdir -p /opt/statefun/modules/eft-for-ssa
-COPY target/eft-for-ssa*jar /opt/statefun/modules/eft-for-ssa/
+COPY target/eft-for-ssa*jar-with-dependencies.jar /opt/statefun/modules/eft-for-ssa/

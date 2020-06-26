@@ -2,6 +2,9 @@ package io.springbok.eft_for_ssa.lincoln_demo;
 
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.hipparchus.optim.nonlinear.vector.leastsquares.GaussNewtonOptimizer;
+import org.orekit.data.DataContext;
+import org.orekit.data.DataProvidersManager;
+import org.orekit.data.DirectoryCrawler;
 import org.orekit.estimation.iod.IodLambert;
 import org.orekit.estimation.leastsquares.BatchLSEstimator;
 import org.orekit.estimation.measurements.Position;
@@ -15,6 +18,7 @@ import org.orekit.propagation.integration.AbstractIntegratedPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class OrbitBuilder {
@@ -24,11 +28,25 @@ public class OrbitBuilder {
   // Inertial frame
   static final Frame inertialFrame = FramesFactory.getGCRF();
 
+  // Configure Orekit
+  static final File orekitData = new File("./orekit-data");
+  static DataProvidersManager manager = null;
+
+  public static void init() {
+    // Configure Orekit
+    if (manager != null) {
+      final DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
+      manager.addProvider(new DirectoryCrawler(orekitData));
+    }
+  }
+
   // Modeling a static class
   private OrbitBuilder() {}
 
   // Create an orbit with a single track of 2 or more positions
   public static KeyedOrbit createOrbit(Track track) {
+
+    init();
 
     ArrayList<Position> positions = track.getPositions();
 
@@ -46,6 +64,8 @@ public class OrbitBuilder {
 
   // Create an orbit with an ArrayList<Track> of 2 or more positions
   public static KeyedOrbit createOrbit(ArrayList<Track> tracks) {
+
+    init();
 
     ArrayList<Position> positions = new ArrayList<>();
     tracks.forEach(
@@ -67,6 +87,8 @@ public class OrbitBuilder {
 
   public static KeyedOrbit refineOrbit(KeyedOrbit orbit, ArrayList<Track> tracks) {
 
+    init();
+
     ArrayList<Position> positions = new ArrayList<>();
     tracks.forEach(
         track -> {
@@ -80,6 +102,9 @@ public class OrbitBuilder {
   }
 
   private static Orbit iod(ArrayList<Position> positions) {
+
+    init();
+
     // Orbit Determination
     final IodLambert lambert = new IodLambert(mu);
     // TODO: Posigrade and number of revolutions are set as guesses for now, but will need to be
@@ -97,6 +122,8 @@ public class OrbitBuilder {
   }
 
   private static Orbit leastSquaresRefine(Orbit orbitEstimation, ArrayList<Position> positions) {
+
+    init();
 
     // Least squares estimator setup
     final GaussNewtonOptimizer GNOptimizer = new GaussNewtonOptimizer();

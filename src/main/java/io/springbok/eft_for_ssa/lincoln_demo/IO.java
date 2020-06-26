@@ -23,6 +23,8 @@ public class IO {
   // "keyed-orbit-out", KeyedOrbit.class);
   public static final EgressIdentifier<String> DEFAULT_EGRESS_ID =
       new EgressIdentifier<>("eft-for-ssa", "default-out", String.class);
+  public static final EgressIdentifier<String> PRINT_EGRESS_ID =
+      new EgressIdentifier<>("eft-for-ssa", "print-out", String.class);
   private final String kafkaAddress;
 
   public IO(String kafkaAddress) {
@@ -34,6 +36,7 @@ public class IO {
         .withKafkaAddress(this.kafkaAddress)
         .withTopic("tracks")
         .withDeserializer(KafkaTracksDeserializer.class)
+        .withProperty("group.id", "eft-for-ssa")
         .build();
   }
 
@@ -41,6 +44,7 @@ public class IO {
     return KafkaEgressBuilder.forIdentifier(DEFAULT_EGRESS_ID)
         .withKafkaAddress(this.kafkaAddress)
         .withSerializer(KafkaTracksSerializer.class)
+        .withProperty("group.id", "eft-for-ssa")
         .build();
   }
 

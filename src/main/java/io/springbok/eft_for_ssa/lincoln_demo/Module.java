@@ -29,8 +29,9 @@ public class Module implements StatefulFunctionModule {
     binder.bindIngressRouter(IO.TRACKS_INGRESS_ID, new TrackRouter());
 
     // Egress
-    //    EgressSpec<String> egressSpec =
+    //    EgressSpec<String> printEgressSpec =
     //        new SinkFunctionSpec<>(IO.DEFAULT_EGRESS_ID, new PrintSinkFunction<>());
+    //    binder.bindEgress(printEgressSpec);
     binder.bindEgress(ioModule.getEgressSpec());
   }
 }

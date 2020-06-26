@@ -22,7 +22,7 @@ public class Track {
 
   private static TimeScale utc = TimeScalesFactory.getUTC();
 
-  /** Creates a Tracklet with the given parameters. */
+  /** Creates a Track with the given parameters. */
   public Track(
       AbsoluteDate msgTime,
       int sensorId,
