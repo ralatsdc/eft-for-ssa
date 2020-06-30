@@ -1,0 +1,42 @@
+package io.springbok.statefun.examples.demonstration;
+
+import com.google.auto.service.AutoService;
+import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
+
+import java.util.Map;
+
+@AutoService(StatefulFunctionModule.class)
+public class LincolnDemoModule implements StatefulFunctionModule {
+
+  private static final String KAFKA_KEY = "kafka-address";
+
+  private static final String DEFAULT_KAFKA_ADDRESS = "kafka-broker:9092";
+
+  @Override
+  public void configure(Map<String, String> globalConfiguration, Binder binder) {
+
+    // Ingress
+    String kafkaAddress =
+        (String) globalConfiguration.getOrDefault(KAFKA_KEY, DEFAULT_KAFKA_ADDRESS);
+    IO ioModule = new IO(kafkaAddress);
+
+    // bind ingress and router
+    binder.bindIngress(ioModule.getIngressSpec());
+    binder.bindIngressRouter(IO.TRACKS_INGRESS_ID, new TrackRouter());
+
+    // Egress
+    //    EgressSpec<String> printEgressSpec =
+    //        new SinkFunctionSpec<>(IO.DEFAULT_EGRESS_ID, new PrintSinkFunction<>());
+    //    binder.bindEgress(printEgressSpec);
+    binder.bindEgress(ioModule.getEgressSpec());
+
+    // Functions
+    binder.bindFunctionProvider(TrackStatefulBuilder.TYPE, unused -> new TrackStatefulBuilder());
+    //		binder.bindFunctionProvider(OrbitStatefulFunction.TYPE, unused -> new
+    // OrbitStatefulFunction());
+    //		binder.bindFunctionProvider(TrackletStatefulFunction.TYPE, unused -> new
+    // TrackletStatefulFunction());
+    //		binder.bindFunctionProvider(OrbitIdStatefulFunction.TYPE, unused -> new
+    // OrbitIdStatefulFunction());
+  }
+}
