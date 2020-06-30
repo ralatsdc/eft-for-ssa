@@ -6,7 +6,7 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 import java.util.Map;
 
 @AutoService(StatefulFunctionModule.class)
-public class LincolnDemoModule implements StatefulFunctionModule {
+public class DemonstrationModule implements StatefulFunctionModule {
 
   private static final String KAFKA_KEY = "kafka-address";
 
@@ -18,11 +18,11 @@ public class LincolnDemoModule implements StatefulFunctionModule {
     // Ingress
     String kafkaAddress =
         (String) globalConfiguration.getOrDefault(KAFKA_KEY, DEFAULT_KAFKA_ADDRESS);
-    IO ioModule = new IO(kafkaAddress);
+    DemonstrationIO ioModule = new DemonstrationIO(kafkaAddress);
 
     // bind ingress and router
     binder.bindIngress(ioModule.getIngressSpec());
-    binder.bindIngressRouter(IO.TRACKS_INGRESS_ID, new TrackRouter());
+    binder.bindIngressRouter(DemonstrationIO.TRACKS_INGRESS_ID, new TrackRouter());
 
     // Egress
     //    EgressSpec<String> printEgressSpec =

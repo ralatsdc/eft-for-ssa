@@ -1,6 +1,6 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.lincoln_demo.generated.TrackIn;
+import io.springbok.statefun.examples.demonstration.generated.TrackIn;
 import org.apache.flink.statefun.sdk.io.Router;
 
 public class TrackRouter implements Router<TrackIn> {

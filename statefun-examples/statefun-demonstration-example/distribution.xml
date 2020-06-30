@@ -17,15 +17,15 @@
             </includes>
         </dependencySet>
     </dependencySets>
-    <fileSets>
-        <fileSet>
-            <outputDirectory>/</outputDirectory>
-            <includes>
-                <include>io/springbok/eft_for_ssa/lincoln_demo/*</include>
-            </includes>
-            <directory>${project.build.outputDirectory}</directory>
-        </fileSet>
-    </fileSets>
+    <!--    <fileSets>-->
+    <!--        <fileSet>-->
+    <!--            <outputDirectory>/</outputDirectory>-->
+    <!--            <includes>-->
+    <!--                <include>io/springbok/eft_for_ssa/lincoln_demo/*</include>-->
+    <!--            </includes>-->
+    <!--            <directory>${project.build.outputDirectory}</directory>-->
+    <!--        </fileSet>-->
+    <!--    </fileSets>-->
     <!--    <files>-->
     <!--        <file>-->
     <!--            <source>-->
@@ -34,9 +34,9 @@
     <!--            <outputDirectory>META-INF</outputDirectory>-->
     <!--        </file>-->
     <!--    </files>-->
-    <containerDescriptorHandlers>
-        <containerDescriptorHandler>
-            <handlerName>metaInf-services</handlerName>
-        </containerDescriptorHandler>
-    </containerDescriptorHandlers>
+    <!--    <containerDescriptorHandlers>-->
+    <!--        <containerDescriptorHandler>-->
+    <!--            <handlerName>metaInf-services</handlerName>-->
+    <!--        </containerDescriptorHandler>-->
+    <!--    </containerDescriptorHandlers>-->
 </assembly>

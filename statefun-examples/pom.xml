@@ -33,7 +33,7 @@ under the License.
 
     <modules>
         <module>statefun-greeter-example</module>
-        <module>lincoln_demo</module>
+        <module>statefun-demonstration-example</module>
     </modules>
 
 </project>

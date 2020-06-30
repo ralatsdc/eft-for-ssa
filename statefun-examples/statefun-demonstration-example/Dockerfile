@@ -15,7 +15,7 @@
 
 #FROM flink-statefun:2.1-SNAPSHOT
 #The Flink community is currently waiting for the official Docker images to be published to Docker Hub. In the meantime, Ververica has volunteered to make Stateful Function's images available via their public registry:
-FROM ververica/flink-statefun:2.1.0
+FROM flink-statefun:2.1-SNAPSHOT
 
-RUN mkdir -p /opt/statefun/modules/eft-for-ssa
-COPY target/lincoln-demo*jar-with-dependencies.jar /opt/statefun/modules/eft-for-ssa/
+RUN mkdir -p /opt/statefun/modules/statefun-demonstration-example
+COPY target/statefun-demonstration-example*jar-with-dependencies.jar /opt/statefun/modules/statefun-demonstration-example/

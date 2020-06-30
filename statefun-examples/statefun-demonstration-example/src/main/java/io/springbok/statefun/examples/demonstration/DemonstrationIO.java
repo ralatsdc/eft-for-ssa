@@ -1,7 +1,7 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.lincoln_demo.generated.TrackIn;
-import io.springbok.statefun.examples.lincoln_demo.generated.DefaultOut;
+import io.springbok.statefun.examples.demonstration.generated.DefaultOut;
+import io.springbok.statefun.examples.demonstration.generated.TrackIn;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.io.EgressSpec;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
@@ -17,7 +17,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-public class IO {
+public class DemonstrationIO {
 
   public static final IngressIdentifier<TrackIn> TRACKS_INGRESS_ID =
       new IngressIdentifier<>(TrackIn.class, "eft-for-ssa", "tracks-in");
@@ -31,7 +31,7 @@ public class IO {
 
   private final String kafkaAddress;
 
-  public IO(String kafkaAddress) {
+  public DemonstrationIO(String kafkaAddress) {
     this.kafkaAddress = Objects.requireNonNull(kafkaAddress);
   }
 

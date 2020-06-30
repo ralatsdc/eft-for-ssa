@@ -18,15 +18,15 @@
 syntax = "proto3";
 
 package org.apache.flink.statefun.examples.kafka;
-option java_package = "io.springbok.statefun.examples.lincoln_demo.generated";
+option java_package = "io.springbok.statefun.examples.demonstration.generated";
 option java_multiple_files = true;
 
 message TrackIn {
-    string track = 1;
+  string track = 1;
 }
 
 message DefaultOut {
-    string track = 1;
+  string track = 1;
 }
 
 

@@ -1,5 +1,6 @@
 package io.springbok.statefun.examples.demonstration;
 
+import io.springbok.statefun.examples.demonstration.generated.DefaultOut;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -19,6 +20,8 @@ public class TrackStatefulBuilder implements StatefulFunction {
 
     // Send to track stateful function to save and process
     //    context.send(TrackStatefulFunction.TYPE, String.valueOf(track.getId()), track);
-    context.send(IO.DEFAULT_EGRESS_ID, track.toString());
+    context.send(
+        DemonstrationIO.DEFAULT_EGRESS_ID,
+        DefaultOut.newBuilder().setTrack(track.toString()).build());
   }
 }
