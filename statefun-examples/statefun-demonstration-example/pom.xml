@@ -34,6 +34,12 @@
             <artifactId>orekit</artifactId>
             <version>10.1</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.hipparchus/hipparchus -->
+        <dependency>
+            <groupId>org.hipparchus</groupId>
+            <artifactId>hipparchus-core</artifactId>
+            <version>1.6</version>
+        </dependency>
     </dependencies>
 
     <build>

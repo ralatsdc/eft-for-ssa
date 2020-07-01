@@ -18,4 +18,6 @@
 FROM flink-statefun:2.1-SNAPSHOT
 
 RUN mkdir -p /opt/statefun/modules/statefun-demonstration-example
-COPY target/statefun-demonstration-example*jar-with-dependencies.jar /opt/statefun/modules/statefun-demonstration-example/
+
+COPY target/statefun-demonstration-example-0.0.1-SNAPSHOT.jar /opt/statefun/modules/statefun-demonstration-example/
+COPY target/statefun-demonstration-example-0.0.1-SNAPSHOT-jar-with-dependencies.jar /opt/statefun/modules/statefun-demonstration-example/
