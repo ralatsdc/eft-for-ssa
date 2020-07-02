@@ -1,6 +1,5 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.demonstration.generated.DefaultOut;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -28,12 +27,9 @@ public class OrbitStatefulFunction implements StatefulFunction {
       //      context.sendAfter(Duration.ofDays(2), context.self(), new DelayedDeleteMessage());
 
       // Send orbit to manager
-      //      context.send(OrbitIdStatefulFunction.TYPE, "manager", new AddOrbitMessage(orbit));
+      context.send(OrbitIdStatefulFunction.TYPE, "manager", new AddOrbitMessage(orbit));
 
       KeyedOrbit response = orbit;
-      context.send(
-          DemonstrationIO.DEFAULT_EGRESS_ID,
-          DefaultOut.newBuilder().setContent(orbit.getOrbit().toString()).build());
     }
 
     //    if (input instanceof DelayedDeleteMessage) {
