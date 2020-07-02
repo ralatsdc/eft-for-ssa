@@ -15,7 +15,7 @@ public class KeyedOrbit {
   public KeyedOrbit(Orbit orbit, Track track) {
 
     this.trackIds = new ArrayList<>();
-    this.trackIds.add(track.getId());
+    this.trackIds.add(track.getTrackId());
     this.orbit = orbit;
     this.orbitId = increment++;
   }
@@ -23,7 +23,7 @@ public class KeyedOrbit {
   public KeyedOrbit(Orbit orbit, ArrayList<Track> tracks) {
 
     this.trackIds = new ArrayList<>();
-    tracks.forEach(track -> this.trackIds.add(track.getId()));
+    tracks.forEach(track -> this.trackIds.add(track.getTrackId()));
     this.orbit = orbit;
     this.orbitId = increment++;
   }
@@ -36,11 +36,7 @@ public class KeyedOrbit {
     return orbit;
   }
 
-  public String getStringId() {
-    return String.valueOf(orbitId);
-  }
-
-  public long getId() {
+  public long getOrbitId() {
     return orbitId;
   }
 }

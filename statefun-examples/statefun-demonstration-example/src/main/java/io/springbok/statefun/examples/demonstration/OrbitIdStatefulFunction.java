@@ -1,6 +1,5 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.demonstration.generated.DefaultOut;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -11,7 +10,8 @@ import java.util.ArrayList;
 
 public class OrbitIdStatefulFunction implements StatefulFunction {
 
-  public static final FunctionType TYPE = new FunctionType("springbok", "tracklet");
+  public static final FunctionType TYPE =
+      new FunctionType("springbok", "orbit-id-stateful-function");
 
   @Persisted
   private final PersistedValue<ArrayList> savedOrbitIdList =
@@ -34,17 +34,18 @@ public class OrbitIdStatefulFunction implements StatefulFunction {
       //                OrbitStatefulFunction.TYPE, id.toString(), new CompareOrbitsMessage(orbit));
       //          });
       //
-      idList.add(orbit.getId());
+      idList.add(orbit.getOrbitId());
       savedOrbitIdList.set(idList);
-      context.send(
-          DemonstrationIO.DEFAULT_EGRESS_ID,
-          DefaultOut.newBuilder().setContent(orbit.getOrbit().toString()).build());
+      Utilities.sendToDefault(
+          context, String.format("Added orbitId %d to id-manager", orbit.getOrbitId()));
     }
-    //    if (input instanceof RemoveOrbitMessage) {
-    //      ArrayList idList = savedOrbitIdList.get();
-    //      RemoveOrbitMessage orbitMessage = (RemoveOrbitMessage) input;
-    //      idList.remove(orbitMessage.getOrbitId());
-    //      savedOrbitIdList.set(idList);
-    //    }
+    if (input instanceof RemoveOrbitMessage) {
+      ArrayList idList = savedOrbitIdList.get();
+      RemoveOrbitMessage orbitMessage = (RemoveOrbitMessage) input;
+      idList.remove(orbitMessage.getOrbitId());
+      savedOrbitIdList.set(idList);
+      Utilities.sendToDefault(
+          context, String.format("Removed orbitId %d to id-manager", orbitMessage.getOrbitId()));
+    }
   }
 }

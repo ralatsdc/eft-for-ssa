@@ -26,7 +26,7 @@ public class RunnerTest {
     @Override
     public TrackIn get() {
       try {
-        Thread.sleep(1_000);
+        Thread.sleep(3000);
       } catch (InterruptedException e) {
         throw new RuntimeException("Interrupted", e);
       }

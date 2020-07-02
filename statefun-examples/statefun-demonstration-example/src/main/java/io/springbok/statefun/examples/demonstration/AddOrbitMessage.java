@@ -13,6 +13,6 @@ public class AddOrbitMessage {
   }
 
   public Long getOrbitId() {
-    return orbit.getId();
+    return orbit.getOrbitId();
   }
 }

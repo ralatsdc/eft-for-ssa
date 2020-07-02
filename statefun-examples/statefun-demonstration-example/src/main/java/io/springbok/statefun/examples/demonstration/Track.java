@@ -101,11 +101,11 @@ public class Track {
     return track;
   }
 
-  public void addOrbit(long orbitId) {
+  public void addOrbitId(long orbitId) {
     this.orbitsIds.add(orbitId);
   }
 
-  public void removeOrbit(long orbitId) {
+  public void removeOrbitId(long orbitId) {
     this.orbitsIds.remove(orbitId);
   }
 
@@ -121,7 +121,7 @@ public class Track {
     return positions;
   }
 
-  public Long getId() {
+  public Long getTrackId() {
     return trackId;
   }
 
