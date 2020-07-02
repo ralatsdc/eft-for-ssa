@@ -13,6 +13,8 @@ public class TrackStatefulBuilder implements StatefulFunction {
   @Override
   public void invoke(Context context, Object input) {
 
+    OrbitBuilder.init();
+
     TrackIn message = (TrackIn) input;
 
     String line = message.getTrack();

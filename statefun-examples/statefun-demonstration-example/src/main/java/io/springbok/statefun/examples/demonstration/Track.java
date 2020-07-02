@@ -55,6 +55,8 @@ public class Track {
   /** Parse a Tracklet from a CSV representation. */
   public static Track fromString(String line) {
 
+    OrbitBuilder.init();
+
     String[] tokens = line.split(",");
     if (tokens.length % 5 != 3) {
       throw new RuntimeException("Invalid record: " + line);

@@ -29,12 +29,12 @@ public class OrbitBuilder {
   static final Frame inertialFrame = FramesFactory.getGCRF();
 
   // Configure Orekit
-  static final File orekitData = new File("./orekit-data");
+  static final File orekitData = new File("../../orekit-data");
   static DataProvidersManager manager = null;
 
   public static void init() {
     // Configure Orekit
-    if (manager != null) {
+    if (manager == null) {
       final DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
       manager.addProvider(new DirectoryCrawler(orekitData));
     }

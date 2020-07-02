@@ -45,7 +45,7 @@ services:
       - MASTER_HOST=master
     volumes:
       - ./checkpoint-dir:/checkpoint-dir
-      - ./orekit-data:/orekit-data
+      - ../../orekit-data:/orekit-data
   worker:
     build:
       context: .
@@ -63,5 +63,5 @@ services:
       - MASTER_HOST=master
     volumes:
       - ./checkpoint-dir:/checkpoint-dir
-      - ./orekit-data:/orekit-data
+      - ../../orekit-data:/orekit-data
 
