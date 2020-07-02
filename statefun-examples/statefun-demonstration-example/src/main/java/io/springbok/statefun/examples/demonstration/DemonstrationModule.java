@@ -34,8 +34,7 @@ public class DemonstrationModule implements StatefulFunctionModule {
     binder.bindFunctionProvider(TrackStatefulBuilder.TYPE, unused -> new TrackStatefulBuilder());
     //		binder.bindFunctionProvider(OrbitStatefulFunction.TYPE, unused -> new
     // OrbitStatefulFunction());
-    //		binder.bindFunctionProvider(TrackletStatefulFunction.TYPE, unused -> new
-    // TrackletStatefulFunction());
+    binder.bindFunctionProvider(TrackStatefulFunction.TYPE, unused -> new TrackStatefulFunction());
     //		binder.bindFunctionProvider(OrbitIdStatefulFunction.TYPE, unused -> new
     // OrbitIdStatefulFunction());
   }
