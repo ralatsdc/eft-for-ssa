@@ -25,11 +25,10 @@ public class TrackStatefulFunction implements StatefulFunction {
       trackState.set(track);
       context.send(
           DemonstrationIO.DEFAULT_EGRESS_ID,
-          DefaultOut.newBuilder().setTrack(track.toString()).build());
+          DefaultOut.newBuilder().setContent(track.toString()).build());
       // Send to orbit state for save
-      //      context.send(
-      //          OrbitStatefulFunction.TYPE, String.valueOf(orbit.getId()), new
-      // NewOrbitMessage(orbit));
+      context.send(
+          OrbitStatefulFunction.TYPE, String.valueOf(orbit.getId()), new NewOrbitMessage(orbit));
     }
     //    if (input instanceof AddOrbitMessage) {
     //      Tracklet tracklet = trackState.get();
