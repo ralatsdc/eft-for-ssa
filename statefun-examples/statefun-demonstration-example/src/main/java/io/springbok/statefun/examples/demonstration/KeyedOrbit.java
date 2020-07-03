@@ -6,37 +6,24 @@ import java.util.ArrayList;
 
 public class KeyedOrbit {
 
-  private Orbit orbit;
-  private static long increment = 0;
-  private long orbitId;
-  private ArrayList<Long> trackIds;
+  public Orbit orbit;
+  public String orbitId;
+  public ArrayList<String> trackIds;
 
   /** Creates an IDOrbit with the given parameters. */
-  public KeyedOrbit(Orbit orbit, Track track) {
+  public KeyedOrbit(Orbit orbit, String orbitId, String trackId) {
 
-    this.trackIds = new ArrayList<>();
-    this.trackIds.add(track.getTrackId());
     this.orbit = orbit;
-    this.orbitId = increment++;
-  }
-
-  public KeyedOrbit(Orbit orbit, ArrayList<Track> tracks) {
-
+    this.orbitId = orbitId;
     this.trackIds = new ArrayList<>();
-    tracks.forEach(track -> this.trackIds.add(track.getTrackId()));
+    this.trackIds.add(trackId);
+  }
+
+  public KeyedOrbit(Orbit orbit, String orbitId, ArrayList<Track> tracks) {
+
     this.orbit = orbit;
-    this.orbitId = increment++;
-  }
-
-  public ArrayList<Long> getTracksId() {
-    return trackIds;
-  }
-
-  public Orbit getOrbit() {
-    return orbit;
-  }
-
-  public long getOrbitId() {
-    return orbitId;
+    this.orbitId = orbitId;
+    this.trackIds = new ArrayList<>();
+    tracks.forEach(track -> this.trackIds.add(track.trackId));
   }
 }

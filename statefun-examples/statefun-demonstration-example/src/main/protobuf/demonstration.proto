@@ -29,4 +29,3 @@ message DefaultOut {
   string content = 1;
 }
 
-

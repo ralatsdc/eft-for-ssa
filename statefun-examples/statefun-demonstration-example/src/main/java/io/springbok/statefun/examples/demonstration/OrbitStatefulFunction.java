@@ -7,7 +7,6 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
 import java.time.Duration;
-import java.util.ArrayList;
 
 public class OrbitStatefulFunction implements StatefulFunction {
 
@@ -20,40 +19,45 @@ public class OrbitStatefulFunction implements StatefulFunction {
   @Override
   public void invoke(Context context, Object input) {
 
-    if (input instanceof NewOrbitMessage) {
+    if (input instanceof NewTrackMessage) {
+      NewTrackMessage newTrackMessage = (NewTrackMessage) input;
 
-      NewOrbitMessage message = (NewOrbitMessage) input;
-      KeyedOrbit orbit = message.getOrbit();
+      // Create Orbit
+      KeyedOrbit keyedOrbit = OrbitFactory.createOrbit(newTrackMessage.track, context.self().id());
 
-      // Persist orbit state
-      orbitState.set(orbit);
-      Utilities.sendToDefault(
-          context, String.format("Set orbit for orbitId %d", orbit.getOrbitId()));
+      // Send orbitId to TrackStatefulFunction
+      context.send(
+          TrackStatefulFunction.TYPE,
+          newTrackMessage.track.trackId,
+          new NewOrbitIdMessage(keyedOrbit.orbitId));
 
       // Send delete message
       context.sendAfter(Duration.ofSeconds(2), context.self(), new DelayedDeleteMessage());
+
+      Utilities.sendToDefault(
+          context, String.format("Created orbit for id %s", keyedOrbit.orbitId));
+
+      orbitState.set(keyedOrbit);
     }
 
     if (input instanceof DelayedDeleteMessage) {
-      KeyedOrbit orbit = orbitState.get();
-      ArrayList<Long> ids = orbit.getTracksId();
+      KeyedOrbit keyedOrbit = orbitState.get();
+
+      RemoveOrbitIdMessage removeOrbitIdMessage = new RemoveOrbitIdMessage(keyedOrbit.orbitId);
 
       // Send message to manager
-      context.send(
-          OrbitIdStatefulFunction.TYPE, "id-manager", new RemoveOrbitMessage(orbit.getOrbitId()));
+      context.send(OrbitIdManager.TYPE, "orbit-id-manager", removeOrbitIdMessage);
 
       // Send message to track(s)
-      ids.forEach(
+      keyedOrbit.trackIds.forEach(
           id -> {
-            context.send(
-                TrackStatefulFunction.TYPE,
-                String.valueOf(id),
-                new RemoveOrbitMessage(orbit.getOrbitId()));
+            context.send(TrackStatefulFunction.TYPE, String.valueOf(id), removeOrbitIdMessage);
           });
 
-      orbitState.clear();
       Utilities.sendToDefault(
-          context, String.format("Removed orbit for orbitId %d", orbit.getOrbitId()));
+          context, String.format("Cleared orbit for id %s", keyedOrbit.orbitId));
+
+      orbitState.clear();
     }
 
     //    // Message from manager
@@ -87,6 +91,4 @@ public class OrbitStatefulFunction implements StatefulFunction {
     //          new NewOrbitMessage(newOrbit));
     //    }
   }
-
-  private class DelayedDeleteMessage {}
 }

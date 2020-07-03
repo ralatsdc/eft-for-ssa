@@ -31,10 +31,9 @@ public class DemonstrationModule implements StatefulFunctionModule {
     binder.bindEgress(ioModule.getEgressSpec());
 
     // Functions
-    binder.bindFunctionProvider(TrackStatefulBuilder.TYPE, unused -> new TrackStatefulBuilder());
+    binder.bindFunctionProvider(TrackIdManager.TYPE, unused -> new TrackIdManager());
     binder.bindFunctionProvider(OrbitStatefulFunction.TYPE, unused -> new OrbitStatefulFunction());
     binder.bindFunctionProvider(TrackStatefulFunction.TYPE, unused -> new TrackStatefulFunction());
-    binder.bindFunctionProvider(
-        OrbitIdStatefulFunction.TYPE, unused -> new OrbitIdStatefulFunction());
+    binder.bindFunctionProvider(OrbitIdManager.TYPE, unused -> new OrbitIdManager());
   }
 }

@@ -11,35 +11,16 @@ import java.util.ArrayList;
 
 public class Track {
 
-  private static long increment = 0;
-  private long trackId;
   private AbsoluteDate msgTime;
-  private int sensorId;
-  private int objectId;
+  public int sensorId;
+  public int objectId;
   private ArrayList<Position> positions;
   private ArrayList<Double> rcsArr;
-  private ArrayList<Long> orbitsIds;
+
+  public String trackId;
+  private ArrayList<String> orbitIds;
 
   private static TimeScale utc = TimeScalesFactory.getUTC();
-
-  /** Creates a Track with the given parameters. */
-  public Track(
-      AbsoluteDate msgTime,
-      int sensorId,
-      int objectId,
-      ArrayList<Position> positions,
-      ArrayList<Double> rcsArr) {
-
-    this.msgTime = msgTime;
-    this.sensorId = sensorId;
-    this.objectId = objectId;
-    this.positions = positions;
-    this.rcsArr = rcsArr;
-    this.trackId = increment++;
-    this.orbitsIds = new ArrayList<>();
-  }
-
-  private Track() {}
 
   @Override
   public String toString() {
@@ -53,9 +34,9 @@ public class Track {
   }
 
   /** Parse a Tracklet from a CSV representation. */
-  public static Track fromString(String line) {
+  public static Track fromString(String line, String id) {
 
-    OrbitBuilder.init();
+    OrbitFactory.init();
 
     String[] tokens = line.split(",");
     if (tokens.length % 5 != 3) {
@@ -91,8 +72,9 @@ public class Track {
 
       track.positions = positions;
       track.rcsArr = rcsArr;
-      track.trackId = increment++;
-      track.orbitsIds = new ArrayList<>();
+
+      track.trackId = id;
+      track.orbitIds = new ArrayList<>();
 
     } catch (NumberFormatException nfe) {
       throw new RuntimeException("Invalid record: " + line, nfe);
@@ -101,31 +83,43 @@ public class Track {
     return track;
   }
 
-  public void addOrbitId(long orbitId) {
-    this.orbitsIds.add(orbitId);
+  public void addOrbitId(String orbitId) {
+    orbitIds.add(orbitId);
   }
 
-  public void removeOrbitId(long orbitId) {
-    this.orbitsIds.remove(orbitId);
+  public void removeOrbitId(String orbitId) {
+    orbitIds.remove(orbitId);
   }
 
   public AbsoluteDate getMsgTime() {
     return msgTime;
   }
 
-  public int getSensorId() {
-    return sensorId;
+  public void setMsgTime(AbsoluteDate msgTime) {
+    this.msgTime = msgTime;
+  }
+
+  public void setPositions(ArrayList<Position> positions) {
+    this.positions = positions;
   }
 
   public ArrayList<Position> getPositions() {
     return positions;
   }
 
-  public Long getTrackId() {
-    return trackId;
+  public void setRcsArr(ArrayList<Double> rcsArr) {
+    this.rcsArr = rcsArr;
   }
 
-  public ArrayList<Long> getOrbitIds() {
-    return orbitsIds;
+  public ArrayList<Double> getRcsArr() {
+    return rcsArr;
+  }
+
+  public void setOrbitIds(ArrayList<String> orbitIds) {
+    this.orbitIds = orbitIds;
+  }
+
+  public ArrayList<String> getOrbitIds() {
+    return orbitIds;
   }
 }

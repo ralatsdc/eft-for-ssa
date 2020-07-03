@@ -21,7 +21,7 @@ import org.orekit.utils.Constants;
 import java.io.File;
 import java.util.ArrayList;
 
-public class OrbitBuilder {
+public class OrbitFactory {
 
   // Gravitation coefficient
   static final double mu = Constants.IERS2010_EARTH_MU;
@@ -41,10 +41,10 @@ public class OrbitBuilder {
   }
 
   // Modeling a static class
-  private OrbitBuilder() {}
+  private OrbitFactory() {}
 
   // Create an orbit with a single track of 2 or more positions
-  public static KeyedOrbit createOrbit(Track track) {
+  public static KeyedOrbit createOrbit(Track track, String orbitId) {
 
     init();
 
@@ -58,12 +58,12 @@ public class OrbitBuilder {
     } else {
       orbit = orbitEstimation;
     }
-    KeyedOrbit keyedOrbit = new KeyedOrbit(orbit, track);
+    KeyedOrbit keyedOrbit = new KeyedOrbit(orbit, orbitId, track.trackId);
     return keyedOrbit;
   }
 
   // Create an orbit with an ArrayList<Track> of 2 or more positions
-  public static KeyedOrbit createOrbit(ArrayList<Track> tracks) {
+  public static KeyedOrbit createOrbit(ArrayList<Track> tracks, String orbitId) {
 
     init();
 
@@ -81,25 +81,25 @@ public class OrbitBuilder {
     } else {
       orbit = orbitEstimation;
     }
-    KeyedOrbit keyedOrbit = new KeyedOrbit(orbit, tracks);
+    KeyedOrbit keyedOrbit = new KeyedOrbit(orbit, orbitId, tracks);
     return keyedOrbit;
   }
 
-  public static KeyedOrbit refineOrbit(KeyedOrbit orbit, ArrayList<Track> tracks) {
-
-    init();
-
-    ArrayList<Position> positions = new ArrayList<>();
-    tracks.forEach(
-        track -> {
-          positions.addAll(track.getPositions());
-        });
-
-    Orbit refinedOrbit = leastSquaresRefine(orbit.getOrbit(), positions);
-    KeyedOrbit keyedOrbit = new KeyedOrbit(refinedOrbit, tracks);
-
-    return keyedOrbit;
-  }
+  //  public static KeyedOrbit refineOrbit(KeyedOrbit keyedOrbit, ArrayList<Track> tracks) {
+  //
+  //    init();
+  //
+  //    ArrayList<Position> positions = new ArrayList<>();
+  //    tracks.forEach(
+  //        track -> {
+  //          positions.addAll(track.positions);
+  //        });
+  //
+  //    Orbit refinedOrbit = leastSquaresRefine(keyedOrbit.orbit, positions);
+  //    KeyedOrbit keyedOrbit = new KeyedOrbit(refinedOrbit, tracks);
+  //
+  //    return keyedOrbit;
+  //  }
 
   private static Orbit iod(ArrayList<Position> positions) {
 

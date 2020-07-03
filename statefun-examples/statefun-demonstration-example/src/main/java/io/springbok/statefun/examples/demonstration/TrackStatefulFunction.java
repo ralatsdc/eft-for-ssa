@@ -1,5 +1,6 @@
 package io.springbok.statefun.examples.demonstration;
 
+import io.springbok.statefun.examples.demonstration.generated.TrackIn;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -15,27 +16,32 @@ public class TrackStatefulFunction implements StatefulFunction {
 
   @Override
   public void invoke(Context context, Object input) {
-    if (input instanceof Track) {
-      Track track = (Track) input;
-      // Create Orbit
-      KeyedOrbit orbit = OrbitBuilder.createOrbit(track);
+    if (input instanceof TrackIn) {
+      TrackIn trackIn = (TrackIn) input;
 
-      // Add orbit id to track
-      track.addOrbitId(orbit.getOrbitId());
+      OrbitFactory.init();
+      Track track = Track.fromString(trackIn.getTrack(), context.self().id());
+
+      context.send(OrbitIdManager.TYPE, "orbit-id-manager", new NewTrackMessage(track));
+
+      Utilities.sendToDefault(context, String.format("Created track for id %s", track.trackId));
+
       trackState.set(track);
+    }
+
+    if (input instanceof NewOrbitIdMessage) {
+      NewOrbitIdMessage newOrbitIdMessage = (NewOrbitIdMessage) input;
+
+      Track track = trackState.get();
+      track.addOrbitId(newOrbitIdMessage.id);
+
       Utilities.sendToDefault(
           context,
-          String.format("Added orbitId %d to trackId %d", orbit.getOrbitId(), track.getTrackId()));
+          String.format("Added orbitId %s for trackId %s", newOrbitIdMessage.id, track.trackId));
 
-      // Send to orbit state for save
-      context.send(
-          OrbitStatefulFunction.TYPE,
-          String.valueOf(orbit.getOrbitId()),
-          new NewOrbitMessage(orbit));
-
-      // Send orbitid to manager
-      context.send(OrbitIdStatefulFunction.TYPE, "id-manager", new AddOrbitMessage(orbit));
+      trackState.set(track);
     }
+
     //    if (input instanceof AddOrbitMessage) {
     //      Tracklet tracklet = trackState.get();
     //      AddOrbitMessage orbitMessage = (AddOrbitMessage) input;
@@ -43,15 +49,10 @@ public class TrackStatefulFunction implements StatefulFunction {
     //      tracklet.addOrbit(orbitId);
     //      trackState.set(tracklet);
     //    }
-    if (input instanceof RemoveOrbitMessage) {
+    if (input instanceof RemoveOrbitIdMessage) {
+      RemoveOrbitIdMessage removeOrbitIdMessage = (RemoveOrbitIdMessage) input;
       Track track = trackState.get();
-      RemoveOrbitMessage orbitMessage = (RemoveOrbitMessage) input;
-      Long orbitId = orbitMessage.getOrbitId();
-      track.removeOrbitId(orbitId);
-      Utilities.sendToDefault(
-          context,
-          String.format(
-              "Removed orbitId %d from trackId %d", orbitMessage.getOrbitId(), track.getTrackId()));
+      track.removeOrbitId(removeOrbitIdMessage.orbitId);
 
       // TODO: potential problem here. If the manager sends a message to an almost expired
       //     orbit and that orbit successfully compares - we have instance of a tracklet being
@@ -60,9 +61,13 @@ public class TrackStatefulFunction implements StatefulFunction {
       if (track.getOrbitIds().size() == 0) {
         trackState.clear();
         Utilities.sendToDefault(
-            context, String.format("Cleared track for trackId %d", track.getTrackId()));
+            context, String.format("Cleared track for trackId %d", track.trackId));
       } else {
         trackState.set(track);
+        Utilities.sendToDefault(
+            context,
+            String.format(
+                "Removed orbitId %s from trackId %d", removeOrbitIdMessage.orbitId, track.trackId));
       }
     }
     //    if (input instanceof CollectedTrackletsMessage) {

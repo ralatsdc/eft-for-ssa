@@ -7,6 +7,6 @@ public class TrackRouter implements Router<TrackIn> {
 
   @Override
   public void route(TrackIn message, Downstream<TrackIn> downstream) {
-    downstream.forward(TrackStatefulBuilder.TYPE, "builder", message);
+    downstream.forward(TrackIdManager.TYPE, "track-id-manager", message);
   }
 }
