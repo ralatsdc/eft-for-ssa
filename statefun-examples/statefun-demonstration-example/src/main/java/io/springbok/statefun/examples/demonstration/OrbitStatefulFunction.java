@@ -1,5 +1,6 @@
 package io.springbok.statefun.examples.demonstration;
 
+import io.springbok.statefun.examples.demonstration.generated.DelayedDeleteMessage;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -32,7 +33,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
           new NewOrbitIdMessage(keyedOrbit.orbitId));
 
       // Send delete message
-      context.sendAfter(Duration.ofSeconds(2), context.self(), new DelayedDeleteMessage());
+      context.sendAfter(Duration.ofSeconds(2), context.self(), DelayedDeleteMessage.newBuilder().build());
 
       Utilities.sendToDefault(
           context, String.format("Created orbit for id %s", keyedOrbit.orbitId));

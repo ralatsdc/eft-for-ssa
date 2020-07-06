@@ -29,3 +29,5 @@ message DefaultOut {
   string content = 1;
 }
 
+message DelayedDeleteMessage {
+}

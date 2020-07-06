@@ -61,13 +61,13 @@ public class TrackStatefulFunction implements StatefulFunction {
       if (track.getOrbitIds().size() == 0) {
         trackState.clear();
         Utilities.sendToDefault(
-            context, String.format("Cleared track for trackId %d", track.trackId));
+            context, String.format("Cleared track for trackId %s", track.trackId));
       } else {
         trackState.set(track);
         Utilities.sendToDefault(
             context,
             String.format(
-                "Removed orbitId %s from trackId %d", removeOrbitIdMessage.orbitId, track.trackId));
+                "Removed orbitId %s from trackId %s", removeOrbitIdMessage.orbitId, track.trackId));
       }
     }
     //    if (input instanceof CollectedTrackletsMessage) {
