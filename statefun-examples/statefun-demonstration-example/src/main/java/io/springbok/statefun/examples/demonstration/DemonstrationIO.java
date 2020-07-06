@@ -69,10 +69,9 @@ public class DemonstrationIO {
     @Override
     public ProducerRecord<byte[], byte[]> serialize(DefaultOut response) {
       // TODO: Serialize to real keys
-      byte[] key = response.getContent().getBytes(StandardCharsets.UTF_8);
       byte[] value = response.getContent().getBytes(StandardCharsets.UTF_8);
 
-      return new ProducerRecord<>("default", key, value);
+      return new ProducerRecord<>("default", value);
     }
   }
 }
