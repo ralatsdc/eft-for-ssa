@@ -3,23 +3,25 @@ package io.springbok.statefun.examples.demonstration;
 import io.springbok.statefun.examples.demonstration.generated.TrackIn;
 import org.apache.flink.statefun.flink.harness.Harness;
 import org.apache.flink.statefun.flink.harness.io.SerializableSupplier;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /** Unit test for simple App. */
 public class RunnerTest {
 
   @Test
+  @Ignore
   public void run() throws Exception {
     Harness harness =
         new Harness()
             .withKryoMessageSerializer()
-            .withSupplyingIngress(DemonstrationIO.TRACKS_INGRESS_ID, new TracksGenerator())
+            .withSupplyingIngress(DemonstrationIO.TRACKS_INGRESS_ID, new InfiniteTracksSource())
             .withPrintingEgress(DemonstrationIO.DEFAULT_EGRESS_ID);
 
     harness.start();
   }
 
-  private static final class TracksGenerator implements SerializableSupplier<TrackIn> {
+  private static final class InfiniteTracksSource implements SerializableSupplier<TrackIn> {
 
     private static final long serialVersionUID = 1;
 
