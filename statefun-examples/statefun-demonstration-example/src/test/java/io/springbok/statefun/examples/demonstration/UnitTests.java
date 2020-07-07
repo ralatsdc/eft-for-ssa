@@ -4,14 +4,11 @@ import io.springbok.statefun.examples.demonstration.generated.TrackIn;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.flink.statefun.flink.harness.Harness;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.io.PrintStream;
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.List;
 
 /** Unit test for simple App. */
 public class UnitTests {
@@ -20,50 +17,31 @@ public class UnitTests {
   private final PrintStream systemOut = System.out;
   private SourceFunction<TrackIn> finiteTracksSource;
 
-  @Before
-  public void before() {
-  }
+  KafkaTestConsumer testConsumer;
+  TrackReader trackReader;
 
-  @After
-  public void after() {
+  @Before
+  public void setUp() throws IOException {
+    testConsumer = new KafkaTestConsumer();
+    trackReader = new TrackReader();
   }
 
   @Test
   public void testTrackCreation() throws Exception {
 
-    FiniteTracksSource<TrackIn> finiteTracksSource = new FiniteTracksSource<>(
-            Arrays.asList(
-                    TrackIn.newBuilder().setTrack("2020-05-17T11:04:01.286,0,25772,2020-05-17T10:54:01.286,-1989133.3430834783,-8130217.779334966,9271.59691128247,6.4386047071908585,2020-05-17T10:55:01.286,-1738970.3523443781,-8180988.596336187,335525.95140157803,9.480538857259878,2020-05-17T10:56:01.286,-1484552.2841660646,-8211744.582400013,660960.2815084265,5.152920379124324,2020-05-17T10:57:01.286,-1226502.2337608847,-8222413.925267441,984778.6375833277,5.8293295865332375,2020-05-17T10:58:01.286,-965451.9889628496,-8212974.117142757,1306189.3128123847,1.8989353201602777,2020-05-17T10:59:01.286,-702040.4653171457,-8183451.97508489,1624406.7934519465,5.7498216886647,2020-05-17T11:00:01.286,-436912.12565480906,-8133923.538346406,1938653.6907981252,0.10900306126677473,2020-05-17T11:01:01.286,-170715.3882237681,-8064513.843279387,2248162.6500216275,0.2739524331416332,2020-05-17T11:02:01.286,95898.97254546685,-7975396.576748958,2552178.2310886616,2.8464553358531077,2020-05-17T11:03:01.286,362279.42856605735,-7866793.609310688,2849958.757090927,0.7778908036341792").build(),
-                    TrackIn.newBuilder().setTrack("2020-05-17T21:35:17.520,0,25907,2020-05-17T21:25:17.520,7292925.789920216,3501039.810514576,9285.3775513573,8.505731838474546,2020-05-17T21:26:17.520,7170574.212928426,3729824.1227539466,340996.4301239839,2.3127088196049774,2020-05-17T21:27:17.520,7028791.987581198,3948501.460284968,671783.4731127787,9.641121361540629,2020-05-17T21:28:17.520,6867963.693512146,4156479.4657948804,1000750.1783569739,3.4839495801152354,2020-05-17T21:29:17.520,6688525.505591693,4353194.798403844,1327005.1861713962,3.553298789641816,2020-05-17T21:30:17.520,6490964.007857437,4538114.657884946,1649664.520353135,8.893557688038076,2020-05-17T21:31:17.520,6275814.871038833,4710738.225883294,1967853.9827945514,5.944885079329003,2020-05-17T21:32:17.520,6043661.397303043,4870598.020255829,2280711.5212210435,0.01643013167896723,2020-05-17T21:33:17.520,5795132.936205954,5017261.158891469,2587389.563649227,0.2112433351761367,2020-05-17T21:34:17.520,5530903.176178599,5150330.529618308,2887057.313254987,5.060071926414618").build(),
-                    TrackIn.newBuilder().setTrack("2020-05-17T21:36:25.044,0,25885,2020-05-17T21:26:25.044,8212837.0274870815,173419.1461677855,1481676.2852549923,8.33571292611547,2020-05-17T21:27:25.044,8139776.047642206,431052.3636560231,1798027.7184576772,0.6883593405990018,2020-05-17T21:28:25.044,8046636.177936332,687621.9768369084,2109943.462918352,8.985481748749349,2020-05-17T21:29:25.044,7933646.544093933,942495.0394860078,2416653.9366291966,1.0948289085437446,2020-05-17T21:30:25.044,7801085.187289152,1195042.7427246077,2717402.3296188205,8.497004296685414").build()
-            )
-    );
+    TestTracksSourceFunction finiteTracksSource = new TestTracksSourceFunction(trackReader.getXTracks(1));
 
     Harness harness =
             new Harness()
                     .withKryoMessageSerializer()
                     .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, finiteTracksSource)
-                    .withPrintingEgress(DemonstrationIO.DEFAULT_EGRESS_ID);
-
+                    .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
+
+    // Test, Somehow
+    // testConsumer contains what we expect
+    // Would it be useful to create a testing egress? Or are the logs sufficient?
+    //Assert.that();
   }
 
-
-  private static final class FiniteTracksSource<TrackIn extends Serializable> implements SourceFunction<TrackIn> {
-    private final List<TrackIn> items;
-
-    FiniteTracksSource(List<TrackIn> items) {
-      this.items = items;
-    }
-
-    @Override
-    public void run(SourceContext<TrackIn> sourceContext) {
-      for (TrackIn item : items) {
-        sourceContext.collect(item);
-      }
-    }
-
-    @Override
-    public void cancel() {}
-  }
 }
