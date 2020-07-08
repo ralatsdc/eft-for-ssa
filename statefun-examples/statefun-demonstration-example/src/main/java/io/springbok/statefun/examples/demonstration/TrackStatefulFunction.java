@@ -37,7 +37,7 @@ public class TrackStatefulFunction implements StatefulFunction {
 
       Utilities.sendToDefault(
           context,
-          String.format("Added orbitId %s for trackId %s", newOrbitIdMessage.id, track.trackId));
+          String.format("Added orbitId %s to trackId %s", newOrbitIdMessage.id, track.trackId));
 
       trackState.set(track);
     }
