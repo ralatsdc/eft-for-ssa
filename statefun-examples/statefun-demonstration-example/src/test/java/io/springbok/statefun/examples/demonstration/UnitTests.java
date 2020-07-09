@@ -10,7 +10,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.io.PrintStream;
 
 /** Unit test for simple App. */
@@ -21,19 +20,19 @@ public class UnitTests {
   private SourceFunction<TrackIn> finiteTracksSource;
 
   TestConsumer testConsumer;
-  TrackReader trackReader;
+  TrackGenerator trackGenerator;
   MockConsumer<String, String> mockConsumer;
 
   @Before
-  public void setUp() throws IOException {
-    trackReader = new TrackReader();
+  public void setUp() throws Exception {
+  	trackGenerator = new TrackGenerator("../../tle-data/globalstar_tles_05_18_2020.txt");
     mockConsumer = new MockConsumer<String, String>(OffsetResetStrategy.EARLIEST);
   }
 
   @Test
   public void testTrackCreation() throws Exception {
 
-    TestTracksSourceFunction finiteTracksSource = new TestTracksSourceFunction(trackReader.getXTracks(1));
+    TestTracksSourceFunction finiteTracksSource = new TestTracksSourceFunction(trackGenerator.getXMessages(1));
     testConsumer = new TestConsumer();
 
     Harness harness =

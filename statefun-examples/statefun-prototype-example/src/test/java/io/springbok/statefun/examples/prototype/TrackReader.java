@@ -1,4 +1,4 @@
-package io.springbok.statefun.examples.demonstration;
+package io.springbok.statefun.examples.prototype;
 
 import java.io.*;
 import java.util.ArrayList;

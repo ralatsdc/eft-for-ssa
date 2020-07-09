@@ -34,8 +34,13 @@ import java.util.Collections;
 public class TrackGenerator {
 
   static String inputPath = "./tle-data/globalstar_tles_05_18_2020.txt";
+  ArrayList<String> messages;
 
-  public static void main(final String[] args) throws Exception {
+  public TrackGenerator(String inputPath) throws Exception {
+
+    // TODO: verify the input is a TLE
+    this.inputPath = inputPath;
+    messages = new ArrayList<>();
 
     // Configure Orekit
     final URL utcTaiData = new URL("https://hpiers.obspm.fr/eoppc/bul/bulc/UTC-TAI.history");
@@ -88,7 +93,6 @@ public class TrackGenerator {
     // Null here signals no random variance.
     final PVBuilder pvBuilder = new PVBuilder(null, sigmaP, sigmaV, baseWeight, satelliteIndex);
 
-    ArrayList<String> messageContainer = new ArrayList<String>();
 
     // Start propagating each TLE
     tles.forEach(
@@ -126,21 +130,11 @@ public class TrackGenerator {
               extrapDate = extrapDate.shiftedBy(largeStep)) {
 
             String message = createMessage(extrapDate, smallStep, nPropagator, pvBuilder, tle);
-            messageContainer.add(message);
+            messages.add(message);
           }
         });
 
-    Collections.sort(messageContainer);
-
-    messageContainer.forEach(
-        message -> {
-          System.out.println(message);
-        });
-
-    createFile(messageContainer);
-
-    System.out.println("TLEs processed: " + tles.size());
-    System.out.println("Messages created: " + messageContainer.size());
+    Collections.sort(messages);
   }
 
   static void createFile(ArrayList<String> messageContainer) {
@@ -170,7 +164,7 @@ public class TrackGenerator {
     }
   }
 
-  static String createMessage(
+  String createMessage(
       AbsoluteDate extrapDate,
       double smallStep,
       NumericalPropagator nPropagator,
@@ -204,7 +198,7 @@ public class TrackGenerator {
       PV pv = pvBuilder.build(states);
       Vector3D position = pv.getPosition();
 
-      //TODO: generate this in a more specified way.
+      //TODO: generate RCS in a more specified way.
       double rcs = 5;
 
       String obs =
@@ -223,7 +217,7 @@ public class TrackGenerator {
     return message;
   }
 
-  static ArrayList<TLE> convertTLES(File tleData) throws IOException {
+  ArrayList<TLE> convertTLES(File tleData) throws IOException {
 
     ArrayList<TLE> tles = new ArrayList<TLE>();
     BufferedReader tleReader;
@@ -245,5 +239,18 @@ public class TrackGenerator {
       e.printStackTrace();
     }
     return tles;
+  }
+
+  public ArrayList<String> getMessages() {
+    return messages;
+  }
+
+  //TODO: add error handling for x being larger than file length
+  public ArrayList<String> getXMessages(int x){
+    ArrayList<String> slicedMessageContainer = new ArrayList<String>();
+    for(int i=0; i<x; i++){
+      slicedMessageContainer.add(messages.get(i));
+    }
+    return slicedMessageContainer;
   }
 }
