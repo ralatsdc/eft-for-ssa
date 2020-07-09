@@ -35,12 +35,19 @@ public class TrackGenerator {
 
   static String inputPath = "./tle-data/globalstar_tles_05_18_2020.txt";
   ArrayList<String> messages;
+  ArrayList<String> singleObjectMessages;
+  boolean firstObject;
 
   public TrackGenerator(String inputPath) throws Exception {
 
     // TODO: verify the input is a TLE
     this.inputPath = inputPath;
+    firstObject = true;
     messages = new ArrayList<>();
+    singleObjectMessages = new ArrayList<>();
+    }
+
+    public void init() throws IOException {
 
     // Configure Orekit
     final URL utcTaiData = new URL("https://hpiers.obspm.fr/eoppc/bul/bulc/UTC-TAI.history");
@@ -131,7 +138,12 @@ public class TrackGenerator {
 
             String message = createMessage(extrapDate, smallStep, nPropagator, pvBuilder, tle);
             messages.add(message);
+            //TODO: create map where each object has its own arraylist - duplicate the arraylist for this
+            if (firstObject == true){
+              singleObjectMessages.add(message);
+            }
           }
+          firstObject = false;
         });
 
     Collections.sort(messages);
@@ -247,10 +259,23 @@ public class TrackGenerator {
 
   //TODO: add error handling for x being larger than file length
   public ArrayList<String> getXMessages(int x){
-    ArrayList<String> slicedMessageContainer = new ArrayList<String>();
+    ArrayList<String> slicedMessages = new ArrayList<String>();
     for(int i=0; i<x; i++){
-      slicedMessageContainer.add(messages.get(i));
+      slicedMessages.add(messages.get(i));
     }
-    return slicedMessageContainer;
+    return slicedMessages;
+  }
+
+  public ArrayList<String> getSingleObjectMessages() {
+    return singleObjectMessages;
+  }
+
+  //TODO: add error handling for x being larger than file length
+  public ArrayList<String> getXSingleObjectMessages(int x){
+    ArrayList<String> slicedSingleObjectMessages = new ArrayList<String>();
+    for(int i=0; i<x; i++){
+      slicedSingleObjectMessages.add(singleObjectMessages.get(i));
+    }
+    return slicedSingleObjectMessages;
   }
 }

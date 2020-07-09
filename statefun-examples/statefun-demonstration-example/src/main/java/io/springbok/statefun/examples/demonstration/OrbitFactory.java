@@ -58,7 +58,7 @@ public class OrbitFactory {
     } else {
       orbit = orbitEstimation;
     }
-    KeyedOrbit keyedOrbit = new KeyedOrbit(orbit, orbitId, track.trackId);
+    KeyedOrbit keyedOrbit = new KeyedOrbit(orbit, orbitId, track);
     return keyedOrbit;
   }
 
@@ -85,21 +85,21 @@ public class OrbitFactory {
     return keyedOrbit;
   }
 
-  //  public static KeyedOrbit refineOrbit(KeyedOrbit keyedOrbit, ArrayList<Track> tracks) {
-  //
-  //    init();
-  //
-  //    ArrayList<Position> positions = new ArrayList<>();
-  //    tracks.forEach(
-  //        track -> {
-  //          positions.addAll(track.positions);
-  //        });
-  //
-  //    Orbit refinedOrbit = leastSquaresRefine(keyedOrbit.orbit, positions);
-  //    KeyedOrbit keyedOrbit = new KeyedOrbit(refinedOrbit, tracks);
-  //
-  //    return keyedOrbit;
-  //  }
+    public static KeyedOrbit refineOrbit(KeyedOrbit keyedOrbit1, ArrayList<Track> keyedOrbit2Tracks, String id) {
+
+      init();
+
+      ArrayList<Position> positions = new ArrayList<>();
+      keyedOrbit2Tracks.forEach(
+          track -> {
+            positions.addAll(track.getPositions());
+          });
+
+      Orbit refinedOrbit = leastSquaresRefine(keyedOrbit1.orbit, positions);
+      KeyedOrbit refinedKeyedOrbit = new KeyedOrbit(refinedOrbit, id, keyedOrbit2Tracks);
+
+      return refinedKeyedOrbit;
+    }
 
   private static Orbit iod(ArrayList<Position> positions) {
 
@@ -107,8 +107,7 @@ public class OrbitFactory {
 
     // Orbit Determination
     final IodLambert lambert = new IodLambert(mu);
-    // TODO: Posigrade and number of revolutions are set as guesses for now, but will need to be
-    // calculated later
+    // TODO: Posigrade and number of revolutions are set as guesses for now, but will need to be calculated later
     final boolean posigrade = true;
     final int nRev = 0;
     final Vector3D initialPosition = positions.get(0).getPosition();
@@ -138,7 +137,7 @@ public class OrbitFactory {
     leastSquares.setParametersConvergenceThreshold(.001);
 
     // Add measurements
-    positions.forEach(measurement -> leastSquares.addMeasurement(measurement));
+    positions.forEach(leastSquares::addMeasurement);
 
     // Run least squares fit
     AbstractIntegratedPropagator[] lsPropagators = leastSquares.estimate();
