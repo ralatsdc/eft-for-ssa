@@ -87,22 +87,20 @@ public class OrbitStatefulFunction implements StatefulFunction {
           }
         }
 
-        // Orbit least squares refine
+        // Least squares refine creation of the state of THIS OrbitStatefulFunction instance
         if (input instanceof CollectedTracksMessage) {
           CollectedTracksMessage message = (CollectedTracksMessage) input;
 
           // Create new orbit by refining with new tracks
-          KeyedOrbit keyedOrbit1 = orbitState.get();
-          KeyedOrbit newOrbit = OrbitFactory.refineOrbit(keyedOrbit1, message.keyedOrbit2Tracks, message.newKeyedOrbitId);
+          System.out.println("Orbit: " + message.orbit1);
+          System.out.println("Tracks: " + message.keyedOrbit2Tracks);
+          System.out.println("ID: " + context.self().id());
+          KeyedOrbit newOrbit = OrbitFactory.refineOrbit(message.orbit1, message.keyedOrbit2Tracks, context.self().id());
           Utilities.sendToDefault(
                   context,
                   String.format("Refined orbits with ids %s and %s", newOrbit.orbitId, message.keyedOrbitId1, message.keyedOrbitId2));
 
-          // Since this orbit is already saved in the manager, send the new orbit directly
-          context.send(
-              OrbitStatefulFunction.TYPE,
-              newOrbit.orbitId,
-              new RefinedOrbitMessage(newOrbit));
+          // Save new orbit
         }
 
         // Save orbit that has already been registered with the ID manager

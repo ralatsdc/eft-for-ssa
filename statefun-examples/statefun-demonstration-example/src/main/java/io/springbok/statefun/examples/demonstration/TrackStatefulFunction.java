@@ -85,10 +85,10 @@ public class TrackStatefulFunction implements StatefulFunction {
                     collectedTracksMessage.getNextTrackId(),
                     collectedTracksMessage);
           } else {
-            // Route back to orbit to do calculation
+            // Route to orbitIdManager to get an ID for the new orbit
             context.send(
-                    OrbitStatefulFunction.TYPE,
-                    collectedTracksMessage.keyedOrbitId1,
+                    OrbitIdManager.TYPE,
+                    "orbit-id-manager",
                     collectedTracksMessage);
           }
         }

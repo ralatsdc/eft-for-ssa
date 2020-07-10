@@ -85,7 +85,7 @@ public class OrbitFactory {
     return keyedOrbit;
   }
 
-    public static KeyedOrbit refineOrbit(KeyedOrbit keyedOrbit1, ArrayList<Track> keyedOrbit2Tracks, String id) {
+    public static KeyedOrbit refineOrbit(Orbit orbit1, ArrayList<Track> keyedOrbit2Tracks, String newOrbitId) {
 
       init();
 
@@ -95,8 +95,8 @@ public class OrbitFactory {
             positions.addAll(track.getPositions());
           });
 
-      Orbit refinedOrbit = leastSquaresRefine(keyedOrbit1.orbit, positions);
-      KeyedOrbit refinedKeyedOrbit = new KeyedOrbit(refinedOrbit, id, keyedOrbit2Tracks);
+      Orbit refinedOrbit = leastSquaresRefine(orbit1, positions);
+      KeyedOrbit refinedKeyedOrbit = new KeyedOrbit(refinedOrbit, newOrbitId, keyedOrbit2Tracks);
 
       return refinedKeyedOrbit;
     }
@@ -135,6 +135,10 @@ public class OrbitFactory {
     leastSquares.setMaxIterations(1000);
     leastSquares.setMaxEvaluations(1000);
     leastSquares.setParametersConvergenceThreshold(.001);
+
+    System.out.println("orbit (Inside leastSquaresRefine):" + orbitEstimation);
+    System.out.println("positions (Inside leastSquaresRefine):" + positions);
+    System.out.println("first position (Inside leastSquaresRefine):" + positions.get(0).getPosition());
 
     // Add measurements
     positions.forEach(leastSquares::addMeasurement);
