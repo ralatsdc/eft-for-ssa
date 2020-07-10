@@ -26,8 +26,7 @@ import org.orekit.utils.Constants;
 import java.io.*;
 import java.net.URL;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 
 // This class will always produce exactly the same track messages given a specific TLE
 // Examples of randomized tracks are shown below but not utilized
@@ -35,16 +34,14 @@ public class TrackGenerator {
 
   static String inputPath = "./tle-data/globalstar_tles_05_18_2020.txt";
   ArrayList<String> messages;
-  ArrayList<String> singleObjectMessages;
-  boolean firstObject;
+  Map<Integer, ArrayList<String>> mappedMessages;
 
   public TrackGenerator(String inputPath) throws Exception {
 
     // TODO: verify the input is a TLE
     this.inputPath = inputPath;
-    firstObject = true;
     messages = new ArrayList<>();
-    singleObjectMessages = new ArrayList<>();
+    mappedMessages = new HashMap<>();
     }
 
     public void init() throws IOException {
@@ -138,12 +135,12 @@ public class TrackGenerator {
 
             String message = createMessage(extrapDate, smallStep, nPropagator, pvBuilder, tle);
             messages.add(message);
+
             //TODO: create map where each object has its own arraylist - duplicate the arraylist for this
-            if (firstObject == true){
-              singleObjectMessages.add(message);
-            }
+            ArrayList<String> sortedMessages = mappedMessages.getOrDefault(tle.getSatelliteNumber(), new ArrayList<>());
+            sortedMessages.add(message);
+            mappedMessages.put(tle.getSatelliteNumber(), sortedMessages);
           }
-          firstObject = false;
         });
 
     Collections.sort(messages);
@@ -267,11 +264,16 @@ public class TrackGenerator {
   }
 
   public ArrayList<String> getSingleObjectMessages() {
+    Set<Integer> keySet = mappedMessages.keySet();
+    ArrayList<String> singleObjectMessages = mappedMessages.get(keySet.iterator().next());
     return singleObjectMessages;
   }
 
   //TODO: add error handling for x being larger than file length
   public ArrayList<String> getXSingleObjectMessages(int x){
+    Set<Integer> keySet = mappedMessages.keySet();
+    ArrayList<String> singleObjectMessages = mappedMessages.get(keySet.iterator().next());
+
     ArrayList<String> slicedSingleObjectMessages = new ArrayList<String>();
     for(int i=0; i<x; i++){
       slicedSingleObjectMessages.add(singleObjectMessages.get(i));
