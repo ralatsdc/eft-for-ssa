@@ -12,7 +12,7 @@ import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
 import org.orekit.orbits.Orbit;
 import org.orekit.orbits.PositionAngle;
-import org.orekit.propagation.conversion.EulerIntegratorBuilder;
+import org.orekit.propagation.conversion.GillIntegratorBuilder;
 import org.orekit.propagation.conversion.NumericalPropagatorBuilder;
 import org.orekit.propagation.integration.AbstractIntegratedPropagator;
 import org.orekit.time.AbsoluteDate;
@@ -127,11 +127,11 @@ public class OrbitFactory {
 
     // Least squares estimator setup
     final GaussNewtonOptimizer GNOptimizer = new GaussNewtonOptimizer();
-    final EulerIntegratorBuilder eulerBuilder = new EulerIntegratorBuilder(60);
+    final GillIntegratorBuilder gillIntegratorBuilder = new GillIntegratorBuilder(60);
     final double positionScale = 1.;
     final NumericalPropagatorBuilder propBuilder =
         new NumericalPropagatorBuilder(
-            orbitEstimation, eulerBuilder, PositionAngle.MEAN, positionScale);
+            orbitEstimation, gillIntegratorBuilder, PositionAngle.MEAN, positionScale);
     final BatchLSEstimator leastSquares = new BatchLSEstimator(GNOptimizer, propBuilder);
     leastSquares.setMaxIterations(1000);
     leastSquares.setMaxEvaluations(1000);
