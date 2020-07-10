@@ -4,8 +4,6 @@ import io.springbok.statefun.examples.demonstration.generated.TrackIn;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.flink.statefun.flink.harness.Harness;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.kafka.clients.consumer.MockConsumer;
-import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,13 +20,11 @@ public class UnitTests {
 
   TestConsumer testConsumer;
   TrackGenerator trackGenerator;
-  MockConsumer<String, String> mockConsumer;
 
   @Before
   public void setUp() throws Exception {
     trackGenerator = new TrackGenerator("../../tle-data/globalstar_tles_05_18_2020.txt");
     trackGenerator.init();
-    mockConsumer = new MockConsumer<String, String>(OffsetResetStrategy.EARLIEST);
   }
 
   @Test

@@ -84,6 +84,10 @@ public class OrbitStatefulFunction implements StatefulFunction {
                 TrackStatefulFunction.TYPE,
                 collectedTracksMessage.getNextTrackId(),
                     collectedTracksMessage);
+          }else {
+            Utilities.sendToDefault(
+                    context,
+                    String.format("Not correlated orbits with ids %s and %s", recievedKeyedOrbit.orbitId, keyedOrbit.orbitId));
           }
         }
 
@@ -100,7 +104,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
                   context,
                   String.format("Refined orbits with ids %s and %s", newOrbit.orbitId, message.keyedOrbitId1, message.keyedOrbitId2));
 
-          // Save new orbit
+          // Save new orbit and send to idmanager
         }
 
         // Save orbit that has already been registered with the ID manager

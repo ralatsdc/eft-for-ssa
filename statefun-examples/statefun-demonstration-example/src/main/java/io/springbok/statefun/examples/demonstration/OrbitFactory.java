@@ -29,7 +29,8 @@ public class OrbitFactory {
   static final Frame inertialFrame = FramesFactory.getGCRF();
 
   // Configure Orekit
-  static final File orekitData = new File("../../orekit-data");
+  static String inputPath = "../../orekit-data";
+  static final File orekitData = new File(inputPath);
   static DataProvidersManager manager = null;
 
   public static void init() {
@@ -136,9 +137,12 @@ public class OrbitFactory {
     leastSquares.setMaxEvaluations(1000);
     leastSquares.setParametersConvergenceThreshold(.001);
 
-    System.out.println("orbit (Inside leastSquaresRefine):" + orbitEstimation);
-    System.out.println("positions (Inside leastSquaresRefine):" + positions);
-    System.out.println("first position (Inside leastSquaresRefine):" + positions.get(0).getPosition());
+    System.out.println("Least Squares Refine Values:");
+    System.out.println("orbit: " + orbitEstimation);
+    System.out.println("position 0:" + positions.get(0).getPosition());
+    System.out.println("position 1:" + positions.get(1).getPosition());
+    System.out.println("position 2:" + positions.get(2).getPosition());
+    System.out.println("position 3:" + positions.get(3).getPosition());
 
     // Add measurements
     positions.forEach(leastSquares::addMeasurement);
@@ -147,5 +151,9 @@ public class OrbitFactory {
     AbstractIntegratedPropagator[] lsPropagators = leastSquares.estimate();
     Orbit orbit = lsPropagators[0].getInitialState().getOrbit();
     return orbit;
+  }
+
+  public void updateOrekitDataDirectory(String path){
+    inputPath = path;
   }
 }

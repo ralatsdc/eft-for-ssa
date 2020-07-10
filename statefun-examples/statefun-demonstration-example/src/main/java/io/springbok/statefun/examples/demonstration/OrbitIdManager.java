@@ -47,8 +47,9 @@ public class OrbitIdManager implements StatefulFunction {
       ArrayList<String> orbitIdList = orbitIds.get();
       orbitIdList.add(String.valueOf(id));
 
-      orbitIds.set(orbitIdList);
       lastOrbitId.set(id);
+      //TODO: save the orbit id in the list after it's created in the OrbitStatefulFunction
+      orbitIds.set(orbitIdList);
     }
 
     if (input instanceof CorrelateOrbitsMessage) {
@@ -58,7 +59,6 @@ public class OrbitIdManager implements StatefulFunction {
 
       // Send to all existing orbits to do calculation
       orbitIdList.forEach(orbitId -> {
-        // Do not send to the new orbit
           context.send(OrbitStatefulFunction.TYPE, orbitId, correlateOrbitsMessage);
       });
 
