@@ -10,6 +10,8 @@ import org.orekit.estimation.leastsquares.BatchLSEstimator;
 import org.orekit.estimation.measurements.Position;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
+import org.orekit.orbits.EquinoctialOrbit;
+import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.Orbit;
 import org.orekit.orbits.PositionAngle;
 import org.orekit.propagation.conversion.GillIntegratorBuilder;
@@ -86,21 +88,32 @@ public class OrbitFactory {
     return keyedOrbit;
   }
 
-    public static KeyedOrbit refineOrbit(Orbit orbit1, ArrayList<Track> keyedOrbit2Tracks, String newOrbitId) {
+  public static KeyedOrbit refineOrbit(
+      Orbit orbit1, ArrayList<Track> keyedOrbit2Tracks, String newOrbitId) {
 
-      init();
+    init();
 
-      ArrayList<Position> positions = new ArrayList<>();
-      keyedOrbit2Tracks.forEach(
-          track -> {
-            positions.addAll(track.getPositions());
-          });
+    // New orbit must be created to refresh the frame in the current StateFun context
+    Orbit orbit =
+        new EquinoctialOrbit(orbit1.getPVCoordinates(), inertialFrame, orbit1.getDate(), mu);
 
-      Orbit refinedOrbit = leastSquaresRefine(orbit1, positions);
-      KeyedOrbit refinedKeyedOrbit = new KeyedOrbit(refinedOrbit, newOrbitId, keyedOrbit2Tracks);
+    Orbit korbit = new KeplerianOrbit(orbit);
 
-      return refinedKeyedOrbit;
-    }
+    System.out.println("Orbit1: " + orbit1);
+    System.out.println("Orbit Constructed from same parameters: " + orbit);
+    System.out.println("Orbit Constructed from same parameters: " + korbit);
+
+    ArrayList<Position> positions = new ArrayList<>();
+    keyedOrbit2Tracks.forEach(
+        track -> {
+          positions.addAll(track.getPositions());
+        });
+
+    Orbit refinedOrbit = leastSquaresRefine(orbit, positions);
+    KeyedOrbit refinedKeyedOrbit = new KeyedOrbit(refinedOrbit, newOrbitId, keyedOrbit2Tracks);
+
+    return refinedKeyedOrbit;
+  }
 
   private static Orbit iod(ArrayList<Position> positions) {
 
@@ -108,7 +121,8 @@ public class OrbitFactory {
 
     // Orbit Determination
     final IodLambert lambert = new IodLambert(mu);
-    // TODO: Posigrade and number of revolutions are set as guesses for now, but will need to be calculated later
+    // TODO: Posigrade and number of revolutions are set as guesses for now, but will need to be
+    // calculated later
     final boolean posigrade = true;
     final int nRev = 0;
     final Vector3D initialPosition = positions.get(0).getPosition();
@@ -153,7 +167,7 @@ public class OrbitFactory {
     return orbit;
   }
 
-  public void updateOrekitDataDirectory(String path){
+  public void updateOrekitDataDirectory(String path) {
     inputPath = path;
   }
 }

@@ -36,7 +36,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
       context.send(OrbitIdManager.TYPE, "orbit-id-manager", new CorrelateOrbitsMessage(keyedOrbit));
 
       // Send delete message
-      context.sendAfter(Duration.ofSeconds(2), context.self(), DelayedDeleteMessage.newBuilder().build());
+      context.sendAfter(
+          Duration.ofSeconds(2), context.self(), DelayedDeleteMessage.newBuilder().build());
 
       Utilities.sendToDefault(
           context, String.format("Created orbit for id %s", keyedOrbit.orbitId));
@@ -64,69 +65,75 @@ public class OrbitStatefulFunction implements StatefulFunction {
       orbitState.clear();
     }
 
-        // Message from manager
-        if (input instanceof CorrelateOrbitsMessage) {
-          CorrelateOrbitsMessage correlateOrbitsMessage = (CorrelateOrbitsMessage) input;
+    // Message from manager
+    if (input instanceof CorrelateOrbitsMessage) {
+      CorrelateOrbitsMessage correlateOrbitsMessage = (CorrelateOrbitsMessage) input;
 
-          KeyedOrbit recievedKeyedOrbit = correlateOrbitsMessage.getKeyedOrbit();
-          KeyedOrbit keyedOrbit = orbitState.get();
+      KeyedOrbit recievedKeyedOrbit = correlateOrbitsMessage.getKeyedOrbit();
+      KeyedOrbit keyedOrbit = orbitState.get();
 
-          if (OrbitCorrelator.correlate(recievedKeyedOrbit, keyedOrbit)) {
+      if (OrbitCorrelator.correlate(recievedKeyedOrbit, keyedOrbit)) {
 
-            Utilities.sendToDefault(
-                    context,
-                    String.format("Correlated orbits with ids %s and %s", recievedKeyedOrbit.orbitId, keyedOrbit.orbitId));
+        Utilities.sendToDefault(
+            context,
+            String.format(
+                "Correlated orbits with ids %s and %s",
+                recievedKeyedOrbit.orbitId, keyedOrbit.orbitId));
 
-            // Get tracks from current orbitState
-            CollectedTracksMessage collectedTracksMessage =
-                new CollectedTracksMessage(recievedKeyedOrbit, keyedOrbit);
-            context.send(
-                TrackStatefulFunction.TYPE,
-                collectedTracksMessage.getNextTrackId(),
-                    collectedTracksMessage);
-          }else {
-            Utilities.sendToDefault(
-                    context,
-                    String.format("Not correlated orbits with ids %s and %s", recievedKeyedOrbit.orbitId, keyedOrbit.orbitId));
-          }
-        }
+        // Get tracks from current orbitState
+        CollectedTracksMessage collectedTracksMessage =
+            new CollectedTracksMessage(recievedKeyedOrbit, keyedOrbit);
+        context.send(
+            TrackStatefulFunction.TYPE,
+            collectedTracksMessage.getNextTrackId(),
+            collectedTracksMessage);
+      } else {
+        Utilities.sendToDefault(
+            context,
+            String.format(
+                "Not correlated orbits with ids %s and %s",
+                recievedKeyedOrbit.orbitId, keyedOrbit.orbitId));
+      }
+    }
 
-        // Least squares refine creation of the state of THIS OrbitStatefulFunction instance
-        if (input instanceof CollectedTracksMessage) {
-          CollectedTracksMessage message = (CollectedTracksMessage) input;
+    // Least squares refine creation of the state of THIS OrbitStatefulFunction instance
+    if (input instanceof CollectedTracksMessage) {
+      CollectedTracksMessage message = (CollectedTracksMessage) input;
 
-          // Create new orbit by refining with new tracks
-          System.out.println("Orbit: " + message.orbit1);
-          System.out.println("Tracks: " + message.keyedOrbit2Tracks);
-          System.out.println("ID: " + context.self().id());
-          KeyedOrbit newOrbit = OrbitFactory.refineOrbit(message.orbit1, message.keyedOrbit2Tracks, context.self().id());
-          Utilities.sendToDefault(
-                  context,
-                  String.format("Refined orbits with ids %s and %s", newOrbit.orbitId, message.keyedOrbitId1, message.keyedOrbitId2));
+      // Create new orbit by refining with new tracks
+      System.out.println("Orbit: " + message.orbit1);
+      System.out.println("Tracks: " + message.keyedOrbit2Tracks);
+      System.out.println("ID: " + context.self().id());
+      KeyedOrbit newOrbit =
+          OrbitFactory.refineOrbit(message.orbit1, message.keyedOrbit2Tracks, context.self().id());
+      Utilities.sendToDefault(
+          context,
+          String.format(
+              "Refined orbits with ids %s and %s to create orbit with id %s",
+              message.keyedOrbitId1, message.keyedOrbitId2, newOrbit.orbitId));
 
-          // Save new orbit and send to idmanager
-        }
+      // Save new orbit and send to idmanager
+    }
 
-        // Save orbit that has already been registered with the ID manager
-	  //TODO: reduce repetition here and with NewTracksMessage
+    // Save orbit that has already been registered with the ID manager
+    // TODO: reduce repetition here and with NewTracksMessage
     if (input instanceof RefinedOrbitMessage) {
       RefinedOrbitMessage refinedOrbitMessage = (RefinedOrbitMessage) input;
 
       KeyedOrbit keyedOrbit = refinedOrbitMessage.keyedOrbit;
 
       // Send orbitId to TrackStatefulFunction
-      refinedOrbitMessage.keyedOrbit.trackIds.forEach(id ->{
-        context.send(
-                TrackStatefulFunction.TYPE,
-                id,
-                new NewOrbitIdMessage(keyedOrbit.orbitId));
-      });
+      refinedOrbitMessage.keyedOrbit.trackIds.forEach(
+          id -> {
+            context.send(TrackStatefulFunction.TYPE, id, new NewOrbitIdMessage(keyedOrbit.orbitId));
+          });
 
       // Send delete message
-      context.sendAfter(Duration.ofSeconds(2), context.self(), DelayedDeleteMessage.newBuilder().build());
+      context.sendAfter(
+          Duration.ofSeconds(2), context.self(), DelayedDeleteMessage.newBuilder().build());
 
       Utilities.sendToDefault(
-              context, String.format("Created refined orbit for id %s", keyedOrbit.orbitId));
+          context, String.format("Created refined orbit for id %s", keyedOrbit.orbitId));
 
       orbitState.set(keyedOrbit);
     }
