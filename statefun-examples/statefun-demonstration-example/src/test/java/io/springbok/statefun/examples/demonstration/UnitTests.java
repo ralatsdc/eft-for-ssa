@@ -107,7 +107,6 @@ public class UnitTests {
         testConsumer.messages.contains("Refined orbits with ids 1 and 0 to create orbit with id 2")
             || testConsumer.messages.contains(
                 "Refined orbits with ids 0 and 1 to create orbit with id 2"));
-    Assert.assertTrue(testConsumer.messages.contains("Created orbit for id 2"));
     Assert.assertTrue(testConsumer.messages.contains("Added orbitId 2 to trackId 0"));
     Assert.assertTrue(testConsumer.messages.contains("Added orbitId 2 to trackId 1"));
 

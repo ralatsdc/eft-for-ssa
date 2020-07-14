@@ -27,22 +27,25 @@ public class KeyedOrbit {
     this.orbitId = orbitId;
     this.trackIds = new ArrayList<>();
     this.objectIds = new ArrayList<>();
-    tracks.forEach(track -> {
-      trackIds.add(track.trackId);
-      objectIds.add(track.objectId);
-    });
+    tracks.forEach(
+        track -> {
+          trackIds.add(track.trackId);
+          objectIds.add(track.objectId);
+        });
   }
 
-  public KeyedOrbit(Orbit orbit, String orbitId, ArrayList<Track> tracks, ArrayList<String> trackIds) {
+  public KeyedOrbit(
+      Orbit orbit, String orbitId, ArrayList<Track> tracks, ArrayList<String> trackIds) {
 
     this.orbit = orbit;
     this.orbitId = orbitId;
-    this.trackIds = new ArrayList<>();
     this.objectIds = new ArrayList<>();
-    tracks.forEach(track -> {
-      trackIds.add(track.trackId);
-      objectIds.add(track.objectId);
-    });
+    this.trackIds = trackIds;
+    tracks.forEach(
+        track -> {
+          trackIds.add(track.trackId);
+          objectIds.add(track.objectId);
+        });
   }
 
   @Override

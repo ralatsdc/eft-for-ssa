@@ -33,6 +33,9 @@ public class TrackStatefulFunction implements StatefulFunction {
       NewOrbitIdMessage newOrbitIdMessage = (NewOrbitIdMessage) input;
 
       Track track = trackState.get();
+      System.out.println("Context: " + context.self());
+      System.out.println("Track:" + track);
+      System.out.println("newOrbitId: " + newOrbitIdMessage.id);
       track.addOrbitId(newOrbitIdMessage.id);
 
       Utilities.sendToDefault(
@@ -56,7 +59,7 @@ public class TrackStatefulFunction implements StatefulFunction {
       track.removeOrbitId(removeOrbitIdMessage.orbitId);
 
       // TODO: potential problem here. If the manager sends a message to an almost expired
-      //     orbit and that orbit successfully compares - we have instance of a tracklet being
+      //     orbit and that orbit successfully compares - we have instance of a track being
       // cleared before it can give itself to the refined orbit calculation
 
       if (track.getOrbitIds().size() == 0) {
@@ -71,26 +74,29 @@ public class TrackStatefulFunction implements StatefulFunction {
                 "Removed orbitId %s from trackId %s", removeOrbitIdMessage.orbitId, track.trackId));
       }
     }
-        if (input instanceof CollectedTracksMessage) {
-          CollectedTracksMessage collectedTracksMessage = (CollectedTracksMessage) input;
+    if (input instanceof CollectedTracksMessage) {
+      CollectedTracksMessage collectedTracksMessage = (CollectedTracksMessage) input;
 
-          Track track = trackState.get();
-          collectedTracksMessage.addTrack(track);
-          Utilities.sendToDefault(context, String.format("Added track with id %s to collectedTracksMessage with orbit ids %s and %s", track.trackId, collectedTracksMessage.keyedOrbitId1, collectedTracksMessage.keyedOrbitId2));
+      Track track = trackState.get();
+      collectedTracksMessage.addTrack(track);
+      Utilities.sendToDefault(
+          context,
+          String.format(
+              "Added track with id %s to collectedTracksMessage with orbit ids %s and %s",
+              track.trackId,
+              collectedTracksMessage.keyedOrbitId1,
+              collectedTracksMessage.keyedOrbitId2));
 
-          if (collectedTracksMessage.hasNextTrackId()) {
-            // Send to next track on list
-            context.send(
-                    TrackStatefulFunction.TYPE,
-                    collectedTracksMessage.getNextTrackId(),
-                    collectedTracksMessage);
-          } else {
-            // Route to orbitIdManager to get an ID for the new orbit
-            context.send(
-                    OrbitIdManager.TYPE,
-                    "orbit-id-manager",
-                    collectedTracksMessage);
-          }
-        }
+      if (collectedTracksMessage.hasNextTrackId()) {
+        // Send to next track on list
+        context.send(
+            TrackStatefulFunction.TYPE,
+            collectedTracksMessage.getNextTrackId(),
+            collectedTracksMessage);
+      } else {
+        // Route to orbitIdManager to get an ID for the new orbit
+        context.send(OrbitIdManager.TYPE, "orbit-id-manager", collectedTracksMessage);
+      }
+    }
   }
 }

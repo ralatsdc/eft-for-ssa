@@ -42,13 +42,29 @@ public class OrbitIdManager implements StatefulFunction {
 
       context.send(OrbitStatefulFunction.TYPE, String.valueOf(id), collectedTracksMessage);
 
-      Utilities.sendToDefault(context, String.format("Created orbitId %s refined from orbits with ids %s and %s", id, collectedTracksMessage.keyedOrbitId1, collectedTracksMessage.keyedOrbitId2));
+      Utilities.sendToDefault(
+          context,
+          String.format(
+              "Created orbitId %s refined from orbits with ids %s and %s",
+              id, collectedTracksMessage.keyedOrbitId1, collectedTracksMessage.keyedOrbitId2));
 
       ArrayList<String> orbitIdList = orbitIds.get();
       orbitIdList.add(String.valueOf(id));
 
       lastOrbitId.set(id);
-      //TODO: save the orbit id in the list after it's created in the OrbitStatefulFunction
+      // TODO: save the orbit id in the list after it's created in the OrbitStatefulFunction
+      orbitIds.set(orbitIdList);
+    }
+
+    if (input instanceof NewOrbitIdMessage) {
+      NewOrbitIdMessage newOrbitIdMessage = (NewOrbitIdMessage) input;
+
+      ArrayList<String> orbitIdList = orbitIds.getOrDefault(new ArrayList<String>());
+
+      Utilities.sendToDefault(context, String.format("Saved orbitId %s", newOrbitIdMessage.id));
+
+      // Update orbitIdList with the new orbit
+      orbitIdList.add(newOrbitIdMessage.id);
       orbitIds.set(orbitIdList);
     }
 
@@ -58,9 +74,13 @@ public class OrbitIdManager implements StatefulFunction {
       ArrayList<String> orbitIdList = orbitIds.getOrDefault(new ArrayList<String>());
 
       // Send to all existing orbits to do calculation
-      orbitIdList.forEach(orbitId -> {
-          context.send(OrbitStatefulFunction.TYPE, orbitId, correlateOrbitsMessage);
-      });
+      orbitIdList.forEach(
+          orbitId -> {
+            context.send(OrbitStatefulFunction.TYPE, orbitId, correlateOrbitsMessage);
+          });
+
+      Utilities.sendToDefault(
+          context, String.format("Saved orbitId %s", correlateOrbitsMessage.keyedOrbit.orbitId));
 
       // Update orbitIdList with the new orbit
       orbitIdList.add(correlateOrbitsMessage.keyedOrbit.orbitId);

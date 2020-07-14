@@ -32,12 +32,12 @@ public class OrbitStatefulFunction implements StatefulFunction {
           newTrackMessage.track.trackId,
           new NewOrbitIdMessage(keyedOrbit.orbitId));
 
-      // Send orbit to id manager for comparison
+      // Send orbit to id manager for comparison and save
       context.send(OrbitIdManager.TYPE, "orbit-id-manager", new CorrelateOrbitsMessage(keyedOrbit));
 
       // Send delete message
       context.sendAfter(
-          Duration.ofSeconds(2), context.self(), DelayedDeleteMessage.newBuilder().build());
+          Duration.ofSeconds(4), context.self(), DelayedDeleteMessage.newBuilder().build());
 
       Utilities.sendToDefault(
           context, String.format("Created orbit for id %s", keyedOrbit.orbitId));
@@ -96,7 +96,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
       }
     }
 
-    // Least squares refine creation of the state of THIS OrbitStatefulFunction instance
+    // Least squares refine creation of the state of this OrbitStatefulFunction instance
     if (input instanceof CollectedTracksMessage) {
       CollectedTracksMessage message = (CollectedTracksMessage) input;
 
@@ -105,37 +105,38 @@ public class OrbitStatefulFunction implements StatefulFunction {
       System.out.println("Tracks: " + message.keyedOrbit2Tracks);
       System.out.println("ID: " + context.self().id());
       KeyedOrbit newOrbit =
-          OrbitFactory.refineOrbit(message.orbit1, message.keyedOrbit2Tracks, context.self().id());
+          OrbitFactory.refineOrbit(
+              message.orbit1,
+              message.keyedOrbit1TrackIds,
+              message.keyedOrbit2Tracks,
+              context.self().id());
       Utilities.sendToDefault(
           context,
           String.format(
               "Refined orbits with ids %s and %s to create orbit with id %s",
               message.keyedOrbitId1, message.keyedOrbitId2, newOrbit.orbitId));
 
+      NewOrbitIdMessage newOrbitIdMessage = new NewOrbitIdMessage(newOrbit.orbitId);
+
       // Save new orbit and send to idmanager
-    }
+      context.send(OrbitIdManager.TYPE, "orbit-id-manager", newOrbitIdMessage);
 
-    // Save orbit that has already been registered with the ID manager
-    // TODO: reduce repetition here and with NewTracksMessage
-    if (input instanceof RefinedOrbitMessage) {
-      RefinedOrbitMessage refinedOrbitMessage = (RefinedOrbitMessage) input;
-
-      KeyedOrbit keyedOrbit = refinedOrbitMessage.keyedOrbit;
+      System.out.println("New Orbit Track IDs: " + newOrbit.trackIds);
 
       // Send orbitId to TrackStatefulFunction
-      refinedOrbitMessage.keyedOrbit.trackIds.forEach(
+      newOrbit.trackIds.forEach(
           id -> {
-            context.send(TrackStatefulFunction.TYPE, id, new NewOrbitIdMessage(keyedOrbit.orbitId));
+            context.send(TrackStatefulFunction.TYPE, id, newOrbitIdMessage);
           });
 
       // Send delete message
       context.sendAfter(
-          Duration.ofSeconds(2), context.self(), DelayedDeleteMessage.newBuilder().build());
+          Duration.ofSeconds(4), context.self(), DelayedDeleteMessage.newBuilder().build());
 
       Utilities.sendToDefault(
-          context, String.format("Created refined orbit for id %s", keyedOrbit.orbitId));
+          context, String.format("Created refined orbit for id %s", newOrbit.orbitId));
 
-      orbitState.set(keyedOrbit);
+      orbitState.set(newOrbit);
     }
   }
 }

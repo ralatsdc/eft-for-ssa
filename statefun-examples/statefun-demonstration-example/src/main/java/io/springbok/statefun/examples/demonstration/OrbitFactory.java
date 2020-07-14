@@ -89,7 +89,10 @@ public class OrbitFactory {
   }
 
   public static KeyedOrbit refineOrbit(
-      Orbit orbit1, ArrayList<Track> keyedOrbit2Tracks, String newOrbitId) {
+      Orbit orbit1,
+      ArrayList<String> keyedOrbit1TrackIds,
+      ArrayList<Track> keyedOrbit2Tracks,
+      String newOrbitId) {
 
     init();
 
@@ -110,7 +113,8 @@ public class OrbitFactory {
         });
 
     Orbit refinedOrbit = leastSquaresRefine(orbit, positions);
-    KeyedOrbit refinedKeyedOrbit = new KeyedOrbit(refinedOrbit, newOrbitId, keyedOrbit2Tracks);
+    KeyedOrbit refinedKeyedOrbit =
+        new KeyedOrbit(refinedOrbit, newOrbitId, keyedOrbit2Tracks, keyedOrbit1TrackIds);
 
     return refinedKeyedOrbit;
   }
