@@ -46,9 +46,10 @@ public class UnitTests {
     Assert.assertTrue(testConsumer.messages.get(2).equals("Created orbitId 0"));
     Assert.assertTrue(testConsumer.messages.get(3).equals("Created orbit for id 0"));
     Assert.assertTrue(testConsumer.messages.get(4).equals("Added orbitId 0 to trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(5).equals("Cleared orbit for id 0"));
-    Assert.assertTrue(testConsumer.messages.get(6).equals("Cleared track for trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(7).equals("Removed orbitId 0"));
+    Assert.assertTrue(testConsumer.messages.get(5).equals("Saved orbitId 0"));
+    Assert.assertTrue(testConsumer.messages.get(6).equals("Cleared orbit for id 0"));
+    Assert.assertTrue(testConsumer.messages.get(7).equals("Cleared track for trackId 0"));
+    Assert.assertTrue(testConsumer.messages.get(8).equals("Removed orbitId 0"));
   }
 
   @Test
