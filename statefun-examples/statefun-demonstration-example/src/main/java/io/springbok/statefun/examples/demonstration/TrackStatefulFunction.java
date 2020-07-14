@@ -33,9 +33,6 @@ public class TrackStatefulFunction implements StatefulFunction {
       NewOrbitIdMessage newOrbitIdMessage = (NewOrbitIdMessage) input;
 
       Track track = trackState.get();
-      System.out.println("Context: " + context.self());
-      System.out.println("Track:" + track);
-      System.out.println("newOrbitId: " + newOrbitIdMessage.id);
       track.addOrbitId(newOrbitIdMessage.id);
 
       Utilities.sendToDefault(

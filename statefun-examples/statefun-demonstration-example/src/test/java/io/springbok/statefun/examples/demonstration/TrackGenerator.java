@@ -1,11 +1,7 @@
 package io.springbok.statefun.examples.demonstration;
 
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
-import org.hipparchus.linear.DiagonalMatrix;
-import org.hipparchus.ode.nonstiff.EulerIntegrator;
-import org.hipparchus.random.CorrelatedRandomVectorGenerator;
-import org.hipparchus.random.GaussianRandomGenerator;
-import org.hipparchus.random.ISAACRandom;
+import org.hipparchus.ode.nonstiff.GillIntegrator;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
@@ -35,6 +31,19 @@ public class TrackGenerator {
   ArrayList<String> messages;
   Map<Integer, ArrayList<String>> mappedMessages;
 
+  // Constants
+  final double mu = Constants.IERS2010_EARTH_MU;
+  final Frame inertialFrame = FramesFactory.getGCRF();
+
+  // Steps - Duration in seconds
+  final double largeStep = 60 * 60 * 12;
+  final double smallStep = 60;
+
+  // Propagator
+  NumericalPropagator numericalPropagator;
+  PVBuilder pvBuilder;
+  ArrayList<TLE> tles;
+
   public TrackGenerator(String tlePath) throws Exception {
 
     // TODO: verify the input is a TLE
@@ -53,88 +62,53 @@ public class TrackGenerator {
 
     // Add tles to list
     final File tleData = new File(tlePath);
-    ArrayList<TLE> tles = convertTLES(tleData);
-
-    // Gravitation coefficient
-    final double mu = Constants.IERS2010_EARTH_MU;
-
-    // Inertial frame
-    final Frame inertialFrame = FramesFactory.getGCRF();
-
-    // Overall duration in seconds for extrapolation - 1 week
-    final double duration = 60 * 60 * 24 * 7;
-
-    // Step duration in seconds - 12 hours
-    final double largeStep = 60 * 60 * 12;
-
-    // Step duration in seconds
-    final double smallStep = 60;
+    tles = convertTLES(tleData);
 
     // Set up propagator
-    final EulerIntegrator euler = new EulerIntegrator(largeStep);
-    final NumericalPropagator nPropagator = new NumericalPropagator(euler);
-
-    // Random number generator set up
-    final int small = 0;
-    final ISAACRandom randomNumGenerator = new ISAACRandom();
-    final GaussianRandomGenerator gaussianGenerator =
-        new GaussianRandomGenerator(randomNumGenerator);
+    final GillIntegrator gillIntegrator = new GillIntegrator(largeStep);
+    numericalPropagator = new NumericalPropagator(gillIntegrator);
 
     // Set propagator index of satellite
     final ObservableSatellite satelliteIndex = new ObservableSatellite(0);
 
     // Set up for PV builder
-    final double[] PVMatrix = new double[] {1, 1};
-    final DiagonalMatrix PVCovarianceMatrix = new DiagonalMatrix(PVMatrix);
-    final CorrelatedRandomVectorGenerator PVNoiseGenerator =
-        new CorrelatedRandomVectorGenerator(PVCovarianceMatrix, small, gaussianGenerator);
-
     final double sigmaP = 1.;
     final double sigmaV = 1.;
     final double baseWeight = 1.;
     // Null here signals no random variance.
-    final PVBuilder pvBuilder = new PVBuilder(null, sigmaP, sigmaV, baseWeight, satelliteIndex);
+    pvBuilder = new PVBuilder(null, sigmaP, sigmaV, baseWeight, satelliteIndex);
+  }
 
-    // Start propagating each TLE
+  public void finitePropagation() {
+
+    // Overall duration in seconds for extrapolation - 1 week
+    final double duration = 60 * 60 * 24 * 7;
+
     tles.forEach(
         (tle) -> {
-
-          // Keplerian Initial orbit parameters
-          final double a = Math.cbrt(mu / (Math.pow(tle.getMeanMotion(), 2)));
-          final double e = tle.getE(); // eccentricity
-          final double i = tle.getI(); // inclination
-          final double omega = tle.getPerigeeArgument(); // perigee argument
-          final double raan = tle.getRaan(); // right ascension of ascending node
-          final double lM = tle.getMeanAnomaly(); // mean anomaly
 
           // Initial date in UTC time scale
           final AbsoluteDate initialDate = tle.getDate();
 
-          // Orbit construction as Keplerian
-          final Orbit initialOrbit =
-              new KeplerianOrbit(
-                  a, e, i, omega, raan, lM, PositionAngle.MEAN, inertialFrame, initialDate, mu);
+          // Get orbit from TLE
+          Orbit initialOrbit = createOrbit(tle);
 
           // Set initial state
           final SpacecraftState initialState = new SpacecraftState(initialOrbit);
-          nPropagator.setInitialState(initialState);
+          numericalPropagator.setInitialState(initialState);
 
           // Stop date
           final AbsoluteDate finalDate = initialDate.shiftedBy(duration);
-
-          // 12 hour steps, plus or minus ~ 5 minutes
-          double randomizedStep = largeStep + (gaussianGenerator.nextNormalizedDouble() * 150);
 
           // Extrapolation loop - 12 hour increments
           for (AbsoluteDate extrapDate = initialDate;
               extrapDate.compareTo(finalDate) <= 0;
               extrapDate = extrapDate.shiftedBy(largeStep)) {
 
-            String message = createMessage(extrapDate, smallStep, nPropagator, pvBuilder, tle);
+            String message =
+                createMessage(extrapDate, smallStep, numericalPropagator, pvBuilder, tle);
             messages.add(message);
 
-            // TODO: create map where each object has its own arraylist - duplicate the arraylist
-            // for this
             ArrayList<String> sortedMessages =
                 mappedMessages.getOrDefault(tle.getSatelliteNumber(), new ArrayList<>());
             sortedMessages.add(message);
@@ -143,6 +117,38 @@ public class TrackGenerator {
         });
 
     Collections.sort(messages);
+  }
+
+  public String propagate(TLE tle, AbsoluteDate extrapDate) {
+
+    // Get orbit from TLE
+    Orbit initialOrbit = createOrbit(tle);
+
+    // Set initial state
+    final SpacecraftState initialState = new SpacecraftState(initialOrbit);
+    numericalPropagator.setInitialState(initialState);
+
+    String message = createMessage(extrapDate, smallStep, numericalPropagator, pvBuilder, tle);
+
+    return message;
+  }
+
+  public Orbit createOrbit(TLE tle) {
+
+    // Keplerian Initial orbit parameters
+    final double a = Math.cbrt(mu / (Math.pow(tle.getMeanMotion(), 2)));
+    final double e = tle.getE(); // eccentricity
+    final double i = tle.getI(); // inclination
+    final double omega = tle.getPerigeeArgument(); // perigee argument
+    final double raan = tle.getRaan(); // right ascension of ascending node
+    final double lM = tle.getMeanAnomaly(); // mean anomaly
+
+    // Orbit construction as Keplerian
+    final Orbit initialOrbit =
+        new KeplerianOrbit(
+            a, e, i, omega, raan, lM, PositionAngle.MEAN, inertialFrame, tle.getDate(), mu);
+
+    return initialOrbit;
   }
 
   static void createFile(ArrayList<String> messageContainer) {

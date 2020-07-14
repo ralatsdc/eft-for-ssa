@@ -25,6 +25,7 @@ public class UnitTests {
   public void setUp() throws Exception {
     trackGenerator = new TrackGenerator("../../tle-data/globalstar_tles_05_18_2020.txt");
     trackGenerator.init();
+    trackGenerator.finitePropagation();
   }
 
   @Test

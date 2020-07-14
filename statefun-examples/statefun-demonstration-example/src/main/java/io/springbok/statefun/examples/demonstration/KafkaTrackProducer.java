@@ -33,9 +33,11 @@ import java.util.Properties;
 
 public class KafkaTrackProducer {
 
-  static String inputPath = "tles/globalstar_tles_05_18_2020.txt";
+  static String inputPath = "tle-data/globalstar_tles_05_18_2020.txt";
 
   public static void main(String[] args) throws IOException {
+
+    System.out.println("Working Directory = " + System.getProperty("user.dir"));
 
     // Configure Kafka
     Properties props = new Properties();
@@ -142,9 +144,7 @@ public class KafkaTrackProducer {
     Producer<String, String> producer = new KafkaProducer<>(props);
     // TODO: load a catalog and compute tracks
     for (int i = 0; i < messageContainer.size(); i++) {
-      producer.send(
-          new ProducerRecord<String, String>(
-              "tracks", Integer.toString(i), messageContainer.get(i)));
+      producer.send(new ProducerRecord<String, String>("tracks", messageContainer.get(i)));
     }
 
     producer.close();

@@ -102,10 +102,6 @@ public class OrbitFactory {
 
     Orbit korbit = new KeplerianOrbit(orbit);
 
-    System.out.println("Orbit1: " + orbit1);
-    System.out.println("Orbit Constructed from same parameters: " + orbit);
-    System.out.println("Orbit Constructed from same parameters: " + korbit);
-
     ArrayList<Position> positions = new ArrayList<>();
     keyedOrbit2Tracks.forEach(
         track -> {
@@ -154,13 +150,6 @@ public class OrbitFactory {
     leastSquares.setMaxIterations(1000);
     leastSquares.setMaxEvaluations(1000);
     leastSquares.setParametersConvergenceThreshold(.001);
-
-    System.out.println("Least Squares Refine Values:");
-    System.out.println("orbit: " + orbitEstimation);
-    System.out.println("position 0:" + positions.get(0).getPosition());
-    System.out.println("position 1:" + positions.get(1).getPosition());
-    System.out.println("position 2:" + positions.get(2).getPosition());
-    System.out.println("position 3:" + positions.get(3).getPosition());
 
     // Add measurements
     positions.forEach(leastSquares::addMeasurement);

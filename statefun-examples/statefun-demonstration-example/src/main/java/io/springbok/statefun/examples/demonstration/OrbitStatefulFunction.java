@@ -101,9 +101,6 @@ public class OrbitStatefulFunction implements StatefulFunction {
       CollectedTracksMessage message = (CollectedTracksMessage) input;
 
       // Create new orbit by refining with new tracks
-      System.out.println("Orbit: " + message.orbit1);
-      System.out.println("Tracks: " + message.keyedOrbit2Tracks);
-      System.out.println("ID: " + context.self().id());
       KeyedOrbit newOrbit =
           OrbitFactory.refineOrbit(
               message.orbit1,
@@ -120,8 +117,6 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
       // Save new orbit and send to idmanager
       context.send(OrbitIdManager.TYPE, "orbit-id-manager", newOrbitIdMessage);
-
-      System.out.println("New Orbit Track IDs: " + newOrbit.trackIds);
 
       // Send orbitId to TrackStatefulFunction
       newOrbit.trackIds.forEach(

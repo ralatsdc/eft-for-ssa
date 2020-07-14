@@ -6,8 +6,6 @@ public class OrbitFactoryTest {
 
   public static void main(String[] args) throws Exception {
 
-    System.out.println("Working Directory = " + System.getProperty("user.dir"));
-
     TrackGenerator trackGenerator =
         new TrackGenerator("../../tle-data/globalstar_tles_05_18_2020.txt");
     trackGenerator.init();
