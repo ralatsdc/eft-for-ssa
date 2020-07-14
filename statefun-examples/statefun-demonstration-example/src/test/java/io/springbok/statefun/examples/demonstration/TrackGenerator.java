@@ -8,7 +8,7 @@ import org.hipparchus.random.GaussianRandomGenerator;
 import org.hipparchus.random.ISAACRandom;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
-import org.orekit.data.NetworkCrawler;
+import org.orekit.data.DirectoryCrawler;
 import org.orekit.estimation.measurements.ObservableSatellite;
 import org.orekit.estimation.measurements.PV;
 import org.orekit.estimation.measurements.generation.PVBuilder;
@@ -24,7 +24,6 @@ import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
 
 import java.io.*;
-import java.net.URL;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -32,29 +31,28 @@ import java.util.*;
 // Examples of randomized tracks are shown below but not utilized
 public class TrackGenerator {
 
-  static String inputPath = "./tle-data/globalstar_tles_05_18_2020.txt";
+  static String tlePath = "./tle-data/globalstar_tles_05_18_2020.txt";
   ArrayList<String> messages;
   Map<Integer, ArrayList<String>> mappedMessages;
 
-  public TrackGenerator(String inputPath) throws Exception {
+  public TrackGenerator(String tlePath) throws Exception {
 
     // TODO: verify the input is a TLE
-    this.inputPath = inputPath;
+    this.tlePath = tlePath;
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
-    }
+  }
 
-    public void init() throws IOException {
+  public void init() throws IOException {
 
     // Configure Orekit
-    final URL utcTaiData = new URL("https://hpiers.obspm.fr/eoppc/bul/bulc/UTC-TAI.history");
-    final URL eopData = new URL("ftp://ftp.iers.org/products/eop/rapid/daily/finals.daily");
+    String orekitPath = "../../orekit-data";
+    final File orekitData = new File(orekitPath);
     final DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
-    manager.addProvider(new NetworkCrawler(utcTaiData));
-    manager.addProvider(new NetworkCrawler(eopData));
+    manager.addProvider(new DirectoryCrawler(orekitData));
 
     // Add tles to list
-    final File tleData = new File(inputPath);
+    final File tleData = new File(tlePath);
     ArrayList<TLE> tles = convertTLES(tleData);
 
     // Gravitation coefficient
@@ -97,7 +95,6 @@ public class TrackGenerator {
     // Null here signals no random variance.
     final PVBuilder pvBuilder = new PVBuilder(null, sigmaP, sigmaV, baseWeight, satelliteIndex);
 
-
     // Start propagating each TLE
     tles.forEach(
         (tle) -> {
@@ -136,8 +133,10 @@ public class TrackGenerator {
             String message = createMessage(extrapDate, smallStep, nPropagator, pvBuilder, tle);
             messages.add(message);
 
-            //TODO: create map where each object has its own arraylist - duplicate the arraylist for this
-            ArrayList<String> sortedMessages = mappedMessages.getOrDefault(tle.getSatelliteNumber(), new ArrayList<>());
+            // TODO: create map where each object has its own arraylist - duplicate the arraylist
+            // for this
+            ArrayList<String> sortedMessages =
+                mappedMessages.getOrDefault(tle.getSatelliteNumber(), new ArrayList<>());
             sortedMessages.add(message);
             mappedMessages.put(tle.getSatelliteNumber(), sortedMessages);
           }
@@ -195,7 +194,7 @@ public class TrackGenerator {
     message = msgTime.toString() + "," + sensorId + "," + objectId;
 
     // TODO: future random number of readings option
-//    int positionReadingNum = (int) (Math.random() * 10);
+    //    int positionReadingNum = (int) (Math.random() * 10);
     int positionReadingNum = 3;
 
     // 3 readings separated by 1 minute
@@ -207,7 +206,7 @@ public class TrackGenerator {
       PV pv = pvBuilder.build(states);
       Vector3D position = pv.getPosition();
 
-      //TODO: generate RCS in a more specified way.
+      // TODO: generate RCS in a more specified way.
       double rcs = 5;
 
       String obs =
@@ -254,10 +253,10 @@ public class TrackGenerator {
     return messages;
   }
 
-  //TODO: add error handling for x being larger than file length
-  public ArrayList<String> getXMessages(int x){
+  // TODO: add error handling for x being larger than file length
+  public ArrayList<String> getXMessages(int x) {
     ArrayList<String> slicedMessages = new ArrayList<String>();
-    for(int i=0; i<x; i++){
+    for (int i = 0; i < x; i++) {
       slicedMessages.add(messages.get(i));
     }
     return slicedMessages;
@@ -269,13 +268,13 @@ public class TrackGenerator {
     return singleObjectMessages;
   }
 
-  //TODO: add error handling for x being larger than file length
-  public ArrayList<String> getXSingleObjectMessages(int x){
+  // TODO: add error handling for x being larger than file length
+  public ArrayList<String> getXSingleObjectMessages(int x) {
     Set<Integer> keySet = mappedMessages.keySet();
     ArrayList<String> singleObjectMessages = mappedMessages.get(keySet.iterator().next());
 
     ArrayList<String> slicedSingleObjectMessages = new ArrayList<String>();
-    for(int i=0; i<x; i++){
+    for (int i = 0; i < x; i++) {
       slicedSingleObjectMessages.add(singleObjectMessages.get(i));
     }
     return slicedSingleObjectMessages;

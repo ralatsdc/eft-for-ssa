@@ -38,7 +38,7 @@ public class OrbitFactory {
   public static void init() {
     // Configure Orekit
     if (manager == null) {
-      final DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
+      manager = DataContext.getDefault().getDataProvidersManager();
       manager.addProvider(new DirectoryCrawler(orekitData));
     }
   }
