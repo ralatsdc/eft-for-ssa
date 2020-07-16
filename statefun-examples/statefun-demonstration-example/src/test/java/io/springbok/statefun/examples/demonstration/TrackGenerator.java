@@ -28,6 +28,8 @@ import java.util.*;
 public class TrackGenerator {
 
   static String tlePath = "./tle-data/globalstar_tles_05_18_2020.txt";
+  private String orekitPath = "../../orekit-data";
+
   ArrayList<String> messages;
   Map<Integer, ArrayList<String>> mappedMessages;
 
@@ -48,6 +50,16 @@ public class TrackGenerator {
 
     // TODO: verify the input is a TLE
     this.tlePath = tlePath;
+    this.orekitPath = orekitPath;
+    messages = new ArrayList<>();
+    mappedMessages = new HashMap<>();
+  }
+
+  public TrackGenerator(String tlePath, String orekitPath) throws Exception {
+
+    // TODO: verify the input is a TLE
+    this.tlePath = tlePath;
+    this.orekitPath = orekitPath;
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
   }
@@ -55,7 +67,6 @@ public class TrackGenerator {
   public void init() throws IOException {
 
     // Configure Orekit
-    String orekitPath = "../../orekit-data";
     final File orekitData = new File(orekitPath);
     final DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
     manager.addProvider(new DirectoryCrawler(orekitData));
@@ -79,7 +90,7 @@ public class TrackGenerator {
     pvBuilder = new PVBuilder(null, sigmaP, sigmaV, baseWeight, satelliteIndex);
   }
 
-  public void finitePropagation() {
+  public ArrayList<String> finitePropagation() {
 
     // Overall duration in seconds for extrapolation - 1 week
     final double duration = 60 * 60 * 24 * 7;
@@ -117,6 +128,7 @@ public class TrackGenerator {
         });
 
     Collections.sort(messages);
+    return messages;
   }
 
   public String propagate(TLE tle, AbsoluteDate extrapDate) {
