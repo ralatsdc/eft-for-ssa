@@ -33,6 +33,7 @@ public class DemonstrationIO {
 
   public DemonstrationIO(String kafkaAddress) {
     this.kafkaAddress = Objects.requireNonNull(kafkaAddress);
+    System.out.println("******" + this.kafkaAddress);
   }
 
   public IngressSpec<TrackIn> getIngressSpec() {
