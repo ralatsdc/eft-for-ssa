@@ -126,7 +126,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
       // Send delete message
       context.sendAfter(
-          Duration.ofSeconds(4), context.self(), DelayedDeleteMessage.newBuilder().build());
+          Duration.ofSeconds(8), context.self(), DelayedDeleteMessage.newBuilder().build());
 
       Utilities.sendToDefault(
           context, String.format("Created refined orbit for id %s", newOrbit.orbitId));

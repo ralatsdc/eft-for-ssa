@@ -48,12 +48,7 @@ public class OrbitIdManager implements StatefulFunction {
               "Created orbitId %s refined from orbits with ids %s and %s",
               id, collectedTracksMessage.keyedOrbitId1, collectedTracksMessage.keyedOrbitId2));
 
-      ArrayList<String> orbitIdList = orbitIds.get();
-      orbitIdList.add(String.valueOf(id));
-
       lastOrbitId.set(id);
-      // TODO: save the orbit id in the list after it's created in the OrbitStatefulFunction
-      orbitIds.set(orbitIdList);
     }
 
     if (input instanceof NewOrbitIdMessage) {

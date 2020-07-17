@@ -10,7 +10,7 @@ public class DemonstrationModule implements StatefulFunctionModule {
 
   private static final String KAFKA_KEY = "kafka-address";
 
-  private static final String DEFAULT_KAFKA_ADDRESS = "kbroker:9093";
+  private static final String DEFAULT_KAFKA_ADDRESS = "kafka-broker:9093";
 
   @Override
   public void configure(Map<String, String> globalConfiguration, Binder binder) {

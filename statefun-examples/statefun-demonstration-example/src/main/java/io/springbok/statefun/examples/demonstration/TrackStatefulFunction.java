@@ -42,14 +42,6 @@ public class TrackStatefulFunction implements StatefulFunction {
       trackState.set(track);
     }
 
-    //    if (input instanceof AddOrbitMessage) {
-    //      Tracklet tracklet = trackState.get();
-    //      AddOrbitMessage orbitMessage = (AddOrbitMessage) input;
-    //      Long orbitId = orbitMessage.getOrbitId();
-    //      tracklet.addOrbit(orbitId);
-    //      trackState.set(tracklet);
-    //    }
-
     if (input instanceof RemoveOrbitIdMessage) {
       RemoveOrbitIdMessage removeOrbitIdMessage = (RemoveOrbitIdMessage) input;
       Track track = trackState.get();

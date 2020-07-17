@@ -19,7 +19,7 @@ services:
     image: wurstmeister/zookeeper
     ports:
       - "2181:2181"
-  kbroker:
+  kafka-broker:
     image: wurstmeister/kafka:2.12-2.0.1
     ports:
       - "9092:9092"
@@ -44,10 +44,8 @@ services:
     #command: -s /checkpoint-dir/savepoint/savepoint-bf101a-4e99820085fe
     expose:
       - "6123"
-    #    links:
-    #      - kbroker
     depends_on:
-      - kbroker
+      - kafka-broker
     ports:
       - "8081:8081"
     environment:
@@ -64,10 +62,10 @@ services:
       - "6122"
     depends_on:
       - master
-      - kbroker
+      - kafka-broker
     links:
       - "master:master"
-      - "kbroker:kbroker"
+      - "kafka-broker:kafka-broker"
     environment:
       - ROLE=worker
       - MASTER_HOST=master
