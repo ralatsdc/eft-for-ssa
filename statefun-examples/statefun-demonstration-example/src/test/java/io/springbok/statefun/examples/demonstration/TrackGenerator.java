@@ -38,13 +38,16 @@ public class TrackGenerator {
   final Frame inertialFrame = FramesFactory.getGCRF();
 
   // Steps - Duration in seconds
-  final double largeStep = 60 * 60 * 12;
+  public final double largeStep = 60 * 60 * 12;
   final double smallStep = 60;
 
   // Propagator
   NumericalPropagator numericalPropagator;
   PVBuilder pvBuilder;
-  ArrayList<TLE> tles;
+  public ArrayList<TLE> tles;
+
+  // infinite generator
+  Iterator<TLE> iterator;
 
   public TrackGenerator(String tlePath) throws Exception {
 
@@ -131,7 +134,7 @@ public class TrackGenerator {
     return messages;
   }
 
-  public String propagate(TLE tle, AbsoluteDate extrapDate) {
+  public String propagate(TLE tle, Double timePassedMS) {
 
     // Get orbit from TLE
     Orbit initialOrbit = createOrbit(tle);
@@ -139,6 +142,9 @@ public class TrackGenerator {
     // Set initial state
     final SpacecraftState initialState = new SpacecraftState(initialOrbit);
     numericalPropagator.setInitialState(initialState);
+
+    // Get working date
+    AbsoluteDate extrapDate = tle.getDate().shiftedBy(timePassedMS);
 
     String message = createMessage(extrapDate, smallStep, numericalPropagator, pvBuilder, tle);
 
