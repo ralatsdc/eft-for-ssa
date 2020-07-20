@@ -36,8 +36,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
       context.send(OrbitIdManager.TYPE, "orbit-id-manager", new CorrelateOrbitsMessage(keyedOrbit));
 
       // Send delete message
-      context.sendAfter(
-          Duration.ofSeconds(4), context.self(), DelayedDeleteMessage.newBuilder().build());
+      sendDeleteMessage(context);
 
       Utilities.sendToDefault(
           context, String.format("Created orbit for id %s", keyedOrbit.orbitId));
@@ -125,13 +124,17 @@ public class OrbitStatefulFunction implements StatefulFunction {
           });
 
       // Send delete message
-      context.sendAfter(
-          Duration.ofSeconds(8), context.self(), DelayedDeleteMessage.newBuilder().build());
+      sendDeleteMessage(context);
 
       Utilities.sendToDefault(
           context, String.format("Created refined orbit for id %s", newOrbit.orbitId));
 
       orbitState.set(newOrbit);
     }
+  }
+
+  private void sendDeleteMessage(Context context) {
+    context.sendAfter(
+        Duration.ofSeconds(320), context.self(), DelayedDeleteMessage.newBuilder().build());
   }
 }

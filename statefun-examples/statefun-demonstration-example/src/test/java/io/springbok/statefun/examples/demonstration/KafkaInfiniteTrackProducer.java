@@ -55,7 +55,7 @@ public class KafkaInfiniteTrackProducer {
         };
 
     ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-    executor.scheduleAtFixedRate(sendMessage, 0, 1, TimeUnit.SECONDS);
+    executor.scheduleAtFixedRate(sendMessage, 0, 1000, TimeUnit.MILLISECONDS);
 
     //    producer.flush();
   }
