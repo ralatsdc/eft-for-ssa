@@ -1,7 +1,7 @@
 package io.springbok.statefun.examples.demonstration;
 
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
-import org.hipparchus.optim.nonlinear.vector.leastsquares.GaussNewtonOptimizer;
+import org.hipparchus.optim.nonlinear.vector.leastsquares.LevenbergMarquardtOptimizer;
 import org.orekit.data.DataContext;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
@@ -10,11 +10,10 @@ import org.orekit.estimation.leastsquares.BatchLSEstimator;
 import org.orekit.estimation.measurements.Position;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
-import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.Orbit;
 import org.orekit.orbits.PositionAngle;
-import org.orekit.propagation.conversion.GillIntegratorBuilder;
+import org.orekit.propagation.conversion.DormandPrince54IntegratorBuilder;
 import org.orekit.propagation.conversion.NumericalPropagatorBuilder;
 import org.orekit.propagation.integration.AbstractIntegratedPropagator;
 import org.orekit.time.AbsoluteDate;
@@ -98,9 +97,7 @@ public class OrbitFactory {
 
     // New orbit must be created to refresh the frame in the current StateFun context
     Orbit orbit =
-        new EquinoctialOrbit(orbit1.getPVCoordinates(), inertialFrame, orbit1.getDate(), mu);
-
-    Orbit korbit = new KeplerianOrbit(orbit);
+        new KeplerianOrbit(orbit1.getPVCoordinates(), inertialFrame, orbit1.getDate(), mu);
 
     ArrayList<Position> positions = new ArrayList<>();
     keyedOrbit2Tracks.forEach(
@@ -139,14 +136,16 @@ public class OrbitFactory {
 
     init();
 
-    // Least squares estimator setup
-    final GaussNewtonOptimizer GNOptimizer = new GaussNewtonOptimizer();
-    final GillIntegratorBuilder gillIntegratorBuilder = new GillIntegratorBuilder(60);
+    final LevenbergMarquardtOptimizer levenbergMarquardtOptimizer =
+        new LevenbergMarquardtOptimizer();
+    final DormandPrince54IntegratorBuilder dormandPrince54IntegratorBuilder =
+        new DormandPrince54IntegratorBuilder(360, 2 * 24 * 3600, 10);
     final double positionScale = 1.;
     final NumericalPropagatorBuilder propBuilder =
         new NumericalPropagatorBuilder(
-            orbitEstimation, gillIntegratorBuilder, PositionAngle.MEAN, positionScale);
-    final BatchLSEstimator leastSquares = new BatchLSEstimator(GNOptimizer, propBuilder);
+            orbitEstimation, dormandPrince54IntegratorBuilder, PositionAngle.MEAN, positionScale);
+    final BatchLSEstimator leastSquares =
+        new BatchLSEstimator(levenbergMarquardtOptimizer, propBuilder);
     leastSquares.setMaxIterations(1000);
     leastSquares.setMaxEvaluations(1000);
     leastSquares.setParametersConvergenceThreshold(.001);

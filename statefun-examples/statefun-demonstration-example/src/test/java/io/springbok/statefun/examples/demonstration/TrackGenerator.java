@@ -39,7 +39,7 @@ public class TrackGenerator {
 
   // Steps - Duration in seconds
   public final double largeStep = 60 * 60 * 12;
-  final double smallStep = 60;
+  final double smallStep = 600;
 
   // Propagator
   NumericalPropagator numericalPropagator;
@@ -221,7 +221,7 @@ public class TrackGenerator {
     //    int positionReadingNum = (int) (Math.random() * 10);
     int positionReadingNum = 3;
 
-    // 3 readings separated by 1 minute
+    // 3 readings separated by smallStep
     for (int i = 0; i <= positionReadingNum; i++) {
       AbsoluteDate currentDate = extrapDate.shiftedBy(smallStep * i);
       final SpacecraftState currentState = nPropagator.propagate(currentDate);
@@ -302,5 +302,10 @@ public class TrackGenerator {
       slicedSingleObjectMessages.add(singleObjectMessages.get(i));
     }
     return slicedSingleObjectMessages;
+  }
+
+  public ArrayList<String> getMessagesById(int id) {
+    ArrayList<String> messagesById = mappedMessages.get(id);
+    return messagesById;
   }
 }

@@ -76,8 +76,11 @@ public class OrbitStatefulFunction implements StatefulFunction {
         Utilities.sendToDefault(
             context,
             String.format(
-                "Correlated orbits with ids %s and %s",
-                recievedKeyedOrbit.orbitId, keyedOrbit.orbitId));
+                "Correlated orbits with ids %s and %s, and objectIds %s and %s",
+                recievedKeyedOrbit.orbitId,
+                keyedOrbit.orbitId,
+                recievedKeyedOrbit.objectIds.get(0),
+                recievedKeyedOrbit.objectIds.get(0)));
 
         // Get tracks from current orbitState
         CollectedTracksMessage collectedTracksMessage =
