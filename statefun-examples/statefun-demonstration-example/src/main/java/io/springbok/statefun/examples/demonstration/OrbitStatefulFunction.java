@@ -135,6 +135,6 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
   private void sendDeleteMessage(Context context) {
     context.sendAfter(
-        Duration.ofSeconds(320), context.self(), DelayedDeleteMessage.newBuilder().build());
+        Duration.ofSeconds(30), context.self(), DelayedDeleteMessage.newBuilder().build());
   }
 }
