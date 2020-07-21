@@ -4,6 +4,9 @@ import org.orekit.orbits.Orbit;
 
 import java.util.ArrayList;
 
+/*
+ KeyedOrbit adds a key to the Orekit Orbit class. It also contains what trackIds and objectIds were used to create the Orbit.
+*/
 public class KeyedOrbit {
 
   public Orbit orbit;
@@ -11,7 +14,7 @@ public class KeyedOrbit {
   public ArrayList<String> trackIds;
   public ArrayList<Integer> objectIds;
 
-  /** Creates an IDOrbit with the given parameters. */
+  // Construct a KeyedOrbit from a single track
   public KeyedOrbit(Orbit orbit, String orbitId, Track track) {
     this.orbit = orbit;
     this.orbitId = orbitId;
@@ -21,8 +24,8 @@ public class KeyedOrbit {
     objectIds.add(track.objectId);
   }
 
+  // Construct a KeyedOrbit from a list of tracks
   public KeyedOrbit(Orbit orbit, String orbitId, ArrayList<Track> tracks) {
-
     this.orbit = orbit;
     this.orbitId = orbitId;
     this.trackIds = new ArrayList<>();
@@ -34,6 +37,7 @@ public class KeyedOrbit {
         });
   }
 
+  // Construct a KeyedOrbit with additional trackIds
   public KeyedOrbit(
       Orbit orbit, String orbitId, ArrayList<Track> tracks, ArrayList<String> trackIds) {
 
@@ -48,6 +52,7 @@ public class KeyedOrbit {
         });
   }
 
+  // Compares the objectIds
   @Override
   public boolean equals(Object obj) {
     if (obj == null) {

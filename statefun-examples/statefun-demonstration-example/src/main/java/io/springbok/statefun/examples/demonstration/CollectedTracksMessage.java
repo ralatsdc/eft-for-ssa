@@ -5,6 +5,10 @@ import org.orekit.orbits.Orbit;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+/*
+ CollectedTracksMessage is created after an orbit correlation is recognized.
+ It is a container for all the information required to gather tracks and least squares refine them with an existing orbit
+*/
 public class CollectedTracksMessage {
 
   public String keyedOrbitId1;

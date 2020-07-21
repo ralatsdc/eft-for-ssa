@@ -9,6 +9,7 @@ import org.orekit.time.TimeScalesFactory;
 
 import java.util.ArrayList;
 
+// Track stores information from a TrackIn string in a more usable interface
 public class Track {
 
   private AbsoluteDate msgTime;
@@ -33,9 +34,10 @@ public class Track {
         + String.join(", ", positions.toString());
   }
 
-  /** Parse a Tracklet from a CSV representation. */
+  // Parse a Track from a CSV representation.
   public static Track fromString(String line, String id) {
 
+    // Ensure Orekit is configured
     OrbitFactory.init();
 
     String[] tokens = line.split(",");
@@ -45,6 +47,7 @@ public class Track {
 
     Track track = new Track();
 
+    // Create track from string
     try {
 
       track.msgTime = new AbsoluteDate(tokens[0], utc);

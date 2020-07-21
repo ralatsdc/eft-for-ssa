@@ -5,6 +5,11 @@ import org.apache.flink.statefun.sdk.spi.StatefulFunctionModule;
 
 import java.util.Map;
 
+/*
+  The Stateful Function Module is the entry point for the application.
+  Here the ingress and egress are bound (detailed in the DemonstrationIO class),
+  the router is bound, and the StatefulFunctions are bound to the application.
+*/
 @AutoService(StatefulFunctionModule.class)
 public class DemonstrationModule implements StatefulFunctionModule {
 
@@ -15,22 +20,19 @@ public class DemonstrationModule implements StatefulFunctionModule {
   @Override
   public void configure(Map<String, String> globalConfiguration, Binder binder) {
 
-    // Ingress
+    //  IO created with Kafka Keys. These ports are opened in the docker-compose.yml
     String kafkaAddress =
         (String) globalConfiguration.getOrDefault(KAFKA_KEY, DEFAULT_KAFKA_ADDRESS);
     DemonstrationIO ioModule = new DemonstrationIO(kafkaAddress);
 
-    // bind ingress and router
+    // Bind the application ingress and router
     binder.bindIngress(ioModule.getIngressSpec());
     binder.bindIngressRouter(DemonstrationIO.TRACKS_INGRESS_ID, new TrackRouter());
 
-    // Egress
-    //    EgressSpec<String> printEgressSpec =
-    //        new SinkFunctionSpec<>(IO.DEFAULT_EGRESS_ID, new PrintSinkFunction<>());
-    //    binder.bindEgress(printEgressSpec);
+    // Bind application egress
     binder.bindEgress(ioModule.getEgressSpec());
 
-    // Functions
+    // Bind functions to the application
     binder.bindFunctionProvider(TrackIdManager.TYPE, unused -> new TrackIdManager());
     binder.bindFunctionProvider(OrbitStatefulFunction.TYPE, unused -> new OrbitStatefulFunction());
     binder.bindFunctionProvider(TrackStatefulFunction.TYPE, unused -> new TrackStatefulFunction());

@@ -22,10 +22,15 @@ import org.orekit.utils.Constants;
 import java.io.File;
 import java.util.ArrayList;
 
+/*
+ OrbitFactory is used to create or refine KeyedOrbits using Orekit
+ OrbitFactory is intended to be used statically
+*/
 public class OrbitFactory {
 
   // Gravitation coefficient
   static final double mu = Constants.IERS2010_EARTH_MU;
+
   // Inertial frame
   static final Frame inertialFrame = FramesFactory.getGCRF();
 
@@ -35,19 +40,17 @@ public class OrbitFactory {
   static DataProvidersManager manager = null;
 
   public static void init() {
-    // Configure Orekit
+    // Ensure Orekit is configured
     if (manager == null) {
       manager = DataContext.getDefault().getDataProvidersManager();
       manager.addProvider(new DirectoryCrawler(orekitData));
     }
   }
 
-  // Modeling a static class
-  private OrbitFactory() {}
-
-  // Create an orbit with a single track of 2 or more positions
+  // Create an orbit with a single Track of 2 or more positions
   public static KeyedOrbit createOrbit(Track track, String orbitId) {
 
+    // Ensure Orekit is configured
     init();
 
     ArrayList<Position> positions = track.getPositions();
@@ -55,6 +58,8 @@ public class OrbitFactory {
     Orbit orbit;
     Orbit orbitEstimation = iod(positions);
 
+    // If there are only two positions, only the initial estimation is possible, else refine the
+    // orbits
     if (positions.size() > 2) {
       orbit = leastSquaresRefine(orbitEstimation, positions);
     } else {
@@ -64,38 +69,19 @@ public class OrbitFactory {
     return keyedOrbit;
   }
 
-  // Create an orbit with an ArrayList<Track> of 2 or more positions
-  public static KeyedOrbit createOrbit(ArrayList<Track> tracks, String orbitId) {
-
-    init();
-
-    ArrayList<Position> positions = new ArrayList<>();
-    tracks.forEach(
-        track -> {
-          positions.addAll(track.getPositions());
-        });
-
-    Orbit orbit;
-    Orbit orbitEstimation = iod(positions);
-
-    if (positions.size() > 2) {
-      orbit = leastSquaresRefine(orbitEstimation, positions);
-    } else {
-      orbit = orbitEstimation;
-    }
-    KeyedOrbit keyedOrbit = new KeyedOrbit(orbit, orbitId, tracks);
-    return keyedOrbit;
-  }
-
+  // Refine an orbit with an ArrayList of Tracks of 2 or more positions
   public static KeyedOrbit refineOrbit(
       Orbit orbit1,
       ArrayList<String> keyedOrbit1TrackIds,
       ArrayList<Track> keyedOrbit2Tracks,
       String newOrbitId) {
 
+    // Ensure Orekit is configured
     init();
 
-    // New orbit must be created to refresh the frame in the current StateFun context
+    // New orbit instance must be created to set the inertialFrame correctly in the current
+    // StatefulFunction context
+    // This is a copy of the given orbit
     Orbit orbit =
         new KeplerianOrbit(orbit1.getPVCoordinates(), inertialFrame, orbit1.getDate(), mu);
 
@@ -105,6 +91,7 @@ public class OrbitFactory {
           positions.addAll(track.getPositions());
         });
 
+    // Refine the orbit with positions taken from the Track(s)
     Orbit refinedOrbit = leastSquaresRefine(orbit, positions);
     KeyedOrbit refinedKeyedOrbit =
         new KeyedOrbit(refinedOrbit, newOrbitId, keyedOrbit2Tracks, keyedOrbit1TrackIds);
@@ -114,9 +101,10 @@ public class OrbitFactory {
 
   private static Orbit iod(ArrayList<Position> positions) {
 
+    // Ensure Orekit is configured
     init();
 
-    // Orbit Determination
+    // Orbit Determination from first and last position
     final IodLambert lambert = new IodLambert(mu);
     // TODO: Posigrade and number of revolutions are set as guesses for now, but will need to be
     // calculated later
@@ -132,10 +120,13 @@ public class OrbitFactory {
     return orbitEstimation;
   }
 
+  // Refine the orbit with additional positions taken from the Track(s)
   private static Orbit leastSquaresRefine(Orbit orbitEstimation, ArrayList<Position> positions) {
 
+    // Ensure Orekit is configured
     init();
 
+    // Least squares refine setup
     final LevenbergMarquardtOptimizer levenbergMarquardtOptimizer =
         new LevenbergMarquardtOptimizer();
     final DormandPrince54IntegratorBuilder dormandPrince54IntegratorBuilder =
@@ -157,9 +148,5 @@ public class OrbitFactory {
     AbstractIntegratedPropagator[] lsPropagators = leastSquares.estimate();
     Orbit orbit = lsPropagators[0].getInitialState().getOrbit();
     return orbit;
-  }
-
-  public void updateOrekitDataDirectory(String path) {
-    inputPath = path;
   }
 }
