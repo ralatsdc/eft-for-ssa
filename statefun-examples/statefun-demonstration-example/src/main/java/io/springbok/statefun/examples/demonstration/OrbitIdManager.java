@@ -75,17 +75,21 @@ public class OrbitIdManager implements StatefulFunction {
 
     // This message is received from an OrbitStatefulFunction when a new refined orbit (multiple
     // tracks combined) is successfully created.
-    // It saves the new orbit id in its list.
-    if (input instanceof NewOrbitIdMessage) {
-      NewOrbitIdMessage newOrbitIdMessage = (NewOrbitIdMessage) input;
+    // It saves the new orbit id in its list and deletes the old ones.
+    if (input instanceof NewRefinedOrbitIdMessage) {
+      NewRefinedOrbitIdMessage newRefinedOrbitIdMessage = (NewRefinedOrbitIdMessage) input;
 
       ArrayList<String> orbitIdList = orbitIds.getOrDefault(new ArrayList<String>());
 
       // Message out that orbit id was saved
-      Utilities.sendToDefault(context, String.format("Saved orbitId %s", newOrbitIdMessage.id));
+      Utilities.sendToDefault(
+          context, String.format("Saved orbitId %s", newRefinedOrbitIdMessage.newOrbitId));
 
       // Update orbitIdList with the new orbit
-      orbitIdList.add(newOrbitIdMessage.id);
+      orbitIdList.add(newRefinedOrbitIdMessage.newOrbitId);
+      orbitIdList.remove(newRefinedOrbitIdMessage.oldOrbitId1);
+      orbitIdList.remove(newRefinedOrbitIdMessage.oldOrbitId2);
+      Utilities.sendToDefault(context, orbitIdList.toString());
       orbitIds.set(orbitIdList);
     }
 

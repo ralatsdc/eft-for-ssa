@@ -135,13 +135,16 @@ public class OrbitStatefulFunction implements StatefulFunction {
               "Refined orbits with ids %s and %s to create orbit with id %s",
               message.keyedOrbitId1, message.keyedOrbitId2, newOrbit.orbitId));
 
-      NewOrbitIdMessage newOrbitIdMessage = new NewOrbitIdMessage(newOrbit.orbitId);
+      NewRefinedOrbitIdMessage newRefinedOrbitIdMessage =
+          new NewRefinedOrbitIdMessage(
+              newOrbit.orbitId, message.keyedOrbitId1, message.keyedOrbitId2);
 
       // Send a message to the OrbitIdManager to save the new orbit id
-      context.send(OrbitIdManager.TYPE, "orbit-id-manager", newOrbitIdMessage);
+      context.send(OrbitIdManager.TYPE, "orbit-id-manager", newRefinedOrbitIdMessage);
 
       // Send orbitId to each TrackStatefulFunction associated with this orbit to save it in each
       // one
+      NewOrbitIdMessage newOrbitIdMessage = new NewOrbitIdMessage(newOrbit.orbitId);
       newOrbit.trackIds.forEach(
           id -> {
             context.send(TrackStatefulFunction.TYPE, id, newOrbitIdMessage);

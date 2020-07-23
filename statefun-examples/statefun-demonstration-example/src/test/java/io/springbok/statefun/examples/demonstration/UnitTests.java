@@ -11,7 +11,9 @@ import org.junit.Test;
 import java.io.PrintStream;
 import java.util.ArrayList;
 
-/** Unit test for simple App. */
+/*
+ NOTE: Tests assume that the delayed delete message in the OrbitStatefulFunction will be send after a 4 second delay
+*/
 public class UnitTests {
 
   private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
