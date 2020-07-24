@@ -1,14 +1,10 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.demonstration.generated.TrackIn;
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.flink.statefun.flink.harness.Harness;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 
 /*
@@ -16,15 +12,10 @@ import java.util.ArrayList;
 */
 public class UnitTests {
 
-  private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-  private final PrintStream systemOut = System.out;
-  private SourceFunction<TrackIn> finiteTracksSource;
+  static TrackGenerator trackGenerator;
 
-  TestConsumer testConsumer;
-  TrackGenerator trackGenerator;
-
-  @Before
-  public void setUp() throws Exception {
+  @BeforeClass
+  public static void setUp() throws Exception {
     trackGenerator = new TrackGenerator("../../tle-data/globalstar_tles_05_18_2020.txt");
     trackGenerator.init();
     trackGenerator.finitePropagation();
@@ -33,14 +24,16 @@ public class UnitTests {
   @Test
   public void testTrackCreation() throws Exception {
 
-    TestTracksSourceFunction finiteTracksSource =
+    TestTracksSourceFunction singleTracksSource =
         new TestTracksSourceFunction(trackGenerator.getXMessages(1));
-    testConsumer = new TestConsumer();
+    TestConsumer testConsumer = new TestConsumer();
+    singleTracksSource.runTimeMS = 2000;
+    OrbitStatefulFunction.deleteTimer = 1;
 
     Harness harness =
         new Harness()
             .withKryoMessageSerializer()
-            .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, finiteTracksSource)
+            .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
@@ -79,7 +72,9 @@ public class UnitTests {
 
     TestTracksSourceFunction finiteTracksSource =
         new TestTracksSourceFunction(trackGenerator.getXSingleObjectMessages(2));
-    testConsumer = new TestConsumer();
+    TestConsumer testConsumer = new TestConsumer();
+    finiteTracksSource.runTimeMS = 8000;
+    OrbitStatefulFunction.deleteTimer = 4;
 
     Harness harness =
         new Harness()

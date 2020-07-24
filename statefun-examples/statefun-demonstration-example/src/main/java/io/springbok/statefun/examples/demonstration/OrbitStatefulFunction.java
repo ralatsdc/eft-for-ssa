@@ -18,6 +18,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
   // This FunctionType binding is used in the Demonstration module
   public static final FunctionType TYPE = new FunctionType("springbok", "orbit-stateful-function");
 
+  public static int deleteTimer = 320;
+
   // PersistedValues can be stored and recalled when this StatefulFunction is invoked
   @Persisted
   private final PersistedValue<KeyedOrbit> orbitState =
@@ -91,7 +93,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
         Utilities.sendToDefault(
             context,
             String.format(
-                "Correlated orbits with ids %s and %s, and objectIds %s and %s",
+                "Correlated orbits with ids %s and %s",
                 recievedKeyedOrbit.orbitId,
                 keyedOrbit.orbitId,
                 recievedKeyedOrbit.objectIds.get(0),
@@ -164,6 +166,6 @@ public class OrbitStatefulFunction implements StatefulFunction {
   // Sends a delete message after a certain amount of time
   private void sendSelfDeleteMessage(Context context) {
     context.sendAfter(
-        Duration.ofSeconds(320), context.self(), DelayedDeleteMessage.newBuilder().build());
+        Duration.ofSeconds(deleteTimer), context.self(), DelayedDeleteMessage.newBuilder().build());
   }
 }
