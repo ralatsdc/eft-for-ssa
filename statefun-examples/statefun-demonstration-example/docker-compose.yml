@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version: "2.1"
+version: "2"
 services:
   zookeeper:
     image: wurstmeister/zookeeper
@@ -54,6 +54,7 @@ services:
     volumes:
       - ./checkpoint-dir:/checkpoint-dir
       - ../../orekit-data:/orekit-data
+      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
   worker:
     build:
       context: .
@@ -72,4 +73,5 @@ services:
     volumes:
       - ./checkpoint-dir:/checkpoint-dir
       - ../../orekit-data:/orekit-data
+      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
 

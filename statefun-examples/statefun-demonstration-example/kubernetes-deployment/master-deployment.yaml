@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert --volumes hostPath
+    kompose.version: 1.21.0 ()
+  creationTimestamp: null
+  labels:
+    io.kompose.service: master
+  name: master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: master
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert --volumes hostPath
+        kompose.version: 1.21.0 ()
+      creationTimestamp: null
+      labels:
+        io.kompose.service: master
+    spec:
+      containers:
+      - env:
+        - name: MASTER_HOST
+          value: master
+        - name: ROLE
+          value: master
+        image: spearw/eft-for-ssa:statefun-demonstration-example_master
+        imagePullPolicy: ""
+        name: master
+        ports:
+        - containerPort: 8081
+        - containerPort: 6123
+        resources: {}
+        volumeMounts:
+        - mountPath: /checkpoint-dir
+          name: master-hostpath0
+        - mountPath: /orekit-data
+          name: master-hostpath1
+#        - name: flink-config-volume
+#          mountPath: /opt/flink/conf/
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - hostPath:
+          path: /checkpoint-dir
+        name: master-hostpath0
+      - hostPath:
+          path: /home/docker/orekit-data
+        name: master-hostpath1
+#      - name: flink-config-volume
+#        configMap:
+#          name: flink-config
+#          items:
+#            - key: flink-conf.yaml
+#              path: flink-conf.yaml
+#            - key: log4j-console.properties
+#              path: log4j-console.properties
+status: {}
