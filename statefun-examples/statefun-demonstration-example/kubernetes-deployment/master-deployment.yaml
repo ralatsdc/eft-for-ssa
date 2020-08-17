@@ -25,40 +25,60 @@ spec:
         io.kompose.service: master
     spec:
       containers:
-      - env:
-        - name: MASTER_HOST
-          value: master
-        - name: ROLE
-          value: master
-        image: spearw/eft-for-ssa:statefun-demonstration-example_master
-        imagePullPolicy: ""
-        name: master
-        ports:
-        - containerPort: 8081
-        - containerPort: 6123
-        resources: {}
-        volumeMounts:
-        - mountPath: /checkpoint-dir
-          name: master-hostpath0
-        - mountPath: /orekit-data
-          name: master-hostpath1
-#        - name: flink-config-volume
-#          mountPath: /opt/flink/conf/
+        - env:
+            - name: MASTER_HOST
+              value: master
+            - name: ROLE
+              value: master
+          image: spearw/eft-for-ssa:statefun-demonstration-example_master
+          imagePullPolicy: ""
+          name: master
+          ports:
+            - containerPort: 8081
+            - containerPort: 6123
+          resources: {}
+          volumeMounts:
+            - mountPath: /checkpoint-dir
+              name: master-hostpath0
+            - mountPath: /orekit-data
+              name: master-hostpath1
+            - name: flink-config-volume
+              mountPath: /opt/flink/conf/
       restartPolicy: Always
       serviceAccountName: ""
       volumes:
-      - hostPath:
-          path: /checkpoint-dir
-        name: master-hostpath0
-      - hostPath:
-          path: /home/docker/orekit-data
-        name: master-hostpath1
-#      - name: flink-config-volume
-#        configMap:
-#          name: flink-config
-#          items:
-#            - key: flink-conf.yaml
-#              path: flink-conf.yaml
-#            - key: log4j-console.properties
-#              path: log4j-console.properties
+        - hostPath:
+            path: /checkpoint-dir
+          name: master-hostpath0
+        - hostPath:
+            path: /home/docker/orekit-data
+          name: master-hostpath1
+        - name: flink-config-volume
+          configMap:
+            name: flink-config
+            items:
+              - key: flink-conf.yaml
+                path: flink-conf.yaml
+              - key: log4j.properties
+                path: log4j.properties
+              - key: log4j-cli.properties
+                path: log4j-cli.properties
+              - key: log4j-console.properties
+                path: log4j-console.properties
+              - key: log4j-yarn-session.properties
+                path: log4j-yarn-session.properties
+              - key: logback.xml
+                path: logback.xml
+              - key: logback-console.xml
+                path: logback-console.xml
+              - key: logback-yarn.xml
+                path: logback-yarn.xml
+              - key: masters
+                path: masters
+              - key: slaves
+                path: slaves
+              - key: sql-client-defaults.yaml
+                path: sql-client-defaults.yaml
+              - key: zoo.cfg
+                path: zoo.cfg
 status: {}

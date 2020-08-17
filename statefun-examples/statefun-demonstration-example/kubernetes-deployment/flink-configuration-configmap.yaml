@@ -1,0 +1,532 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flink-config
+  labels:
+    app: flink
+data:
+  flink-conf.yaml: |+
+    # Licensed to the Apache Software Foundation (ASF) under one or more
+    # contributor license agreements.  See the NOTICE file distributed with
+    # this work for additional information regarding copyright ownership.
+    # The ASF licenses this file to You under the Apache License, Version 2.0
+    # (the "License"); you may not use this file except in compliance with
+    # the License.  You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    # This file is the base for the Apache Flink configuration
+
+    #==============================================================================
+    # Configurations strictly required by Stateful Functions. Do not change.
+    #==============================================================================
+
+    classloader.parent-first-patterns.additional: org.apache.flink.statefun;org.apache.kafka;com.google.protobuf
+
+    #==============================================================================
+    # Recommended configurations. Users may change according to their needs.
+    #==============================================================================
+
+    state.backend: rocksdb
+    state.backend.rocksdb.timer-service.factory: ROCKSDB
+    state.checkpoints.dir: file:///checkpoint-dir
+    state.backend.incremental: true
+    taskmanager.memory.process.size: 4g
+
+    taskmanager.numberOfTaskSlots: 2
+    parallelism.default: 2
+
+    statefun.flink-job-name: Statefun Application
+
+  log4j.properties: |+
+    ################################################################################
+    #  Licensed to the Apache Software Foundation (ASF) under one
+    #  or more contributor license agreements.  See the NOTICE file
+    #  distributed with this work for additional information
+    #  regarding copyright ownership.  The ASF licenses this file
+    #  to you under the Apache License, Version 2.0 (the
+    #  "License"); you may not use this file except in compliance
+    #  with the License.  You may obtain a copy of the License at
+    #
+    #      http://www.apache.org/licenses/LICENSE-2.0
+    #
+    #  Unless required by applicable law or agreed to in writing, software
+    #  distributed under the License is distributed on an "AS IS" BASIS,
+    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    #  See the License for the specific language governing permissions and
+    # limitations under the License.
+    ################################################################################
+    # This affects logging for both user code and Flink
+    log4j.rootLogger=INFO, file
+    # Uncomment this if you want to _only_ change Flink's logging
+    #log4j.logger.org.apache.flink=INFO
+    # The following lines keep the log level of common libraries/connectors on
+    # log level INFO. The root logger does not override this. You have to manually
+    # change the log levels here.
+    log4j.logger.akka=INFO
+    log4j.logger.org.apache.kafka=INFO
+    log4j.logger.org.apache.hadoop=INFO
+    log4j.logger.org.apache.zookeeper=INFO
+    # Log all infos in the given file
+    log4j.appender.file=org.apache.log4j.FileAppender
+    log4j.appender.file.file=${log.file}
+    log4j.appender.file.append=false
+    log4j.appender.file.layout=org.apache.log4j.PatternLayout
+    log4j.appender.file.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
+    # Suppress the irrelevant (wrong) warnings from the Netty channel handler
+    log4j.logger.org.apache.flink.shaded.akka.org.jboss.netty.channel.DefaultChannelPipeline=ERROR, file
+
+  log4j-cli.properties: |+
+    #  See the License for the specific language governing permissions and
+    # limitations under the License.
+    ################################################################################
+    log4j.rootLogger=INFO, file
+    # Log all infos in the given file
+    log4j.appender.file=org.apache.log4j.FileAppender
+    log4j.appender.file.file=${log.file}
+    log4j.appender.file.append=false
+    log4j.appender.file.layout=org.apache.log4j.PatternLayout
+    log4j.appender.file.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
+    # Log output from org.apache.flink.yarn to the console. This is used by the
+    # CliFrontend class when using a per-job YARN cluster.
+    log4j.logger.org.apache.flink.yarn=INFO, console
+    log4j.logger.org.apache.flink.yarn.cli.FlinkYarnSessionCli=INFO, console
+    log4j.logger.org.apache.hadoop=INFO, console
+    log4j.appender.console=org.apache.log4j.ConsoleAppender
+    log4j.appender.console.layout=org.apache.log4j.PatternLayout
+    log4j.appender.console.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
+    # suppress the warning that hadoop native libraries are not loaded (irrelevant for the client)
+    log4j.logger.org.apache.hadoop.util.NativeCodeLoader=OFF
+    # suppress the irrelevant (wrong) warnings from the netty channel handler
+    log4j.logger.org.apache.flink.shaded.akka.org.jboss.netty.channel.DefaultChannelPipeline=ERROR, file
+
+  log4j-console.properties: |+
+    ################################################################################
+    #  Licensed to the Apache Software Foundation (ASF) under one
+    #  or more contributor license agreements.  See the NOTICE file
+    #  distributed with this work for additional information
+    #  regarding copyright ownership.  The ASF licenses this file
+    #  to you under the Apache License, Version 2.0 (the
+    #  "License"); you may not use this file except in compliance
+    #  with the License.  You may obtain a copy of the License at
+    #
+    #      http://www.apache.org/licenses/LICENSE-2.0
+    #
+    #  Unless required by applicable law or agreed to in writing, software
+    #  distributed under the License is distributed on an "AS IS" BASIS,
+    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    #  See the License for the specific language governing permissions and
+    # limitations under the License.
+    ################################################################################
+    # This affects logging for both user code and Flink
+    log4j.rootLogger=INFO, console
+    # Uncomment this if you want to _only_ change Flink's logging
+    #log4j.logger.org.apache.flink=INFO
+    # The following lines keep the log level of common libraries/connectors on
+    # log level INFO. The root logger does not override this. You have to manually
+    # change the log levels here.
+    log4j.logger.akka=INFO
+    log4j.logger.org.apache.kafka=INFO
+    log4j.logger.org.apache.hadoop=INFO
+    log4j.logger.org.apache.zookeeper=INFO
+    # Log all infos to the console
+    log4j.appender.console=org.apache.log4j.ConsoleAppender
+    log4j.appender.console.layout=org.apache.log4j.PatternLayout
+    log4j.appender.console.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
+    # Suppress the irrelevant (wrong) warnings from the Netty channel handler
+    log4j.logger.org.apache.flink.shaded.akka.org.jboss.netty.channel.DefaultChannelPipeline=ERROR, console
+
+  log4j-yarn-session.properties: |+
+    ################################################################################
+    #  Licensed to the Apache Software Foundation (ASF) under one
+    #  or more contributor license agreements.  See the NOTICE file
+    #  distributed with this work for additional information
+    #  regarding copyright ownership.  The ASF licenses this file
+    #  to you under the Apache License, Version 2.0 (the
+    #  "License"); you may not use this file except in compliance
+    #  with the License.  You may obtain a copy of the License at
+    #
+    #      http://www.apache.org/licenses/LICENSE-2.0
+    #
+    #  Unless required by applicable law or agreed to in writing, software
+    #  distributed under the License is distributed on an "AS IS" BASIS,
+    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    #  See the License for the specific language governing permissions and
+    # limitations under the License.
+    ################################################################################
+    log4j.rootLogger=INFO, stdout
+    # Log all infos in the given file
+    log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+    log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+    log4j.appender.stdout.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
+    # suppress the irrelevant (wrong) warnings from the netty channel handler
+    log4j.logger.org.apache.flink.shaded.akka.org.jboss.netty.channel.DefaultChannelPipeline=ERROR, stdout
+    log4j.logger.org.apache.zookeeper=WARN, stdout
+    log4j.logger.org.apache.flink.shaded.org.apache.curator.framework=WARN, stdout
+    log4j.logger.org.apache.flink.runtime.util.ZooKeeperUtils=WARN, stdout
+    log4j.logger.org.apache.flink.runtime.leaderretrieval.ZooKeeperLeaderRetrievalService=WARN, stdout
+
+  logback.xml: |+
+    <!--
+    ~ Licensed to the Apache Software Foundation (ASF) under one
+    ~ or more contributor license agreements.  See the NOTICE file
+    ~ distributed with this work for additional information
+    ~ regarding copyright ownership.  The ASF licenses this file
+    ~ to you under the Apache License, Version 2.0 (the
+    ~ "License"); you may not use this file except in compliance
+    ~ with the License.  You may obtain a copy of the License at
+    ~
+    ~     http://www.apache.org/licenses/LICENSE-2.0
+    ~
+    ~ Unless required by applicable law or agreed to in writing, software
+    ~ distributed under the License is distributed on an "AS IS" BASIS,
+    ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    ~ See the License for the specific language governing permissions and
+    ~ limitations under the License.
+    -->
+
+    <configuration>
+    <appender name="file" class="ch.qos.logback.core.FileAppender">
+    <file>${log.file}</file>
+    <append>false</append>
+    <encoder>
+    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{60} %X{sourceThread} - %msg%n</pattern>
+    </encoder>
+    </appender>
+
+    <!-- This affects logging for both user code and Flink -->
+    <root level="INFO">
+    <appender-ref ref="file"/>
+    </root>
+
+    <!-- Uncomment this if you want to only change Flink's logging -->
+    <!--<logger name="org.apache.flink" level="INFO">-->
+    <!--<appender-ref ref="file"/>-->
+    <!--</logger>-->
+
+    <!-- The following lines keep the log level of common libraries/connectors on
+    log level INFO. The root logger does not override this. You have to manually
+    change the log levels here. -->
+    <logger name="akka" level="INFO">
+    <appender-ref ref="file"/>
+    </logger>
+    <logger name="org.apache.kafka" level="INFO">
+    <appender-ref ref="file"/>
+    </logger>
+    <logger name="org.apache.hadoop" level="INFO">
+    <appender-ref ref="file"/>
+    </logger>
+    <logger name="org.apache.zookeeper" level="INFO">
+    <appender-ref ref="file"/>
+    </logger>
+
+    <!-- Suppress the irrelevant (wrong) warnings from the Netty channel handler -->
+    <logger name="org.apache.flink.shaded.akka.org.jboss.netty.channel.DefaultChannelPipeline" level="ERROR">
+    <appender-ref ref="file"/>
+    </logger>
+    </configuration>
+
+  logback-console.xml: |+
+    <!--
+    ~ Licensed to the Apache Software Foundation (ASF) under one
+    ~ or more contributor license agreements.  See the NOTICE file
+    ~ distributed with this work for additional information
+    ~ regarding copyright ownership.  The ASF licenses this file
+    ~ to you under the Apache License, Version 2.0 (the
+    ~ "License"); you may not use this file except in compliance
+    ~ with the License.  You may obtain a copy of the License at
+    ~
+    ~     http://www.apache.org/licenses/LICENSE-2.0
+    ~
+    ~ Unless required by applicable law or agreed to in writing, software
+    ~ distributed under the License is distributed on an "AS IS" BASIS,
+    ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    ~ See the License for the specific language governing permissions and
+    ~ limitations under the License.
+    -->
+
+    <configuration>
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{60} %X{sourceThread} - %msg%n</pattern>
+    </encoder>
+    </appender>
+
+    <!-- This affects logging for both user code and Flink -->
+    <root level="INFO">
+    <appender-ref ref="console"/>
+    </root>
+
+    <!-- Uncomment this if you want to only change Flink's logging -->
+    <!--<logger name="org.apache.flink" level="INFO">-->
+    <!--<appender-ref ref="console"/>-->
+    <!--</logger>-->
+
+    <!-- The following lines keep the log level of common libraries/connectors on
+    log level INFO. The root logger does not override this. You have to manually
+    change the log levels here. -->
+    <logger name="akka" level="INFO">
+    <appender-ref ref="console"/>
+    </logger>
+    <logger name="org.apache.kafka" level="INFO">
+    <appender-ref ref="console"/>
+    </logger>
+    <logger name="org.apache.hadoop" level="INFO">
+    <appender-ref ref="console"/>
+    </logger>
+    <logger name="org.apache.zookeeper" level="INFO">
+    <appender-ref ref="console"/>
+    </logger>
+
+    <!-- Suppress the irrelevant (wrong) warnings from the Netty channel handler -->
+    <logger name="org.apache.flink.shaded.akka.org.jboss.netty.channel.DefaultChannelPipeline" level="ERROR">
+    <appender-ref ref="console"/>
+    </logger>
+    </configuration>
+
+  logback-yarn.xml: |+
+    <!--
+    ~ Licensed to the Apache Software Foundation (ASF) under one
+    ~ or more contributor license agreements.  See the NOTICE file
+    ~ distributed with this work for additional information
+    ~ regarding copyright ownership.  The ASF licenses this file
+    ~ to you under the Apache License, Version 2.0 (the
+    ~ "License"); you may not use this file except in compliance
+    ~ with the License.  You may obtain a copy of the License at
+    ~
+    ~     http://www.apache.org/licenses/LICENSE-2.0
+    ~
+    ~ Unless required by applicable law or agreed to in writing, software
+    ~ distributed under the License is distributed on an "AS IS" BASIS,
+    ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    ~ See the License for the specific language governing permissions and
+    ~ limitations under the License.
+    -->
+
+    <configuration>
+    <appender name="file" class="ch.qos.logback.core.FileAppender">
+    <file>${log.file}</file>
+    <append>false</append>
+    <encoder>
+    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{60} %X{sourceThread} - %msg%n</pattern>
+    </encoder>
+    </appender>
+
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+    <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{60} %X{sourceThread} - %msg%n</pattern>
+    </encoder>
+    </appender>
+
+    <logger name="ch.qos.logback" level="WARN"/>
+    <root level="INFO">
+    <appender-ref ref="file"/>
+    <appender-ref ref="console"/>
+    </root>
+    </configuration>
+
+  masters: |+
+    localhost:8081
+
+  slaves: |+
+    localhost
+
+  sql-client-defaults.yaml: |+
+    ################################################################################
+    #  Licensed to the Apache Software Foundation (ASF) under one
+    #  or more contributor license agreements.  See the NOTICE file
+    #  distributed with this work for additional information
+    #  regarding copyright ownership.  The ASF licenses this file
+    #  to you under the Apache License, Version 2.0 (the
+    #  "License"); you may not use this file except in compliance
+    #  with the License.  You may obtain a copy of the License at
+    #
+    #      http://www.apache.org/licenses/LICENSE-2.0
+    #
+    #  Unless required by applicable law or agreed to in writing, software
+    #  distributed under the License is distributed on an "AS IS" BASIS,
+    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    #  See the License for the specific language governing permissions and
+    # limitations under the License.
+    ################################################################################
+
+
+    # This file defines the default environment for Flink's SQL Client.
+    # Defaults might be overwritten by a session specific environment.
+
+
+    # See the Table API & SQL documentation for details about supported properties.
+
+
+    #==============================================================================
+    # Tables
+    #==============================================================================
+
+    # Define tables here such as sources, sinks, views, or temporal tables.
+
+    tables: [] # empty list
+    # A typical table source definition looks like:
+    # - name: ...
+    #   type: source-table
+    #   connector: ...
+    #   format: ...
+    #   schema: ...
+
+    # A typical view definition looks like:
+    # - name: ...
+    #   type: view
+    #   query: "SELECT ..."
+
+    # A typical temporal table definition looks like:
+    # - name: ...
+    #   type: temporal-table
+    #   history-table: ...
+    #   time-attribute: ...
+    #   primary-key: ...
+
+
+    #==============================================================================
+    # User-defined functions
+    #==============================================================================
+
+    # Define scalar, aggregate, or table functions here.
+
+    functions: [] # empty list
+    # A typical function definition looks like:
+    # - name: ...
+    #   from: class
+    #   class: ...
+    #   constructor: ...
+
+
+    #==============================================================================
+    # Catalogs
+    #==============================================================================
+
+    # Define catalogs here.
+
+    catalogs: [] # empty list
+    # A typical catalog definition looks like:
+    #  - name: myhive
+    #    type: hive
+    #    hive-conf-dir: /opt/hive_conf/
+    #    default-database: ...
+
+    #==============================================================================
+    # Modules
+    #==============================================================================
+
+    # Define modules here.
+
+    #modules: # note the following modules will be of the order they are specified
+    #  - name: core
+    #    type: core
+
+    #==============================================================================
+    # Execution properties
+    #==============================================================================
+
+    # Properties that change the fundamental execution behavior of a table program.
+
+    execution:
+      # select the implementation responsible for planning table programs
+      # possible values are 'blink' (used by default) or 'old'
+      planner: blink
+      # 'batch' or 'streaming' execution
+      type: streaming
+      # allow 'event-time' or only 'processing-time' in sources
+      time-characteristic: event-time
+      # interval in ms for emitting periodic watermarks
+      periodic-watermarks-interval: 200
+      # 'changelog' or 'table' presentation of results
+      result-mode: table
+      # maximum number of maintained rows in 'table' presentation of results
+      max-table-result-rows: 1000000
+      # parallelism of the program
+      parallelism: 1
+      # maximum parallelism
+      max-parallelism: 128
+      # minimum idle state retention in ms
+      min-idle-state-retention: 0
+      # maximum idle state retention in ms
+      max-idle-state-retention: 0
+      # current catalog ('default_catalog' by default)
+      current-catalog: default_catalog
+      # current database of the current catalog (default database of the catalog by default)
+      current-database: default_database
+      # controls how table programs are restarted in case of a failures
+      restart-strategy:
+        # strategy type
+        # possible values are "fixed-delay", "failure-rate", "none", or "fallback" (default)
+        type: fallback
+
+    #==============================================================================
+    # Configuration options
+    #==============================================================================
+
+    # Configuration options for adjusting and tuning table programs.
+
+    # A full list of options and their default values can be found
+    # on the dedicated "Configuration" web page.
+
+    # A configuration can look like:
+    # configuration:
+    #   table.exec.spill-compression.enabled: true
+    #   table.exec.spill-compression.block-size: 128kb
+    #   table.optimizer.join-reorder-enabled: true
+
+    #==============================================================================
+    # Deployment properties
+    #==============================================================================
+
+    # Properties that describe the cluster to which table programs are submitted to.
+
+    deployment:
+      # general cluster communication timeout in ms
+      response-timeout: 5000
+      # (optional) address from cluster to gateway
+      gateway-address: ""
+      # (optional) port from cluster to gateway
+      gateway-port: 0
+  zoo.cfg: |+
+    ################################################################################
+    #  Licensed to the Apache Software Foundation (ASF) under one
+    #  or more contributor license agreements.  See the NOTICE file
+    #  distributed with this work for additional information
+    #  regarding copyright ownership.  The ASF licenses this file
+    #  to you under the Apache License, Version 2.0 (the
+    #  "License"); you may not use this file except in compliance
+    #  with the License.  You may obtain a copy of the License at
+    #
+    #      http://www.apache.org/licenses/LICENSE-2.0
+    #
+    #  Unless required by applicable law or agreed to in writing, software
+    #  distributed under the License is distributed on an "AS IS" BASIS,
+    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    #  See the License for the specific language governing permissions and
+    # limitations under the License.
+    ################################################################################
+
+    # The number of milliseconds of each tick
+    tickTime=2000
+
+    # The number of ticks that the initial  synchronization phase can take
+    initLimit=10
+
+    # The number of ticks that can pass between  sending a request and getting an acknowledgement
+    syncLimit=5
+
+    # The directory where the snapshot is stored.
+    # dataDir=/tmp/zookeeper
+
+    # The port at which the clients will connect
+    clientPort=2181
+
+    # ZooKeeper quorum peers
+    server.1=localhost:2888:3888
+    # server.2=host:peer-port:leader-port

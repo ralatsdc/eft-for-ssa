@@ -54,7 +54,7 @@ services:
     volumes:
       - ./checkpoint-dir:/checkpoint-dir
       - ../../orekit-data:/orekit-data
-      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./conf/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
   worker:
     build:
       context: .
@@ -73,5 +73,5 @@ services:
     volumes:
       - ./checkpoint-dir:/checkpoint-dir
       - ../../orekit-data:/orekit-data
-      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./conf/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
 
