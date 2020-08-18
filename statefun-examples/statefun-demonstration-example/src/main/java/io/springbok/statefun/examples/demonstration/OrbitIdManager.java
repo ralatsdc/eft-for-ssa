@@ -1,6 +1,9 @@
 package io.springbok.statefun.examples.demonstration;
 
+import io.springbok.statefun.examples.demonstration.generated.CorrelateOrbitsMessage;
+import io.springbok.statefun.examples.demonstration.generated.NewRefinedOrbitIdMessage;
 import io.springbok.statefun.examples.demonstration.generated.NewTrackMessage;
+import io.springbok.statefun.examples.demonstration.generated.RemoveOrbitIdMessage;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -84,12 +87,12 @@ public class OrbitIdManager implements StatefulFunction {
 
       // Message out that orbit id was saved
       Utilities.sendToDefault(
-          context, String.format("Saved orbitId %s", newRefinedOrbitIdMessage.newOrbitId));
+          context, String.format("Saved orbitId %s", newRefinedOrbitIdMessage.getNewOrbitId()));
 
       // Update orbitIdList with the new orbit
-      orbitIdList.add(newRefinedOrbitIdMessage.newOrbitId);
-      orbitIdList.remove(newRefinedOrbitIdMessage.oldOrbitId1);
-      orbitIdList.remove(newRefinedOrbitIdMessage.oldOrbitId2);
+      orbitIdList.add(newRefinedOrbitIdMessage.getNewOrbitId());
+      orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId1());
+      orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId2());
       Utilities.sendToDefault(context, orbitIdList.toString());
       orbitIds.set(orbitIdList);
     }
@@ -109,25 +112,28 @@ public class OrbitIdManager implements StatefulFunction {
             context.send(OrbitStatefulFunction.TYPE, orbitId, correlateOrbitsMessage);
           });
 
+      KeyedOrbit keyedOrbit = KeyedOrbit.fromString(correlateOrbitsMessage.getStringContent());
+
       // Message out that orbit id was saved
-      Utilities.sendToDefault(
-          context, String.format("Saved orbitId %s", correlateOrbitsMessage.keyedOrbit.orbitId));
+      Utilities.sendToDefault(context, String.format("Saved orbitId %s", keyedOrbit.orbitId));
 
       // Update orbitIdList with the new orbit
-      orbitIdList.add(correlateOrbitsMessage.keyedOrbit.orbitId);
+      orbitIdList.add(keyedOrbit.orbitId);
       orbitIds.set(orbitIdList);
     }
 
     // This message is sent from an OrbitStatefulFunction when that orbit expires. This removes that
     // orbit id from the orbit id list
     if (input instanceof RemoveOrbitIdMessage) {
-      RemoveOrbitIdMessage orbitMessage = (RemoveOrbitIdMessage) input;
+      RemoveOrbitIdMessage removeOrbitIdMessage = (RemoveOrbitIdMessage) input;
+
+      String orbitId = removeOrbitIdMessage.getStringContent();
 
       ArrayList ids = orbitIds.get();
-      ids.remove(orbitMessage.orbitId);
+      ids.remove(orbitId);
 
       // Message out that orbit id was removed
-      Utilities.sendToDefault(context, String.format("Removed orbitId %s", orbitMessage.orbitId));
+      Utilities.sendToDefault(context, String.format("Removed orbitId %s", orbitId));
 
       orbitIds.set(ids);
     }

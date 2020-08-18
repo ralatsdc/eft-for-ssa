@@ -34,5 +34,19 @@ message NewTrackMessage {
   string id = 2;
 }
 
+message CorrelateOrbitsMessage {
+  string stringContent = 1;
+}
+
+message RemoveOrbitIdMessage {
+  string stringContent = 1;
+}
+
+message NewRefinedOrbitIdMessage {
+  string newOrbitId = 1;
+  string oldOrbitId1 = 2;
+  string oldOrbitId2 = 3;
+}
+
 message DelayedDeleteMessage {
 }

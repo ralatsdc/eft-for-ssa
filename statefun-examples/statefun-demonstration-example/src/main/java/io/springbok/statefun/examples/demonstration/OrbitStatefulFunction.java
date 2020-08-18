@@ -1,7 +1,6 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.demonstration.generated.DelayedDeleteMessage;
-import io.springbok.statefun.examples.demonstration.generated.NewTrackMessage;
+import io.springbok.statefun.examples.demonstration.generated.*;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -46,7 +45,10 @@ public class OrbitStatefulFunction implements StatefulFunction {
           TrackStatefulFunction.TYPE, track.trackId, new NewOrbitIdMessage(keyedOrbit.orbitId));
 
       // Send orbit to id manager for correlation and save
-      context.send(OrbitIdManager.TYPE, "orbit-id-manager", new CorrelateOrbitsMessage(keyedOrbit));
+      context.send(
+          OrbitIdManager.TYPE,
+          "orbit-id-manager",
+          CorrelateOrbitsMessage.newBuilder().setStringContent(keyedOrbit.toString()).build());
 
       // Send delete message to self after a certain amount of time
       sendSelfDeleteMessage(context);
@@ -62,10 +64,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
     if (input instanceof DelayedDeleteMessage) {
       KeyedOrbit keyedOrbit = orbitState.get();
 
-      System.out.println(keyedOrbit.toString());
-      System.out.println(KeyedOrbit.fromString(keyedOrbit.toString()).toString());
-
-      RemoveOrbitIdMessage removeOrbitIdMessage = new RemoveOrbitIdMessage(keyedOrbit.orbitId);
+      RemoveOrbitIdMessage removeOrbitIdMessage =
+          RemoveOrbitIdMessage.newBuilder().setStringContent(keyedOrbit.orbitId).build();
 
       // Send message to manager to remove this orbit from list
       context.send(OrbitIdManager.TYPE, "orbit-id-manager", removeOrbitIdMessage);
@@ -87,7 +87,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
     if (input instanceof CorrelateOrbitsMessage) {
       CorrelateOrbitsMessage correlateOrbitsMessage = (CorrelateOrbitsMessage) input;
 
-      KeyedOrbit recievedKeyedOrbit = correlateOrbitsMessage.getKeyedOrbit();
+      KeyedOrbit recievedKeyedOrbit =
+          KeyedOrbit.fromString(correlateOrbitsMessage.getStringContent());
       KeyedOrbit keyedOrbit = orbitState.get();
 
       // Attempt correlation
@@ -142,8 +143,11 @@ public class OrbitStatefulFunction implements StatefulFunction {
               message.keyedOrbitId1, message.keyedOrbitId2, newOrbit.orbitId));
 
       NewRefinedOrbitIdMessage newRefinedOrbitIdMessage =
-          new NewRefinedOrbitIdMessage(
-              newOrbit.orbitId, message.keyedOrbitId1, message.keyedOrbitId2);
+          NewRefinedOrbitIdMessage.newBuilder()
+              .setNewOrbitId(newOrbit.orbitId)
+              .setOldOrbitId1(message.keyedOrbitId1)
+              .setOldOrbitId2(message.keyedOrbitId2)
+              .build();
 
       // Send a message to the OrbitIdManager to save the new orbit id
       context.send(OrbitIdManager.TYPE, "orbit-id-manager", newRefinedOrbitIdMessage);

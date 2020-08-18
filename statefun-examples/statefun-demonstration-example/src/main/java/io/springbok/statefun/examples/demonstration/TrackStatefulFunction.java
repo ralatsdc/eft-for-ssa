@@ -2,6 +2,7 @@ package io.springbok.statefun.examples.demonstration;
 
 import io.springbok.statefun.examples.demonstration.generated.NewTrackMessage;
 import io.springbok.statefun.examples.demonstration.generated.TrackIn;
+import io.springbok.statefun.examples.demonstration.generated.RemoveOrbitIdMessage;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -74,9 +75,11 @@ public class TrackStatefulFunction implements StatefulFunction {
     if (input instanceof RemoveOrbitIdMessage) {
       RemoveOrbitIdMessage removeOrbitIdMessage = (RemoveOrbitIdMessage) input;
 
+      String orbitId = removeOrbitIdMessage.getStringContent();
+
       // Get the trackState and remove the id from it
       Track track = trackState.get();
-      track.removeOrbitId(removeOrbitIdMessage.orbitId);
+      track.removeOrbitId(orbitId);
 
       // TODO: potential problem here. If the manager sends a message to an almost expired
       //     orbit and that orbit successfully compares - we have instance of a track being
@@ -90,9 +93,7 @@ public class TrackStatefulFunction implements StatefulFunction {
       } else {
         trackState.set(track);
         Utilities.sendToDefault(
-            context,
-            String.format(
-                "Removed orbitId %s from trackId %s", removeOrbitIdMessage.orbitId, track.trackId));
+            context, String.format("Removed orbitId %s from trackId %s", orbitId, track.trackId));
       }
     }
 
