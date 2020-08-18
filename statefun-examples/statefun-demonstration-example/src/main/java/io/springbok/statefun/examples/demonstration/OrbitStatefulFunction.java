@@ -1,6 +1,7 @@
 package io.springbok.statefun.examples.demonstration;
 
 import io.springbok.statefun.examples.demonstration.generated.DelayedDeleteMessage;
+import io.springbok.statefun.examples.demonstration.generated.NewTrackMessage;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -30,19 +31,19 @@ public class OrbitStatefulFunction implements StatefulFunction {
   @Override
   public void invoke(Context context, Object input) {
 
-    // TrackIn is a message from the TrackStateful Function. This constructs a new KeyedOrbit from
+    // TrackIn is a message from the TrackStatefulFunction. This constructs a new KeyedOrbit from
     // incoming data
     if (input instanceof NewTrackMessage) {
       NewTrackMessage newTrackMessage = (NewTrackMessage) input;
 
+      Track track = Track.fromString(newTrackMessage.getStringTrack(), newTrackMessage.getId());
+
       // Create KeyedOrbit
-      KeyedOrbit keyedOrbit = OrbitFactory.createOrbit(newTrackMessage.track, context.self().id());
+      KeyedOrbit keyedOrbit = OrbitFactory.createOrbit(track, context.self().id());
 
       // Send new orbit id to TrackStatefulFunction
       context.send(
-          TrackStatefulFunction.TYPE,
-          newTrackMessage.track.trackId,
-          new NewOrbitIdMessage(keyedOrbit.orbitId));
+          TrackStatefulFunction.TYPE, track.trackId, new NewOrbitIdMessage(keyedOrbit.orbitId));
 
       // Send orbit to id manager for correlation and save
       context.send(OrbitIdManager.TYPE, "orbit-id-manager", new CorrelateOrbitsMessage(keyedOrbit));
@@ -60,6 +61,9 @@ public class OrbitStatefulFunction implements StatefulFunction {
     // This message is sent from this instance of the OrbitStatefulFunction after a period of time
     if (input instanceof DelayedDeleteMessage) {
       KeyedOrbit keyedOrbit = orbitState.get();
+
+      System.out.println(keyedOrbit.toString());
+      System.out.println(KeyedOrbit.fromString(keyedOrbit.toString()).toString());
 
       RemoveOrbitIdMessage removeOrbitIdMessage = new RemoveOrbitIdMessage(keyedOrbit.orbitId);
 

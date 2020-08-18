@@ -29,5 +29,10 @@ message DefaultOut {
   string content = 1;
 }
 
+message NewTrackMessage {
+  string stringTrack = 1;
+  string id = 2;
+}
+
 message DelayedDeleteMessage {
 }

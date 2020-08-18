@@ -1,5 +1,6 @@
 package io.springbok.statefun.examples.demonstration;
 
+import io.springbok.statefun.examples.demonstration.generated.NewTrackMessage;
 import io.springbok.statefun.examples.demonstration.generated.TrackIn;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -36,8 +37,14 @@ public class TrackStatefulFunction implements StatefulFunction {
       // Create track from input
       Track track = Track.fromString(trackIn.getTrack(), context.self().id());
 
+      NewTrackMessage newTrackMessage =
+          NewTrackMessage.newBuilder()
+              .setStringTrack(track.toString())
+              .setId(track.trackId)
+              .build();
+
       // Send message to the OrbitIdManager that a new track was created
-      context.send(OrbitIdManager.TYPE, "orbit-id-manager", new NewTrackMessage(track));
+      context.send(OrbitIdManager.TYPE, "orbit-id-manager", newTrackMessage);
 
       // Send message out that track was created
       Utilities.sendToDefault(context, String.format("Created track for id %s", track.trackId));

@@ -17,6 +17,7 @@ import org.orekit.propagation.conversion.DormandPrince54IntegratorBuilder;
 import org.orekit.propagation.conversion.NumericalPropagatorBuilder;
 import org.orekit.propagation.integration.AbstractIntegratedPropagator;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 
 import java.io.File;
@@ -147,6 +148,21 @@ public class OrbitFactory {
     // Run least squares fit
     AbstractIntegratedPropagator[] lsPropagators = leastSquares.estimate();
     Orbit orbit = lsPropagators[0].getInitialState().getOrbit();
+    return orbit;
+  }
+
+  public static Orbit fromTokens(String[] tokens) {
+
+    double a = Double.parseDouble(tokens[0]);
+    double e = Double.parseDouble(tokens[1]);
+    double i = Double.parseDouble(tokens[2]);
+    double pa = Double.parseDouble(tokens[3]);
+    double raan = Double.parseDouble(tokens[4]);
+    double v = Double.parseDouble(tokens[5]);
+    AbsoluteDate date = new AbsoluteDate(tokens[6], TimeScalesFactory.getUTC());
+
+    Orbit orbit =
+        new KeplerianOrbit(a, e, i, pa, raan, v, PositionAngle.TRUE, inertialFrame, date, mu);
     return orbit;
   }
 }
