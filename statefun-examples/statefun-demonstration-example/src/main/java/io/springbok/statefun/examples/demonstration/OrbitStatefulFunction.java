@@ -42,7 +42,9 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
       // Send new orbit id to TrackStatefulFunction
       context.send(
-          TrackStatefulFunction.TYPE, track.trackId, new NewOrbitIdMessage(keyedOrbit.orbitId));
+          TrackStatefulFunction.TYPE,
+          track.trackId,
+          NewOrbitIdMessage.newBuilder().setId(keyedOrbit.orbitId).build());
 
       // Send orbit to id manager for correlation and save
       context.send(
@@ -154,7 +156,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
       // Send orbitId to each TrackStatefulFunction associated with this orbit to save it in each
       // one
-      NewOrbitIdMessage newOrbitIdMessage = new NewOrbitIdMessage(newOrbit.orbitId);
+      NewOrbitIdMessage newOrbitIdMessage =
+          NewOrbitIdMessage.newBuilder().setId(newOrbit.orbitId).build();
       newOrbit.trackIds.forEach(
           id -> {
             context.send(TrackStatefulFunction.TYPE, id, newOrbitIdMessage);

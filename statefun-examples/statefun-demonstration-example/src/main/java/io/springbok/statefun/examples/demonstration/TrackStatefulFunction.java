@@ -1,8 +1,9 @@
 package io.springbok.statefun.examples.demonstration;
 
+import io.springbok.statefun.examples.demonstration.generated.NewOrbitIdMessage;
 import io.springbok.statefun.examples.demonstration.generated.NewTrackMessage;
-import io.springbok.statefun.examples.demonstration.generated.TrackIn;
 import io.springbok.statefun.examples.demonstration.generated.RemoveOrbitIdMessage;
+import io.springbok.statefun.examples.demonstration.generated.TrackIn;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -60,12 +61,13 @@ public class TrackStatefulFunction implements StatefulFunction {
 
       // Get the trackState and update it with the new id
       Track track = trackState.get();
-      track.addOrbitId(newOrbitIdMessage.id);
+      track.addOrbitId(newOrbitIdMessage.getId());
 
       // Send message out that orbitId was added
       Utilities.sendToDefault(
           context,
-          String.format("Added orbitId %s to trackId %s", newOrbitIdMessage.id, track.trackId));
+          String.format(
+              "Added orbitId %s to trackId %s", newOrbitIdMessage.getId(), track.trackId));
 
       // Set persisted state
       trackState.set(track);

@@ -42,6 +42,10 @@ message RemoveOrbitIdMessage {
   string stringContent = 1;
 }
 
+message NewOrbitIdMessage {
+  string id = 1;
+}
+
 message NewRefinedOrbitIdMessage {
   string newOrbitId = 1;
   string oldOrbitId1 = 2;
