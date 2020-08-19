@@ -92,14 +92,8 @@ public class UnitTests {
 
     // Test track collection
     Assert.assertTrue(
-        testConsumer.messages.contains(
-                "Added track with id 1 to collectedTracksMessage with orbit ids 0 and 1")
-            || testConsumer.messages.contains(
-                "Added track with id 1 to collectedTracksMessage with orbit ids 1 and 0")
-            || testConsumer.messages.contains(
-                "Added track with id 0 to collectedTracksMessage with orbit ids 0 and 1")
-            || testConsumer.messages.contains(
-                "Added track with id 0 to collectedTracksMessage with orbit ids 1 and 0"));
+        testConsumer.messages.contains("Added track with id 1 to collectedTracksMessage")
+            || testConsumer.messages.contains("Added track with id 0 to collectedTracksMessage"));
 
     // Test new orbit creation flow
     Assert.assertTrue(

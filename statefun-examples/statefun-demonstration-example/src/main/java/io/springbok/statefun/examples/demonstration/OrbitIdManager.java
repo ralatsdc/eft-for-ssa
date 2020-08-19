@@ -1,9 +1,6 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.demonstration.generated.CorrelateOrbitsMessage;
-import io.springbok.statefun.examples.demonstration.generated.NewRefinedOrbitIdMessage;
-import io.springbok.statefun.examples.demonstration.generated.NewTrackMessage;
-import io.springbok.statefun.examples.demonstration.generated.RemoveOrbitIdMessage;
+import io.springbok.statefun.examples.demonstration.generated.*;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -67,11 +64,7 @@ public class OrbitIdManager implements StatefulFunction {
       context.send(OrbitStatefulFunction.TYPE, String.valueOf(id), collectedTracksMessage);
 
       // Message out that orbit id was created
-      Utilities.sendToDefault(
-          context,
-          String.format(
-              "Created orbitId %s refined from orbits with ids %s and %s",
-              id, collectedTracksMessage.keyedOrbitId1, collectedTracksMessage.keyedOrbitId2));
+      Utilities.sendToDefault(context, String.format("Created orbitId %s", id));
 
       // Set persisted state
       lastOrbitId.set(id);

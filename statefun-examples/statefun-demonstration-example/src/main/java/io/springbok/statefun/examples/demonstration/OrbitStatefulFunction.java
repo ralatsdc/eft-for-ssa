@@ -8,6 +8,7 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
 import java.time.Duration;
+import java.util.ArrayList;
 
 /*
  TrackStatefulFunction stores instances of the KeyedOrbit class built from the data it receives from the OrbitIdManager.
@@ -108,12 +109,18 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
         // CollectedTracksMessage gathers all Tracks from one orbit, and keeps the orbit of the
         // other to refine with a least squares
+        ArrayList<String> trackIds = new ArrayList<>(keyedOrbit.trackIds);
+        String nextTrack = trackIds.get(0);
+        trackIds.remove(0);
+
         CollectedTracksMessage collectedTracksMessage =
-            new CollectedTracksMessage(recievedKeyedOrbit, keyedOrbit);
-        context.send(
-            TrackStatefulFunction.TYPE,
-            collectedTracksMessage.getNextTrackId(),
-            collectedTracksMessage);
+            CollectedTracksMessage.newBuilder()
+                .setKeyedOrbit1(recievedKeyedOrbit.toString())
+                .setKeyedOrbit2(keyedOrbit.toString())
+                .setRemainingTracksToGather(Utilities.arrayListToString(trackIds))
+                .build();
+
+        context.send(TrackStatefulFunction.TYPE, nextTrack, collectedTracksMessage);
       } else {
         // Send message out that correlation not successful
         Utilities.sendToDefault(
@@ -127,28 +134,36 @@ public class OrbitStatefulFunction implements StatefulFunction {
     // CollectedTracksMessage is received in a new OrbitStatefulFunction created by the
     // OrbitIdManager once all tracks are collected
     if (input instanceof CollectedTracksMessage) {
-      CollectedTracksMessage message = (CollectedTracksMessage) input;
+      CollectedTracksMessage collectedTracksMessage = (CollectedTracksMessage) input;
+
+      KeyedOrbit keyedOrbit1 = KeyedOrbit.fromString(collectedTracksMessage.getKeyedOrbit1());
+      KeyedOrbit keyedOrbit2 = KeyedOrbit.fromString(collectedTracksMessage.getKeyedOrbit2());
+
+      ArrayList<String> stringTracks =
+          Utilities.stringToArrayList(collectedTracksMessage.getCollectedTracks());
+      ArrayList<Track> collectedTracks = new ArrayList<>();
+
+      for (int j = 0; j < stringTracks.size(); j++) {
+        collectedTracks.add(Track.fromString(stringTracks.remove(j), keyedOrbit2.trackIds.get(j)));
+      }
 
       // Create new KeyedOrbit by refining with new tracks
       KeyedOrbit newOrbit =
           OrbitFactory.refineOrbit(
-              message.orbit1,
-              message.keyedOrbit1TrackIds,
-              message.keyedOrbit2Tracks,
-              context.self().id());
+              keyedOrbit1.orbit, keyedOrbit1.trackIds, collectedTracks, context.self().id());
 
       // Send message out that orbit was refined
       Utilities.sendToDefault(
           context,
           String.format(
               "Refined orbits with ids %s and %s to create orbit with id %s",
-              message.keyedOrbitId1, message.keyedOrbitId2, newOrbit.orbitId));
+              keyedOrbit1.orbitId, keyedOrbit2.orbitId, newOrbit.orbitId));
 
       NewRefinedOrbitIdMessage newRefinedOrbitIdMessage =
           NewRefinedOrbitIdMessage.newBuilder()
               .setNewOrbitId(newOrbit.orbitId)
-              .setOldOrbitId1(message.keyedOrbitId1)
-              .setOldOrbitId2(message.keyedOrbitId2)
+              .setOldOrbitId1(keyedOrbit1.orbitId)
+              .setOldOrbitId2(keyedOrbit2.orbitId)
               .build();
 
       // Send a message to the OrbitIdManager to save the new orbit id

@@ -1,14 +1,13 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.demonstration.generated.NewOrbitIdMessage;
-import io.springbok.statefun.examples.demonstration.generated.NewTrackMessage;
-import io.springbok.statefun.examples.demonstration.generated.RemoveOrbitIdMessage;
-import io.springbok.statefun.examples.demonstration.generated.TrackIn;
+import io.springbok.statefun.examples.demonstration.generated.*;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+
+import java.util.ArrayList;
 
 /*
  TrackStatefulFunction stores instances of the Track class built from the data it receives from the TrackIdManager.
@@ -106,28 +105,53 @@ public class TrackStatefulFunction implements StatefulFunction {
 
       // Get the trackState and add it to the incoming message
       Track track = trackState.get();
-      collectedTracksMessage.addTrack(track);
+
+      String collectedTracks;
+
+      if (collectedTracksMessage.getCollectedTracks() == null) {
+        collectedTracks = track.toString();
+      } else {
+        ArrayList<String> trackArray =
+            Utilities.stringToArrayList(collectedTracksMessage.getCollectedTracks());
+        trackArray.add(track.toString());
+        collectedTracks = Utilities.arrayListToString(trackArray);
+      }
 
       // Send message out
       Utilities.sendToDefault(
           context,
-          String.format(
-              "Added track with id %s to collectedTracksMessage with orbit ids %s and %s",
-              track.trackId,
-              collectedTracksMessage.keyedOrbitId1,
-              collectedTracksMessage.keyedOrbitId2));
+          String.format("Added track with id %s to collectedTracksMessage", track.trackId));
+
+      ArrayList<String> remainingTracks =
+          Utilities.stringToArrayList(collectedTracksMessage.getRemainingTracksToGather());
 
       // If the CollectedTracksMessage still needs to collect more tracks, forward it to the next
       // track, otherwise send it to get a new id
-      if (collectedTracksMessage.hasNextTrackId()) {
+
+      if (remainingTracks.size() > 0) {
         // Send to next track on list
-        context.send(
-            TrackStatefulFunction.TYPE,
-            collectedTracksMessage.getNextTrackId(),
-            collectedTracksMessage);
+
+        String trackId = remainingTracks.remove(0);
+
+        CollectedTracksMessage newCollectedTracksMessage =
+            CollectedTracksMessage.newBuilder()
+                .setKeyedOrbit1(collectedTracksMessage.getKeyedOrbit1())
+                .setKeyedOrbit2(collectedTracksMessage.getKeyedOrbit2())
+                .setRemainingTracksToGather(Utilities.arrayListToString(remainingTracks))
+                .setCollectedTracks(collectedTracks)
+                .build();
+
+        context.send(TrackStatefulFunction.TYPE, trackId, newCollectedTracksMessage);
       } else {
+
+        CollectedTracksMessage newCollectedTracksMessage =
+            CollectedTracksMessage.newBuilder()
+                .setKeyedOrbit1(collectedTracksMessage.getKeyedOrbit1())
+                .setKeyedOrbit2(collectedTracksMessage.getKeyedOrbit2())
+                .setCollectedTracks(collectedTracks)
+                .build();
         // Route to orbitIdManager to get an ID for the new orbit
-        context.send(OrbitIdManager.TYPE, "orbit-id-manager", collectedTracksMessage);
+        context.send(OrbitIdManager.TYPE, "orbit-id-manager", newCollectedTracksMessage);
       }
     }
   }
