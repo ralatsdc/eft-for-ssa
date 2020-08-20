@@ -128,13 +128,8 @@ public class TrackStatefulFunction implements StatefulFunction {
       // If the CollectedTracksMessage still needs to collect more tracks, forward it to the next
       // track, otherwise send it to get a new id
 
-      System.out.println("remainingTracks: " + tracksToGather);
-      System.out.println("remainingTracks.size(): " + tracksToGather.size());
-
-      if (tracksToGather.size() == collectedTracksMessage.getIterator()) {
+      if (tracksToGather.size() > collectedTracksMessage.getIterator()) {
         // Send to next track on list
-
-        String trackId = tracksToGather.remove(0);
 
         CollectedTracksMessage newCollectedTracksMessage =
             CollectedTracksMessage.newBuilder()
@@ -145,7 +140,10 @@ public class TrackStatefulFunction implements StatefulFunction {
                 .setIterator(collectedTracksMessage.getIterator() + 1)
                 .build();
 
-        context.send(TrackStatefulFunction.TYPE, trackId, newCollectedTracksMessage);
+        context.send(
+            TrackStatefulFunction.TYPE,
+            tracksToGather.get(collectedTracksMessage.getIterator()),
+            newCollectedTracksMessage);
       } else {
 
         CollectedTracksMessage newCollectedTracksMessage =
