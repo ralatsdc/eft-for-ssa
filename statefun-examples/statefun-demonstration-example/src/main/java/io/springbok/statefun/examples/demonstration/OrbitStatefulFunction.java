@@ -111,13 +111,13 @@ public class OrbitStatefulFunction implements StatefulFunction {
         // other to refine with a least squares
         ArrayList<String> trackIds = new ArrayList<>(keyedOrbit.trackIds);
         String nextTrack = trackIds.get(0);
-        trackIds.remove(0);
 
         CollectedTracksMessage collectedTracksMessage =
             CollectedTracksMessage.newBuilder()
                 .setKeyedOrbit1(recievedKeyedOrbit.toString())
                 .setKeyedOrbit2(keyedOrbit.toString())
-                .setRemainingTracksToGather(Utilities.arrayListToString(trackIds))
+                .setTracksToGather(Utilities.arrayListToString(trackIds))
+                .setIterator(1)
                 .build();
 
         context.send(TrackStatefulFunction.TYPE, nextTrack, collectedTracksMessage);

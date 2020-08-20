@@ -30,7 +30,7 @@ spec:
               value: master
             - name: ROLE
               value: master
-          image: spearw/eft-for-ssa:statefun-demonstration-example_master
+          image: spearw/eft-for-ssa:protobuf-master
           imagePullPolicy: ""
           name: master
           ports:

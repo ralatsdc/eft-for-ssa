@@ -55,8 +55,9 @@ message NewRefinedOrbitIdMessage {
 message CollectedTracksMessage {
   string keyedOrbit1 = 1;
   string keyedOrbit2 = 2;
-  string remainingTracksToGather = 3;
+  string tracksToGather = 3;
   string collectedTracks = 4;
+  int32 iterator = 5;
 }
 
 message DelayedDeleteMessage {

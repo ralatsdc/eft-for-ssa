@@ -122,23 +122,27 @@ public class TrackStatefulFunction implements StatefulFunction {
           context,
           String.format("Added track with id %s to collectedTracksMessage", track.trackId));
 
-      ArrayList<String> remainingTracks =
-          Utilities.stringToArrayList(collectedTracksMessage.getRemainingTracksToGather());
+      ArrayList<String> tracksToGather =
+          Utilities.stringToArrayList(collectedTracksMessage.getTracksToGather());
 
       // If the CollectedTracksMessage still needs to collect more tracks, forward it to the next
       // track, otherwise send it to get a new id
 
-      if (remainingTracks.size() > 0) {
+      System.out.println("remainingTracks: " + tracksToGather);
+      System.out.println("remainingTracks.size(): " + tracksToGather.size());
+
+      if (tracksToGather.size() == collectedTracksMessage.getIterator()) {
         // Send to next track on list
 
-        String trackId = remainingTracks.remove(0);
+        String trackId = tracksToGather.remove(0);
 
         CollectedTracksMessage newCollectedTracksMessage =
             CollectedTracksMessage.newBuilder()
                 .setKeyedOrbit1(collectedTracksMessage.getKeyedOrbit1())
                 .setKeyedOrbit2(collectedTracksMessage.getKeyedOrbit2())
-                .setRemainingTracksToGather(Utilities.arrayListToString(remainingTracks))
+                .setTracksToGather(Utilities.arrayListToString(tracksToGather))
                 .setCollectedTracks(collectedTracks)
+                .setIterator(collectedTracksMessage.getIterator() + 1)
                 .build();
 
         context.send(TrackStatefulFunction.TYPE, trackId, newCollectedTracksMessage);
