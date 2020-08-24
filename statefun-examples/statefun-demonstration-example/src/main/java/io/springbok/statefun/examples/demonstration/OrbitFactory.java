@@ -153,6 +153,8 @@ public class OrbitFactory {
 
   public static Orbit fromTokens(String[] tokens) {
 
+    init();
+
     double a = Double.parseDouble(tokens[0]);
     double e = Double.parseDouble(tokens[1]);
     double i = Double.parseDouble(tokens[2]);
