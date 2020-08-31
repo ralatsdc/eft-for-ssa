@@ -19,7 +19,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
   // This FunctionType binding is used in the Demonstration module
   public static final FunctionType TYPE = new FunctionType("springbok", "orbit-stateful-function");
 
-  public static int deleteTimer = 320;
+  public static int deleteTimer = 6;
 
   // PersistedValues can be stored and recalled when this StatefulFunction is invoked
   @Persisted
@@ -123,11 +123,18 @@ public class OrbitStatefulFunction implements StatefulFunction {
         context.send(TrackStatefulFunction.TYPE, nextTrack, collectedTracksMessage);
       } else {
         // Send message out that correlation not successful
-        Utilities.sendToDefault(
-            context,
-            String.format(
-                "Not correlated orbits with ids %s and %s",
-                recievedKeyedOrbit.orbitId, keyedOrbit.orbitId));
+        try {
+          Utilities.sendToDefault(
+              context,
+              String.format(
+                  "Not correlated orbits with ids %s and %s",
+                  recievedKeyedOrbit.orbitId, keyedOrbit.orbitId));
+        } catch (Exception ExpiredOrbitException) {
+          Utilities.sendToDefault(
+              context,
+              String.format(
+                  "Not correlated orbits - orbit with id %s has expired", context.self().id()));
+        }
       }
     }
 
