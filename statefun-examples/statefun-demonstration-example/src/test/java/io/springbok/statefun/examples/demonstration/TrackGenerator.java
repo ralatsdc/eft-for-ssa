@@ -249,7 +249,7 @@ public class TrackGenerator {
     return message;
   }
 
-  ArrayList<TLE> convertTLES(File tleData) throws IOException {
+  public static ArrayList<TLE> convertTLES(File tleData) throws IOException {
 
     ArrayList<TLE> tles = new ArrayList<TLE>();
     BufferedReader tleReader;

@@ -19,7 +19,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
   // This FunctionType binding is used in the Demonstration module
   public static final FunctionType TYPE = new FunctionType("springbok", "orbit-stateful-function");
 
-  public static int deleteTimer = 6;
+  public static int deleteTimer = 320;
 
   // PersistedValues can be stored and recalled when this StatefulFunction is invoked
   @Persisted

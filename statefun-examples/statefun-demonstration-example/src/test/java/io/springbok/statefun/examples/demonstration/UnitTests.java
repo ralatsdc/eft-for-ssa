@@ -4,7 +4,11 @@ import org.apache.flink.statefun.flink.harness.Harness;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.orekit.orbits.KeplerianOrbit;
+import org.orekit.orbits.PositionAngle;
+import org.orekit.propagation.analytical.tle.TLE;
 
+import java.io.File;
 import java.util.ArrayList;
 
 /*
@@ -13,10 +17,11 @@ import java.util.ArrayList;
 public class UnitTests {
 
   static TrackGenerator trackGenerator;
+  static String tlePath = "../../tle-data/globalstar_tles_05_18_2020.txt";
 
   @BeforeClass
   public static void setUp() throws Exception {
-    trackGenerator = new TrackGenerator("../../tle-data/globalstar_tles_05_18_2020.txt");
+    trackGenerator = new TrackGenerator(tlePath);
     trackGenerator.init();
     trackGenerator.finitePropagation();
   }
@@ -108,5 +113,44 @@ public class UnitTests {
 
     Assert.assertTrue(testConsumer.messages.contains("Cleared track for trackId 0"));
     Assert.assertTrue(testConsumer.messages.contains("Cleared track for trackId 1"));
+  }
+
+  @Test
+  public void testTrackMessages() throws Exception {
+
+    final File tleData = new File(tlePath);
+    ArrayList<TLE> tles = TrackGenerator.convertTLES(tleData);
+    TLE tle = tles.get(0);
+
+    int satelliteNumber = tle.getSatelliteNumber();
+    String trackObject = trackGenerator.getMessagesById(satelliteNumber).get(0);
+    Track track = Track.fromString(trackObject, "0");
+
+    KeyedOrbit keyedOrbit = OrbitFactory.createOrbit(track, "0");
+    KeplerianOrbit orbit = (KeplerianOrbit) keyedOrbit.orbit;
+
+    System.out.println(orbit);
+    System.out.println(orbit.getPerigeeArgument());
+    System.out.println(tle.getPerigeeArgument());
+
+    System.out.println(orbit.getRightAscensionOfAscendingNode());
+    System.out.println(tle.getRaan());
+
+    // Assert true within 1000th of the value
+    Assert.assertTrue(
+        "Eccentricity",
+        tle.getE() - tle.getE() / 1000 < orbit.getE()
+            && orbit.getE() < tle.getE() + tle.getE() / 1000);
+
+    Assert.assertTrue(
+        "Inclination",
+        tle.getI() - tle.getI() / 1000 < orbit.getI()
+            && orbit.getI() < tle.getI() + tle.getI() / 1000);
+
+    Assert.assertTrue(
+        "Anomaly",
+        tle.getMeanAnomaly() - tle.getMeanAnomaly() / 1000 < orbit.getAnomaly(PositionAngle.MEAN)
+            && orbit.getAnomaly(PositionAngle.MEAN)
+                < tle.getMeanAnomaly() + tle.getMeanAnomaly() / 1000);
   }
 }
