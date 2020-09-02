@@ -30,7 +30,7 @@ import java.util.ArrayList;
 public class OrbitFactory {
 
   // Gravitation coefficient
-  static final double mu = Constants.IERS2010_EARTH_MU;
+  public static final double mu = Constants.IERS2010_EARTH_MU;
 
   // Inertial frame
   static final Frame inertialFrame = FramesFactory.getGCRF();
@@ -164,7 +164,7 @@ public class OrbitFactory {
     AbsoluteDate date = new AbsoluteDate(tokens[6], TimeScalesFactory.getUTC());
 
     Orbit orbit =
-        new KeplerianOrbit(a, e, i, pa, raan, v, PositionAngle.TRUE, inertialFrame, date, mu);
+        new KeplerianOrbit(a, e, i, pa, raan, v, PositionAngle.MEAN, inertialFrame, date, mu);
     return orbit;
   }
 }

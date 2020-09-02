@@ -120,37 +120,75 @@ public class UnitTests {
 
     final File tleData = new File(tlePath);
     ArrayList<TLE> tles = TrackGenerator.convertTLES(tleData);
-    TLE tle = tles.get(0);
+    tles.forEach(
+        tle -> {
+          int satelliteNumber = tle.getSatelliteNumber();
+          String trackObject = trackGenerator.getMessagesById(satelliteNumber).get(0);
+          Track track = Track.fromString(trackObject, "0");
 
-    int satelliteNumber = tle.getSatelliteNumber();
-    String trackObject = trackGenerator.getMessagesById(satelliteNumber).get(0);
-    Track track = Track.fromString(trackObject, "0");
+          KeyedOrbit keyedOrbit = OrbitFactory.createOrbit(track, "0");
+          KeplerianOrbit orbit = (KeplerianOrbit) keyedOrbit.orbit;
 
-    KeyedOrbit keyedOrbit = OrbitFactory.createOrbit(track, "0");
-    KeplerianOrbit orbit = (KeplerianOrbit) keyedOrbit.orbit;
+          System.out.println(orbit);
+          System.out.println(tle);
 
-    System.out.println(orbit);
-    System.out.println(orbit.getPerigeeArgument());
-    System.out.println(tle.getPerigeeArgument());
+          double a = orbit.getA();
+          double e = orbit.getE();
+          double i = orbit.getI();
+          double orbitPerigee = orbit.getPerigeeArgument();
+          if (orbitPerigee < 0) {
+            orbitPerigee = orbitPerigee + 2 * Math.PI;
+          }
+          double raan = orbit.getRightAscensionOfAscendingNode();
+          if (raan < 0) {
+            raan = raan + 2 * Math.PI;
+          }
+          double anomaly = orbit.getAnomaly(PositionAngle.MEAN);
+          if (anomaly < 0) {
+            anomaly = anomaly + 2 * Math.PI;
+          }
 
-    System.out.println(orbit.getRightAscensionOfAscendingNode());
-    System.out.println(tle.getRaan());
+          final double tleA =
+              (Math.cbrt(OrbitFactory.mu))
+                  / (Math.cbrt(Math.pow(tle.getMeanMotion(), 2))); // semi major axis in M
 
-    // Assert true within 1000th of the value
-    Assert.assertTrue(
-        "Eccentricity",
-        tle.getE() - tle.getE() / 1000 < orbit.getE()
-            && orbit.getE() < tle.getE() + tle.getE() / 1000);
+          System.out.println(a);
+          System.out.println(tleA);
+          System.out.println(e);
+          System.out.println(tle.getE());
 
-    Assert.assertTrue(
-        "Inclination",
-        tle.getI() - tle.getI() / 1000 < orbit.getI()
-            && orbit.getI() < tle.getI() + tle.getI() / 1000);
+          System.out.println(orbitPerigee);
+          System.out.println(tle.getPerigeeArgument());
+          System.out.println(raan);
+          System.out.println(tle.getRaan());
+          System.out.println(anomaly);
+          System.out.println(tle.getMeanAnomaly());
 
-    Assert.assertTrue(
-        "Anomaly",
-        tle.getMeanAnomaly() - tle.getMeanAnomaly() / 1000 < orbit.getAnomaly(PositionAngle.MEAN)
-            && orbit.getAnomaly(PositionAngle.MEAN)
-                < tle.getMeanAnomaly() + tle.getMeanAnomaly() / 1000);
+          System.out.println(orbit.getDate());
+          System.out.println(tle.getDate());
+
+          // Assert true within 1000th of the value
+          Assert.assertTrue("Semimajor Axis", tleA - tleA / 1000 < a && a < tleA + tleA / 1000);
+
+          Assert.assertTrue(
+              "Eccentricity",
+              tle.getE() - tle.getE() / 1000 < e && e < tle.getE() + tle.getE() / 1000);
+
+          Assert.assertTrue(
+              "Inclination",
+              tle.getI() - tle.getI() / 1000 < i && i < tle.getI() + tle.getI() / 1000);
+
+          Assert.assertEquals(tle.getPerigeeArgument(), orbitPerigee, 0.0001);
+
+          Assert.assertTrue(
+              "RAAN",
+              tle.getRaan() - tle.getRaan() / 1000 < raan
+                  && raan < tle.getRaan() + tle.getRaan() / 1000);
+
+          Assert.assertTrue(
+              "Anomaly",
+              tle.getMeanAnomaly() - tle.getMeanAnomaly() / 1000 < anomaly
+                  && anomaly < tle.getMeanAnomaly() + tle.getMeanAnomaly() / 1000);
+        });
   }
 }
