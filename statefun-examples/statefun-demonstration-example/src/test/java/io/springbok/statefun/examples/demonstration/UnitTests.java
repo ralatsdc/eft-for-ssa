@@ -129,9 +129,6 @@ public class UnitTests {
           KeyedOrbit keyedOrbit = OrbitFactory.createOrbit(track, "0");
           KeplerianOrbit orbit = (KeplerianOrbit) keyedOrbit.orbit;
 
-          System.out.println(orbit);
-          System.out.println(tle);
-
           double a = orbit.getA();
           double e = orbit.getE();
           double i = orbit.getI();
@@ -151,21 +148,6 @@ public class UnitTests {
           final double tleA =
               (Math.cbrt(OrbitFactory.mu))
                   / (Math.cbrt(Math.pow(tle.getMeanMotion(), 2))); // semi major axis in M
-
-          System.out.println(a);
-          System.out.println(tleA);
-          System.out.println(e);
-          System.out.println(tle.getE());
-
-          System.out.println(orbitPerigee);
-          System.out.println(tle.getPerigeeArgument());
-          System.out.println(raan);
-          System.out.println(tle.getRaan());
-          System.out.println(anomaly);
-          System.out.println(tle.getMeanAnomaly());
-
-          System.out.println(orbit.getDate());
-          System.out.println(tle.getDate());
 
           // Assert true within 1000th of the value
           Assert.assertTrue("Semimajor Axis", tleA - tleA / 1000 < a && a < tleA + tleA / 1000);
