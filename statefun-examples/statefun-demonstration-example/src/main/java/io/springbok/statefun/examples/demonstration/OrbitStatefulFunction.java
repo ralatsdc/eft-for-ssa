@@ -200,5 +200,6 @@ public class OrbitStatefulFunction implements StatefulFunction {
   private void sendSelfDeleteMessage(Context context) {
     context.sendAfter(
         Duration.ofSeconds(deleteTimer), context.self(), DelayedDeleteMessage.newBuilder().build());
+        Duration.ofSeconds(30), context.self(), DelayedDeleteMessage.newBuilder().build());
   }
 }
