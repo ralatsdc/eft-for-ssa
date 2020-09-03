@@ -37,25 +37,18 @@ public class TrackStatefulFunction implements StatefulFunction {
 
       Utilities.sendToDefault(
           context,
-          String.format("Added orbitId %s for trackId %s", newOrbitIdMessage.id, track.trackId));
+          String.format("Added orbitId %s to trackId %s", newOrbitIdMessage.id, track.trackId));
 
       trackState.set(track);
     }
 
-    //    if (input instanceof AddOrbitMessage) {
-    //      Tracklet tracklet = trackState.get();
-    //      AddOrbitMessage orbitMessage = (AddOrbitMessage) input;
-    //      Long orbitId = orbitMessage.getOrbitId();
-    //      tracklet.addOrbit(orbitId);
-    //      trackState.set(tracklet);
-    //    }
     if (input instanceof RemoveOrbitIdMessage) {
       RemoveOrbitIdMessage removeOrbitIdMessage = (RemoveOrbitIdMessage) input;
       Track track = trackState.get();
       track.removeOrbitId(removeOrbitIdMessage.orbitId);
 
       // TODO: potential problem here. If the manager sends a message to an almost expired
-      //     orbit and that orbit successfully compares - we have instance of a tracklet being
+      //     orbit and that orbit successfully compares - we have instance of a track being
       // cleared before it can give itself to the refined orbit calculation
 
       if (track.getOrbitIds().size() == 0) {
@@ -70,24 +63,29 @@ public class TrackStatefulFunction implements StatefulFunction {
                 "Removed orbitId %s from trackId %s", removeOrbitIdMessage.orbitId, track.trackId));
       }
     }
-    //    if (input instanceof CollectedTrackletsMessage) {
-    //      Tracklet tracklet = trackState.get();
-    //      CollectedTrackletsMessage collectedTrackletsMessage = (CollectedTrackletsMessage) input;
-    //      collectedTrackletsMessage.addTracklet(tracklet);
-    //      collectedTrackletsMessage.removeTrackletId(tracklet.getId());
-    //      if (collectedTrackletsMessage.emptyIdList()) {
-    //        // Route back to orbit to do calculation
-    //        context.send(
-    //            OrbitStatefulFunction.TYPE,
-    //            String.valueOf(collectedTrackletsMessage.getOrbitId()),
-    //            collectedTrackletsMessage);
-    //      } else {
-    //        // Send to next tracklet on list
-    //        context.send(
-    //            TrackStatefulFunction.TYPE,
-    //            collectedTrackletsMessage.getRoute(),
-    //            collectedTrackletsMessage);
-    //      }
-    //    }
+    if (input instanceof CollectedTracksMessage) {
+      CollectedTracksMessage collectedTracksMessage = (CollectedTracksMessage) input;
+
+      Track track = trackState.get();
+      collectedTracksMessage.addTrack(track);
+      Utilities.sendToDefault(
+          context,
+          String.format(
+              "Added track with id %s to collectedTracksMessage with orbit ids %s and %s",
+              track.trackId,
+              collectedTracksMessage.keyedOrbitId1,
+              collectedTracksMessage.keyedOrbitId2));
+
+      if (collectedTracksMessage.hasNextTrackId()) {
+        // Send to next track on list
+        context.send(
+            TrackStatefulFunction.TYPE,
+            collectedTracksMessage.getNextTrackId(),
+            collectedTracksMessage);
+      } else {
+        // Route to orbitIdManager to get an ID for the new orbit
+        context.send(OrbitIdManager.TYPE, "orbit-id-manager", collectedTracksMessage);
+      }
+    }
   }
 }

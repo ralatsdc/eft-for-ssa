@@ -26,40 +26,61 @@ public class OrbitIdManager implements StatefulFunction {
     if (input instanceof NewTrackMessage) {
       NewTrackMessage newTrackMessage = (NewTrackMessage) input;
 
-      ArrayList<String> ids = orbitIds.getOrDefault(new ArrayList());
-      Long id = lastOrbitId.getOrDefault(-1L);
-      id++;
-      ids.add(String.valueOf(id));
+      Long id = createNewId();
 
       context.send(OrbitStatefulFunction.TYPE, String.valueOf(id), newTrackMessage);
 
       Utilities.sendToDefault(context, String.format("Created orbitId %s", id));
 
-      orbitIds.set(ids);
       lastOrbitId.set(id);
     }
 
-    //    if (input instanceof AddOrbitMessage) {
-    //      ArrayList idList = orbitIds.getOrDefault(new ArrayList<Long>());
-    //      AddOrbitMessage orbitMessage = (AddOrbitMessage) input;
-    //      KeyedOrbit orbit = orbitMessage.getOrbit();
-    //
-    //      // Send to all existing orbits to do calculation
-    //      // TODO: deal with flink requiring string IDs and keyedorbits and tracklets incrementing
-    // long
-    //      // IDs
-    //      //      idList.forEach(
-    //      //          id -> {
-    //      //            context.send(
-    //      //                OrbitStatefulFunction.TYPE, id.toString(), new
-    // CompareOrbitsMessage(orbit));
-    //      //          });
-    //      //
-    //      idList.add(orbit.getOrbitId());
-    //      orbitIds.set(idList);
-    //      Utilities.sendToDefault(
-    //          context, String.format("Added orbitId %d to id-manager", orbit.getOrbitId()));
-    //    }
+    if (input instanceof CollectedTracksMessage) {
+      CollectedTracksMessage collectedTracksMessage = (CollectedTracksMessage) input;
+
+      Long id = createNewId();
+
+      context.send(OrbitStatefulFunction.TYPE, String.valueOf(id), collectedTracksMessage);
+
+      Utilities.sendToDefault(
+          context,
+          String.format(
+              "Created orbitId %s refined from orbits with ids %s and %s",
+              id, collectedTracksMessage.keyedOrbitId1, collectedTracksMessage.keyedOrbitId2));
+
+      lastOrbitId.set(id);
+    }
+
+    if (input instanceof NewOrbitIdMessage) {
+      NewOrbitIdMessage newOrbitIdMessage = (NewOrbitIdMessage) input;
+
+      ArrayList<String> orbitIdList = orbitIds.getOrDefault(new ArrayList<String>());
+
+      Utilities.sendToDefault(context, String.format("Saved orbitId %s", newOrbitIdMessage.id));
+
+      // Update orbitIdList with the new orbit
+      orbitIdList.add(newOrbitIdMessage.id);
+      orbitIds.set(orbitIdList);
+    }
+
+    if (input instanceof CorrelateOrbitsMessage) {
+      CorrelateOrbitsMessage correlateOrbitsMessage = (CorrelateOrbitsMessage) input;
+
+      ArrayList<String> orbitIdList = orbitIds.getOrDefault(new ArrayList<String>());
+
+      // Send to all existing orbits to do calculation
+      orbitIdList.forEach(
+          orbitId -> {
+            context.send(OrbitStatefulFunction.TYPE, orbitId, correlateOrbitsMessage);
+          });
+
+      Utilities.sendToDefault(
+          context, String.format("Saved orbitId %s", correlateOrbitsMessage.keyedOrbit.orbitId));
+
+      // Update orbitIdList with the new orbit
+      orbitIdList.add(correlateOrbitsMessage.keyedOrbit.orbitId);
+      orbitIds.set(orbitIdList);
+    }
 
     if (input instanceof RemoveOrbitIdMessage) {
       RemoveOrbitIdMessage orbitMessage = (RemoveOrbitIdMessage) input;
@@ -69,5 +90,11 @@ public class OrbitIdManager implements StatefulFunction {
 
       orbitIds.set(ids);
     }
+  }
+
+  private Long createNewId() {
+    Long id = lastOrbitId.getOrDefault(-1L);
+    id++;
+    return id;
   }
 }

@@ -23,10 +23,16 @@ services:
     image: wurstmeister/kafka:2.12-2.0.1
     ports:
       - "9092:9092"
+    expose:
+      - "9093"
     environment:
       HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
       KAFKA_CREATE_TOPICS: "tracks:1:1,default:1:1"
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INTERNAL_LISTENER://:9093,LOCALHOST_LISTENER://:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL_LISTENER://:9093,LOCALHOST_LISTENER://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL_LISTENER:PLAINTEXT,LOCALHOST_LISTENER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL_LISTENER
     depends_on:
       - zookeeper
     volumes:
@@ -38,6 +44,8 @@ services:
     #command: -s /checkpoint-dir/savepoint/savepoint-bf101a-4e99820085fe
     expose:
       - "6123"
+    depends_on:
+      - kafka-broker
     ports:
       - "8081:8081"
     environment:

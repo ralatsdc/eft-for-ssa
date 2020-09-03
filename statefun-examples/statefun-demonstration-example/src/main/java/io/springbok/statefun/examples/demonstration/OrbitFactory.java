@@ -10,9 +10,11 @@ import org.orekit.estimation.leastsquares.BatchLSEstimator;
 import org.orekit.estimation.measurements.Position;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
+import org.orekit.orbits.EquinoctialOrbit;
+import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.Orbit;
 import org.orekit.orbits.PositionAngle;
-import org.orekit.propagation.conversion.EulerIntegratorBuilder;
+import org.orekit.propagation.conversion.GillIntegratorBuilder;
 import org.orekit.propagation.conversion.NumericalPropagatorBuilder;
 import org.orekit.propagation.integration.AbstractIntegratedPropagator;
 import org.orekit.time.AbsoluteDate;
@@ -29,13 +31,14 @@ public class OrbitFactory {
   static final Frame inertialFrame = FramesFactory.getGCRF();
 
   // Configure Orekit
-  static final File orekitData = new File("../../orekit-data");
+  static String inputPath = "../../orekit-data";
+  static final File orekitData = new File(inputPath);
   static DataProvidersManager manager = null;
 
   public static void init() {
     // Configure Orekit
     if (manager == null) {
-      final DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
+      manager = DataContext.getDefault().getDataProvidersManager();
       manager.addProvider(new DirectoryCrawler(orekitData));
     }
   }
@@ -58,7 +61,7 @@ public class OrbitFactory {
     } else {
       orbit = orbitEstimation;
     }
-    KeyedOrbit keyedOrbit = new KeyedOrbit(orbit, orbitId, track.trackId);
+    KeyedOrbit keyedOrbit = new KeyedOrbit(orbit, orbitId, track);
     return keyedOrbit;
   }
 
@@ -85,21 +88,32 @@ public class OrbitFactory {
     return keyedOrbit;
   }
 
-  //  public static KeyedOrbit refineOrbit(KeyedOrbit keyedOrbit, ArrayList<Track> tracks) {
-  //
-  //    init();
-  //
-  //    ArrayList<Position> positions = new ArrayList<>();
-  //    tracks.forEach(
-  //        track -> {
-  //          positions.addAll(track.positions);
-  //        });
-  //
-  //    Orbit refinedOrbit = leastSquaresRefine(keyedOrbit.orbit, positions);
-  //    KeyedOrbit keyedOrbit = new KeyedOrbit(refinedOrbit, tracks);
-  //
-  //    return keyedOrbit;
-  //  }
+  public static KeyedOrbit refineOrbit(
+      Orbit orbit1,
+      ArrayList<String> keyedOrbit1TrackIds,
+      ArrayList<Track> keyedOrbit2Tracks,
+      String newOrbitId) {
+
+    init();
+
+    // New orbit must be created to refresh the frame in the current StateFun context
+    Orbit orbit =
+        new EquinoctialOrbit(orbit1.getPVCoordinates(), inertialFrame, orbit1.getDate(), mu);
+
+    Orbit korbit = new KeplerianOrbit(orbit);
+
+    ArrayList<Position> positions = new ArrayList<>();
+    keyedOrbit2Tracks.forEach(
+        track -> {
+          positions.addAll(track.getPositions());
+        });
+
+    Orbit refinedOrbit = leastSquaresRefine(orbit, positions);
+    KeyedOrbit refinedKeyedOrbit =
+        new KeyedOrbit(refinedOrbit, newOrbitId, keyedOrbit2Tracks, keyedOrbit1TrackIds);
+
+    return refinedKeyedOrbit;
+  }
 
   private static Orbit iod(ArrayList<Position> positions) {
 
@@ -127,22 +141,26 @@ public class OrbitFactory {
 
     // Least squares estimator setup
     final GaussNewtonOptimizer GNOptimizer = new GaussNewtonOptimizer();
-    final EulerIntegratorBuilder eulerBuilder = new EulerIntegratorBuilder(60);
+    final GillIntegratorBuilder gillIntegratorBuilder = new GillIntegratorBuilder(60);
     final double positionScale = 1.;
     final NumericalPropagatorBuilder propBuilder =
         new NumericalPropagatorBuilder(
-            orbitEstimation, eulerBuilder, PositionAngle.MEAN, positionScale);
+            orbitEstimation, gillIntegratorBuilder, PositionAngle.MEAN, positionScale);
     final BatchLSEstimator leastSquares = new BatchLSEstimator(GNOptimizer, propBuilder);
     leastSquares.setMaxIterations(1000);
     leastSquares.setMaxEvaluations(1000);
     leastSquares.setParametersConvergenceThreshold(.001);
 
     // Add measurements
-    positions.forEach(measurement -> leastSquares.addMeasurement(measurement));
+    positions.forEach(leastSquares::addMeasurement);
 
     // Run least squares fit
     AbstractIntegratedPropagator[] lsPropagators = leastSquares.estimate();
     Orbit orbit = lsPropagators[0].getInitialState().getOrbit();
     return orbit;
+  }
+
+  public void updateOrekitDataDirectory(String path) {
+    inputPath = path;
   }
 }
