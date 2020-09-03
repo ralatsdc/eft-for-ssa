@@ -1,80 +1,306 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.springbok</groupId>
-  <artifactId>eft-for-ssa</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+    <parent>
+        <groupId>org.apache</groupId>
+        <artifactId>apache</artifactId>
+        <version>23</version>
+    </parent>
 
-  <name>eft-for-ssa</name>
-  <!-- FIXME change it to the project's website -->
-  <url>http://www.example.com</url>
+    <artifactId>eft-for-ssa</artifactId>
+    <groupId>io.springbok</groupId>
+    <name>eft-for-ssa</name>
+    <version>0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>1.7</maven.compiler.source>
-    <maven.compiler.target>1.7</maven.compiler.target>
-  </properties>
+    <url>http://flink.apache.org</url>
+    <inceptionYear>2014</inceptionYear>
 
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-    	<groupId>org.orekit</groupId>
-    	<artifactId>orekit</artifactId>
-    	<version>10.1</version>
-    </dependency>
-  </dependencies>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
-  <build>
-    <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
-      <plugins>
-        <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
-        <plugin>
-          <artifactId>maven-clean-plugin</artifactId>
-          <version>3.1.0</version>
-        </plugin>
-        <!-- default lifecycle, jar packaging: see https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
-        <plugin>
-          <artifactId>maven-resources-plugin</artifactId>
-          <version>3.0.2</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.0</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.1</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>3.0.2</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-install-plugin</artifactId>
-          <version>2.5.2</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-deploy-plugin</artifactId>
-          <version>2.8.2</version>
-        </plugin>
-        <!-- site lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
-        <plugin>
-          <artifactId>maven-site-plugin</artifactId>
-          <version>3.7.1</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-project-info-reports-plugin</artifactId>
-          <version>3.0.0</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-  </build>
+    <scm>
+        <url>https://github.com/apache/flink-statefun</url>
+        <connection>git@github.com:apache/flink-statefun.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/flink-statefun.git</developerConnection>
+    </scm>
+
+    <modules>
+        <module>statefun-examples</module>
+    </modules>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>1.8</java.version>
+        <spotbugs.version>3.1.12</spotbugs.version>
+        <spotless-maven-plugin.version>1.20.0</spotless-maven-plugin.version>
+        <auto-service.version>1.0-rc6</auto-service.version>
+        <protobuf.version>3.7.1</protobuf.version>
+        <unixsocket.version>2.3.2</unixsocket.version>
+        <protoc-jar-maven-plugin.version>3.11.1</protoc-jar-maven-plugin.version>
+        <flink.version>1.10.1</flink.version>
+        <root.dir>${rootDir}</root.dir>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service-annotations</artifactId>
+            <version>${auto-service.version}</version>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <!--
+            We're reusing the apache-release build profile defined in the Apache Parent POM,
+            with one exclusion: do not run the source-release-assembly execution goal.
+            We have our own scripts to create the source release, which correctly excludes
+            binaries from distribution tarball.
+            The script can be found under tools/releasing/create_source_release.sh.
+        -->
+        <profile>
+            <id>apache-release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.apache.apache.resources</groupId>
+                                <artifactId>apache-source-release-assembly-descriptor</artifactId>
+                                <version>1.0.6</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <id>source-release-assembly</id>
+                                <!-- disable the execution -->
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.github.os72</groupId>
+                    <artifactId>protoc-jar-maven-plugin</artifactId>
+                    <version>${protoc-jar-maven-plugin.version}</version>
+                    <executions>
+                        <!-- Generate src/main/protobuf -->
+                        <execution>
+                            <id>generate-protobuf-sources</id>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <includeStdTypes>true</includeStdTypes>
+                                <protocVersion>${protobuf.version}</protocVersion>
+                                <cleanOutputFolder>true</cleanOutputFolder>
+                                <outputDirectory>${basedir}/target/generated-sources/protoc-jar</outputDirectory>
+                            </configuration>
+                        </execution>
+
+                        <!-- Generate src/test/protobuf -->
+                        <execution>
+                            <id>generate-protobuf-test-sources</id>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <includeStdTypes>true</includeStdTypes>
+                                <protocVersion>${protobuf.version}</protocVersion>
+                                <inputDirectories>
+                                    <include>src/test/protobuf</include>
+                                </inputDirectories>
+                                <outputTargets>
+                                    <outputTarget>
+                                        <type>descriptor</type>
+                                        <outputDirectory>${basedir}/target/test-classes</outputDirectory>
+                                    </outputTarget>
+                                    <outputTarget>
+                                        <type>java</type>
+                                        <outputDirectory>${basedir}/target/generated-test-sources/protoc-jar
+                                        </outputDirectory>
+                                    </outputTarget>
+                                </outputTargets>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <!-- Java compiler -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>com.google.auto.service</groupId>
+                            <artifactId>auto-service</artifactId>
+                            <version>${auto-service.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
+            <!-- Spotbugs -->
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${spotbugs.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs</artifactId>
+                        <version>${spotbugs.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>analyze-compile</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <effort>Max</effort>
+                    <threshold>Low</threshold>
+                    <excludeFilterFile>${root.dir}/tools/maven/spotbugs-exclude.xml</excludeFilterFile>
+                </configuration>
+            </plugin>
+
+
+            <!-- Licence -->
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <version>0.13</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <excludes>
+                        <!-- Additional files like .gitignore etc.-->
+                        <exclude>**/.*/**</exclude>
+                        <exclude>**/*.prefs</exclude>
+                        <exclude>**/*.log</exclude>
+                        <!-- Administrative files in the main trunk. -->
+                        <exclude>**/README.md</exclude>
+                        <exclude>**/CODE_OF_CONDUCT.md</exclude>
+                        <exclude>.github/**</exclude>
+                        <!-- IDE files. -->
+                        <exclude>**/*.iml</exclude>
+                        <!-- Generated content -->
+                        <exclude>**/target/**</exclude>
+                        <exclude>**/_build/**</exclude>
+                        <exclude>docs/page/font-awesome/**</exclude>
+                        <exclude>docs/page/js/**</exclude>
+                        <exclude>docs/content/page/js/**</exclude>
+                        <exclude>docs/content/page/font-awesome/**</exclude>
+                        <exclude>docs/Gemfile.lock</exclude>
+                        <!-- Generated code  -->
+                        <exclude>**/generated/**</exclude>
+                        <!-- Quickstart archetype test configuration -->
+                        <exclude>statefun-quickstart/src/test/resources/projects/testArtifact/goal.txt</exclude>
+                        <!-- Bundled license files -->
+                        <exclude>**/LICENSE*</exclude>
+                        <!-- Python venv -->
+                        <exclude>**/venv/**</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+            <!-- Java code style -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless-maven-plugin.version}</version>
+                <configuration>
+                    <java>
+                        <googleJavaFormat>
+                            <version>1.7</version>
+                            <style>GOOGLE</style>
+                        </googleJavaFormat>
+                        <removeUnusedImports/>
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>spotless-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.commonjava.maven.plugins</groupId>
+                <artifactId>directory-maven-plugin</artifactId>
+                <version>0.1</version>
+                <executions>
+                    <execution>
+                        <id>directories</id>
+                        <goals>
+                            <goal>highest-basedir</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                        <configuration>
+                            <property>rootDir</property>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
+

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/eft-for-ssa.iml" filepath="$PROJECT_DIR$/eft-for-ssa.iml" />
+      <module fileurl="file://$PROJECT_DIR$/orekit-examples/orekit-examples.iml" filepath="$PROJECT_DIR$/orekit-examples/orekit-examples.iml" />
+      <module fileurl="file://$PROJECT_DIR$/statefun-examples/statefun-demonstration-example/statefun-demonstration-example.iml" filepath="$PROJECT_DIR$/statefun-examples/statefun-demonstration-example/statefun-demonstration-example.iml" />
+      <module fileurl="file://$PROJECT_DIR$/statefun-examples/statefun-examples.iml" filepath="$PROJECT_DIR$/statefun-examples/statefun-examples.iml" />
+      <module fileurl="file://$PROJECT_DIR$/statefun-examples/statefun-greeter-example/statefun-greeter-example.iml" filepath="$PROJECT_DIR$/statefun-examples/statefun-greeter-example/statefun-greeter-example.iml" />
+      <module fileurl="file://$PROJECT_DIR$/statefun-examples/statefun-prototype-example/statefun-prototype-example.iml" filepath="$PROJECT_DIR$/statefun-examples/statefun-prototype-example/statefun-prototype-example.iml" />
+    </modules>
+  </component>
+</project>
