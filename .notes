@@ -1,0 +1,118 @@
+Harness
+
+Harness is used to run Flink-Statefun on the local JVM. It is used in this project for unit testing purposes.
+Harness testing is done by checking the default kafka topic to ensure the messages are what is expected by the input.
+
+The TestTracksSourceFunction will take an ArrayList<String> of string track messages, and use that as a flink source. The TrackGenerator class can be used to provide the ArrayList.
+
+TestTracksSourceFunction can also be adjusted by modifying an instance's runTimeMS, as well as the base OrbitStatefulFunction.delete timer to suit the needs of the test. See example below:
+
+(TestTracksSourceFunction) singleTracksSource.runTimeMS = 2000;
+OrbitStatefulFunction.deleteTimer = 1;
+
+---
+
+Docker-Compose
+
+Startup:
+Build Jar
+    $ mvn clean package -DskipTests
+Build containers
+    $ docker-compose build
+Start Docker
+    $ docker-compose up
+additional options can be specified for scaling, here 'worker' refers to the container name specified in the docker-compose.yaml'. This command is in place of the original docker-compose up
+    $ docker-compose up --scale worker=2
+Run consumer
+    $ docker-compose exec kafka-broker kafka-console-consumer.sh      --bootstrap-server localhost:9092      --isolation-level read_committed      --topic default
+Run producer
+    $ docker-compose exec kafka-broker kafka-console-producer.sh      --broker-list localhost:9092      --topic tracks
+OR run io.springbok.statefun.examples.demonstration.KafkaInfiniteTrackProducer
+Ensure KafkaInfiniteTrackProducer is set to produce to localhost:9092 under props in its source code:
+props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+
+Useful Tools:
+Flink Dashboard
+    - Navigate to localhost:8081 in browser once flink has started
+Docker Container Metrics
+    $ docker stats
+Accessing docker containers
+Get container id
+    $ docker stats
+Access container
+    $ docker exec -it <container id> /bin/sh; exit
+
+Other notes:
+Ensure that the flink-conf.yaml file is configured properly.
+taskmanager.memory.process.size must be equal to the memory of the container
+parallelism.default must be equal or smaller than the number of worker containers
+
+---
+
+Kubernetes
+
+Startup:
+
+Start Minikube
+    $ minikube start
+configure flink
+    $ minikube ssh 'sudo ip link set docker0 promisc on’
+add orekit data to node:
+    $ scp -r -i $(minikube ssh-key) <absolute path to data> docker@$(minikube ip):/home/docker/orekit-data
+Add resources to cluster by directory name (apply works for files or directories)
+    $ kubectl apply -f kubernetes-deployment
+Check pod status (will be a minute or two and kafka will throw errors until zookeeper is fully up and running - can reduce the time of startup by starting zookeeper files first with previous command)
+    $ kubectl get pods -w
+get node ip
+    $ minikube ip
+OR, for non-minikube nodes, first get node name
+    $ kubectl get nodes
+And then use name to get ip
+    $ kubectl get node <NodeName> -o=jsonpath='{range .status.addresses[*]}{.type}{"\t"}{.address}{"\n"}'
+Get external port (should be 30092)
+    $ kubectl get svc kafka-broker
+Once kafka and zookeeper has started, verify topics with kafkacat node ip and port
+    $ kafkacat -b <node ip>:<external port> -L
+If it's working, it'll show both default and tracks topics with a valid leader; the response will be something like:
+
+    Metadata for all topics (from broker 1001: localhost:9092/1001):
+     1 brokers:
+      broker 1001 at localhost:9092 (controller)
+     2 topics:
+      topic "default" with 1 partitions:
+        partition 0, leader 1001, replicas: 1001, isrs: 1001
+      topic "tracks" with 1 partitions:
+        partition 0, leader 1001, replicas: 1001, isrs: 1001
+
+Start consumer
+    $ bin/kafka-console-consumer.sh --topic tracks --from-beginning --bootstrap-server <node ip>:<external port>
+Start producer
+    $ bin/kafka-console-producer.sh --broker-list <node ip>:<external port> --topic tracks
+OR, InfiniteTrackProducer; props needs to have the right server value
+    props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "<node ip>:<external port>");
+
+Other tools:
+Look at pods
+    $ kubectl get pods
+Look at services
+    $ kubectl get svc
+Access container
+    $ kubectl exec --stdin --tty <pod name> -- /bin/bash
+Flink dashboard (in browser)
+    http://<node ip>:30081
+
+Applying java changes:
+
+Applying java changes needs to be done by uploading a container to dockerhub.
+
+Make any changes to java, and then build the project and build the container as specified in the docker-compose section.
+    $ mvn clean package -DskipTests
+    $ docker-compose build
+Check the new image id
+    $ docker images
+There will be a worker and a master image. They will both have the same id and it doesn't matter which one is used. Either can be uploaded
+Tag the image using the id
+    $ docker tag <image id> <dockerhubusername>/eft-for-ssa:<containerversionname>
+The image upload can be verified by going to dockerhub.
+Next edit the kubernetes-deployment/master-deployment and kubernetes-deployment/worker-deployment images to reflect the new image names
+    image: spearw/eft-for-ssa:protobuf-master

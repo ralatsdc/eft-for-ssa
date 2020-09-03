@@ -1,29 +1,27 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.demonstration.generated.TrackIn;
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.flink.statefun.flink.harness.Harness;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.orekit.orbits.KeplerianOrbit;
+import org.orekit.orbits.PositionAngle;
+import org.orekit.propagation.analytical.tle.TLE;
 
-import java.io.PrintStream;
+import java.io.File;
 import java.util.ArrayList;
 
-/** Unit test for simple App. */
+/*
+ NOTE: Tests assume that the delayed delete message in the OrbitStatefulFunction will be send after a 4 second delay
+*/
 public class UnitTests {
 
-  private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-  private final PrintStream systemOut = System.out;
-  private SourceFunction<TrackIn> finiteTracksSource;
+  static TrackGenerator trackGenerator;
+  static String tlePath = "../../tle-data/globalstar_tles_05_18_2020.txt";
 
-  TestConsumer testConsumer;
-  TrackGenerator trackGenerator;
-
-  @Before
-  public void setUp() throws Exception {
-    trackGenerator = new TrackGenerator("../../tle-data/globalstar_tles_05_18_2020.txt");
+  @BeforeClass
+  public static void setUp() throws Exception {
+    trackGenerator = new TrackGenerator(tlePath);
     trackGenerator.init();
     trackGenerator.finitePropagation();
   }
@@ -31,14 +29,16 @@ public class UnitTests {
   @Test
   public void testTrackCreation() throws Exception {
 
-    TestTracksSourceFunction finiteTracksSource =
+    TestTracksSourceFunction singleTracksSource =
         new TestTracksSourceFunction(trackGenerator.getXMessages(1));
-    testConsumer = new TestConsumer();
+    TestConsumer testConsumer = new TestConsumer();
+    singleTracksSource.runTimeMS = 2000;
+    OrbitStatefulFunction.deleteTimer = 1;
 
     Harness harness =
         new Harness()
             .withKryoMessageSerializer()
-            .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, finiteTracksSource)
+            .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
@@ -77,7 +77,9 @@ public class UnitTests {
 
     TestTracksSourceFunction finiteTracksSource =
         new TestTracksSourceFunction(trackGenerator.getXSingleObjectMessages(2));
-    testConsumer = new TestConsumer();
+    TestConsumer testConsumer = new TestConsumer();
+    finiteTracksSource.runTimeMS = 8000;
+    OrbitStatefulFunction.deleteTimer = 4;
 
     Harness harness =
         new Harness()
@@ -95,14 +97,8 @@ public class UnitTests {
 
     // Test track collection
     Assert.assertTrue(
-        testConsumer.messages.contains(
-                "Added track with id 1 to collectedTracksMessage with orbit ids 0 and 1")
-            || testConsumer.messages.contains(
-                "Added track with id 1 to collectedTracksMessage with orbit ids 1 and 0")
-            || testConsumer.messages.contains(
-                "Added track with id 0 to collectedTracksMessage with orbit ids 0 and 1")
-            || testConsumer.messages.contains(
-                "Added track with id 0 to collectedTracksMessage with orbit ids 1 and 0"));
+        testConsumer.messages.contains("Added track with id 1 to collectedTracksMessage")
+            || testConsumer.messages.contains("Added track with id 0 to collectedTracksMessage"));
 
     // Test new orbit creation flow
     Assert.assertTrue(
@@ -117,5 +113,64 @@ public class UnitTests {
 
     Assert.assertTrue(testConsumer.messages.contains("Cleared track for trackId 0"));
     Assert.assertTrue(testConsumer.messages.contains("Cleared track for trackId 1"));
+  }
+
+  @Test
+  public void testTrackMessages() throws Exception {
+
+    final File tleData = new File(tlePath);
+    ArrayList<TLE> tles = TrackGenerator.convertTLES(tleData);
+    tles.forEach(
+        tle -> {
+          int satelliteNumber = tle.getSatelliteNumber();
+          String trackObject = trackGenerator.getMessagesById(satelliteNumber).get(0);
+          Track track = Track.fromString(trackObject, "0");
+
+          KeyedOrbit keyedOrbit = OrbitFactory.createOrbit(track, "0");
+          KeplerianOrbit orbit = (KeplerianOrbit) keyedOrbit.orbit;
+
+          double a = orbit.getA();
+          double e = orbit.getE();
+          double i = orbit.getI();
+          double orbitPerigee = orbit.getPerigeeArgument();
+          if (orbitPerigee < 0) {
+            orbitPerigee = orbitPerigee + 2 * Math.PI;
+          }
+          double raan = orbit.getRightAscensionOfAscendingNode();
+          if (raan < 0) {
+            raan = raan + 2 * Math.PI;
+          }
+          double anomaly = orbit.getAnomaly(PositionAngle.MEAN);
+          if (anomaly < 0) {
+            anomaly = anomaly + 2 * Math.PI;
+          }
+
+          final double tleA =
+              (Math.cbrt(OrbitFactory.mu))
+                  / (Math.cbrt(Math.pow(tle.getMeanMotion(), 2))); // semi major axis in M
+
+          // Assert true within 1000th of the value
+          Assert.assertTrue("Semimajor Axis", tleA - tleA / 1000 < a && a < tleA + tleA / 1000);
+
+          Assert.assertTrue(
+              "Eccentricity",
+              tle.getE() - tle.getE() / 1000 < e && e < tle.getE() + tle.getE() / 1000);
+
+          Assert.assertTrue(
+              "Inclination",
+              tle.getI() - tle.getI() / 1000 < i && i < tle.getI() + tle.getI() / 1000);
+
+          Assert.assertEquals(tle.getPerigeeArgument(), orbitPerigee, 0.0001);
+
+          Assert.assertTrue(
+              "RAAN",
+              tle.getRaan() - tle.getRaan() / 1000 < raan
+                  && raan < tle.getRaan() + tle.getRaan() / 1000);
+
+          Assert.assertTrue(
+              "Anomaly",
+              tle.getMeanAnomaly() - tle.getMeanAnomaly() / 1000 < anomaly
+                  && anomaly < tle.getMeanAnomaly() + tle.getMeanAnomaly() / 1000);
+        });
   }
 }

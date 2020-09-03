@@ -17,24 +17,28 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+/*
+   DemonstrationIO defines the application ingress and egress, and binds them to Kafka topics.
+This class is used as part of the Demonstration Module
+*/
 public class DemonstrationIO {
-
-  public static final IngressIdentifier<TrackIn> TRACKS_INGRESS_ID =
-      new IngressIdentifier<>(TrackIn.class, "eft-for-ssa", "tracks-in");
-  //	public static final EgressIdentifier<KeyedOrbit> EGRESS_ID = new
-  // EgressIdentifier<>("eft-for-ssa",
-  // "keyed-orbit-out", KeyedOrbit.class);
-  public static final EgressIdentifier<DefaultOut> DEFAULT_EGRESS_ID =
-      new EgressIdentifier<>("eft-for-ssa", "default-out", DefaultOut.class);
-  public static final EgressIdentifier<String> PRINT_EGRESS_ID =
-      new EgressIdentifier<>("eft-for-ssa", "print-out", String.class);
 
   private final String kafkaAddress;
 
+  // Setting ingress identifier
+  public static final IngressIdentifier<TrackIn> TRACKS_INGRESS_ID =
+      new IngressIdentifier<>(TrackIn.class, "eft-for-ssa", "tracks-in");
+
+  // Setting egress identifier
+  public static final EgressIdentifier<DefaultOut> DEFAULT_EGRESS_ID =
+      new EgressIdentifier<>("eft-for-ssa", "default-out", DefaultOut.class);
+
+  // Simple constructor
   public DemonstrationIO(String kafkaAddress) {
     this.kafkaAddress = Objects.requireNonNull(kafkaAddress);
   }
 
+  // Build and return ingress spec
   public IngressSpec<TrackIn> getIngressSpec() {
     return KafkaIngressBuilder.forIdentifier(TRACKS_INGRESS_ID)
         .withKafkaAddress(this.kafkaAddress)
@@ -44,6 +48,7 @@ public class DemonstrationIO {
         .build();
   }
 
+  // Build and return egress spec
   EgressSpec<DefaultOut> getEgressSpec() {
     return KafkaEgressBuilder.forIdentifier(DEFAULT_EGRESS_ID)
         .withKafkaAddress(this.kafkaAddress)
@@ -51,8 +56,8 @@ public class DemonstrationIO {
         .build();
   }
 
+  // Simple byte deserializer for the ingress
   private static final class KafkaTracksDeserializer implements KafkaIngressDeserializer<TrackIn> {
-    //    private static final long serialVersionUID = 1L;
 
     @Override
     public TrackIn deserialize(ConsumerRecord<byte[], byte[]> input) {
@@ -62,6 +67,7 @@ public class DemonstrationIO {
     }
   }
 
+  // Simple byte serializer for the egress
   private static final class KafkaTracksSerializer implements KafkaEgressSerializer<DefaultOut> {
 
     private static final long serialVersionUID = 1L;

@@ -1,9 +1,14 @@
 package io.springbok.statefun.examples.demonstration;
 
+import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.Orbit;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
+/*
+ KeyedOrbit adds a key to the Orekit Orbit class. It also contains what trackIds and objectIds were used to create the Orbit.
+*/
 public class KeyedOrbit {
 
   public Orbit orbit;
@@ -11,7 +16,7 @@ public class KeyedOrbit {
   public ArrayList<String> trackIds;
   public ArrayList<Integer> objectIds;
 
-  /** Creates an IDOrbit with the given parameters. */
+  // Construct a KeyedOrbit from a single track
   public KeyedOrbit(Orbit orbit, String orbitId, Track track) {
     this.orbit = orbit;
     this.orbitId = orbitId;
@@ -21,8 +26,8 @@ public class KeyedOrbit {
     objectIds.add(track.objectId);
   }
 
+  // Construct a KeyedOrbit from a list of tracks
   public KeyedOrbit(Orbit orbit, String orbitId, ArrayList<Track> tracks) {
-
     this.orbit = orbit;
     this.orbitId = orbitId;
     this.trackIds = new ArrayList<>();
@@ -34,6 +39,7 @@ public class KeyedOrbit {
         });
   }
 
+  // Construct a KeyedOrbit with additional trackIds
   public KeyedOrbit(
       Orbit orbit, String orbitId, ArrayList<Track> tracks, ArrayList<String> trackIds) {
 
@@ -48,6 +54,68 @@ public class KeyedOrbit {
         });
   }
 
+  private KeyedOrbit() {}
+
+  @Override
+  public String toString() {
+    KeplerianOrbit keplerianOrbit = new KeplerianOrbit(orbit);
+    return orbit.getA()
+        + ";"
+        + orbit.getE()
+        + ";"
+        + orbit.getI()
+        + ";"
+        + keplerianOrbit.getPerigeeArgument()
+        + ";"
+        + keplerianOrbit.getRightAscensionOfAscendingNode()
+        + ";"
+        + keplerianOrbit.getTrueAnomaly()
+        + ";"
+        + keplerianOrbit.getDate()
+        + ";"
+        + orbitId
+        + ";"
+        + trackIds
+        + ";"
+        + objectIds;
+  }
+
+  public static KeyedOrbit fromString(String line) {
+
+    String[] tokens = line.split(";");
+    if (tokens.length != 10) {
+      throw new RuntimeException("Invalid string to form KeyedOrbit: " + line);
+    }
+
+    KeyedOrbit keyedOrbit = new KeyedOrbit();
+
+    // Create KeyedOrbit from string
+    try {
+
+      Orbit orbit = OrbitFactory.fromTokens(Arrays.copyOfRange(tokens, 0, 7));
+      keyedOrbit.orbit = orbit;
+
+      keyedOrbit.orbitId = tokens[7];
+
+      ArrayList<String> trackIds =
+          new ArrayList<>(Arrays.asList(tokens[8].replaceAll("[\\[\\]]", "").split(", ")));
+      keyedOrbit.trackIds = trackIds;
+
+      String[] objectIdStrings = tokens[9].replaceAll("[\\[\\]]", "").split(", ");
+      ArrayList<Integer> objectIds = new ArrayList<>();
+      for (int i = 0; i < objectIdStrings.length; i++) {
+        objectIds.add(Integer.parseInt(objectIdStrings[i]));
+      }
+      keyedOrbit.objectIds = objectIds;
+
+    } catch (NumberFormatException nfe) {
+      throw new RuntimeException("Invalid record: " + line, nfe);
+    }
+
+    return keyedOrbit;
+  }
+
+  // Compares the objectIds
   @Override
   public boolean equals(Object obj) {
     if (obj == null) {

@@ -29,5 +29,36 @@ message DefaultOut {
   string content = 1;
 }
 
+message NewTrackMessage {
+  string stringTrack = 1;
+  string id = 2;
+}
+
+message CorrelateOrbitsMessage {
+  string stringContent = 1;
+}
+
+message RemoveOrbitIdMessage {
+  string stringContent = 1;
+}
+
+message NewOrbitIdMessage {
+  string id = 1;
+}
+
+message NewRefinedOrbitIdMessage {
+  string newOrbitId = 1;
+  string oldOrbitId1 = 2;
+  string oldOrbitId2 = 3;
+}
+
+message CollectedTracksMessage {
+  string keyedOrbit1 = 1;
+  string keyedOrbit2 = 2;
+  string tracksToGather = 3;
+  string collectedTracks = 4;
+  int32 iterator = 5;
+}
+
 message DelayedDeleteMessage {
 }

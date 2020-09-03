@@ -9,6 +9,7 @@ import org.orekit.time.TimeScalesFactory;
 
 import java.util.ArrayList;
 
+// Track stores information from a TrackIn string in a more usable interface
 public class Track {
 
   private AbsoluteDate msgTime;
@@ -24,27 +25,40 @@ public class Track {
 
   @Override
   public String toString() {
-    return msgTime
-        + ","
-        + sensorId
-        + ","
-        + objectId
-        + ","
-        + String.join(", ", positions.toString());
+
+    String msg = msgTime + "," + sensorId + "," + objectId;
+
+    for (int i = 0; i < positions.size(); i++) {
+      Position position = positions.get(i);
+      String positionString =
+          position.getDate()
+              + ","
+              + position.getPosition().getX()
+              + ","
+              + position.getPosition().getY()
+              + ","
+              + position.getPosition().getZ()
+              + ","
+              + rcsArr.get(i);
+      msg = msg + "," + positionString;
+    }
+    return msg;
   }
 
-  /** Parse a Tracklet from a CSV representation. */
+  // Parse a Track from a CSV representation.
   public static Track fromString(String line, String id) {
 
+    // Ensure Orekit is configured
     OrbitFactory.init();
 
     String[] tokens = line.split(",");
     if (tokens.length % 5 != 3) {
-      throw new RuntimeException("Invalid record: " + line);
+      throw new RuntimeException("Invalid string to form Track: " + line);
     }
 
     Track track = new Track();
 
+    // Create track from string
     try {
 
       track.msgTime = new AbsoluteDate(tokens[0], utc);

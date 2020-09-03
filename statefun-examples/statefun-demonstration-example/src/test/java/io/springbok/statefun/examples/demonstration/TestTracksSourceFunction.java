@@ -8,8 +8,9 @@ import java.util.Iterator;
 
 public final class TestTracksSourceFunction implements SourceFunction<TrackIn> {
 
-  private final ArrayList<TrackIn> tracks;
+  private ArrayList<TrackIn> tracks;
   private volatile boolean isRunning = true;
+  public int runTimeMS = 8000;
 
   TestTracksSourceFunction(ArrayList<String> tracks) {
     this.tracks = new ArrayList<>();
@@ -29,10 +30,8 @@ public final class TestTracksSourceFunction implements SourceFunction<TrackIn> {
       for (TrackIn track : tracks) {
         sourceContext.collect(tracksIterator.next());
       }
-    // Todo: figure out how to ensure all processes are complete instead of dumb timing them
-    // Timer is important because once the flinksource run shuts down, stateful functions CLOSE
-    // mailboxes, so all of the processes can't finish and it throws an error
-    Thread.sleep(8000);
+    sourceContext.close();
+    Thread.sleep(runTimeMS);
   }
 
   @Override
