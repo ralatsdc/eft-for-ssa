@@ -132,9 +132,6 @@ public class OrbitStatefulFunction implements StatefulFunction {
                   .build();
 
           context.send(TrackStatefulFunction.TYPE, nextTrack, collectedTracksMessage);
-          System.out.println("Sent out CollectedTrackMessage");
-          System.out.println(nextTrack);
-          System.out.println(collectedTracksMessage);
         } else {
           // Send message out that correlation not successful
           Utilities.sendToDefault(

@@ -114,84 +114,84 @@ public class TrackStatefulFunction implements StatefulFunction {
             context,
             String.format("track with id %s has already been deleted", context.self().id()));
       }
+    }
 
-      // DeleteTrackMessage is sent if the track fails to form an initial orbit
-      if (input instanceof DeleteTrackMessage) {
-        try {
-          trackState.clear();
-          Utilities.sendToDefault(
-              context, String.format("Cleared track for trackId %s", context.self().id()));
-        } catch (NullPointerException trackDoesNotExist) {
-          Utilities.sendToDefault(
-              context,
-              String.format("track with id %s has already been deleted", context.self().id()));
+    // DeleteTrackMessage is sent if the track fails to form an initial orbit
+    if (input instanceof DeleteTrackMessage) {
+      try {
+        trackState.clear();
+        Utilities.sendToDefault(
+            context, String.format("Cleared track for trackId %s", context.self().id()));
+      } catch (NullPointerException trackDoesNotExist) {
+        Utilities.sendToDefault(
+            context,
+            String.format("track with id %s has already been deleted", context.self().id()));
+      }
+    }
+
+    // CollectedTracksMessage is sent after two orbits correlate. This message is requesting the
+    // track information so a least squares estimation can be run
+    if (input instanceof CollectedTracksMessage) {
+      CollectedTracksMessage collectedTracksMessage = (CollectedTracksMessage) input;
+      String collectedTracks = new String();
+      try {
+
+        // Get the trackState and add it to the incoming message
+        Track track = trackState.get();
+
+        if (collectedTracksMessage.getCollectedTracks() == null) {
+          collectedTracks = track.toString();
+        } else {
+          ArrayList<String> trackArray =
+              Utilities.stringToArrayList(collectedTracksMessage.getCollectedTracks());
+          trackArray.add(track.toString());
+          collectedTracks = Utilities.arrayListToString(trackArray);
         }
+        // Send message out
+        Utilities.sendToDefault(
+            context,
+            String.format("Added track with id %s to collectedTracksMessage", track.trackId));
 
-        // CollectedTracksMessage is sent after two orbits correlate. This message is requesting the
-        // track information so a least squares estimation can be run
-        if (input instanceof CollectedTracksMessage) {
-          CollectedTracksMessage collectedTracksMessage = (CollectedTracksMessage) input;
-          String collectedTracks = new String();
-          try {
+      } catch (Exception e) {
+        collectedTracks = collectedTracksMessage.getCollectedTracks();
+        Utilities.sendToDefault(
+            context,
+            String.format(
+                "track with id %s has already been deleted, forwarding CollectedTracksMessage.",
+                context.self().id()));
+      } finally {
+        // If the CollectedTracksMessage still needs to collect more tracks, forward it to the
+        // next
+        // track, otherwise send it to get a new id
+        ArrayList<String> tracksToGather =
+            Utilities.stringToArrayList(collectedTracksMessage.getTracksToGather());
 
-            // Get the trackState and add it to the incoming message
-            Track track = trackState.get();
+        if (tracksToGather.size() > collectedTracksMessage.getIterator()) {
+          // Send to next track on list
 
-            if (collectedTracksMessage.getCollectedTracks() == null) {
-              collectedTracks = track.toString();
-            } else {
-              ArrayList<String> trackArray =
-                  Utilities.stringToArrayList(collectedTracksMessage.getCollectedTracks());
-              trackArray.add(track.toString());
-              collectedTracks = Utilities.arrayListToString(trackArray);
-            }
-            // Send message out
-            Utilities.sendToDefault(
-                context,
-                String.format("Added track with id %s to collectedTracksMessage", track.trackId));
+          CollectedTracksMessage newCollectedTracksMessage =
+              CollectedTracksMessage.newBuilder()
+                  .setKeyedOrbit1(collectedTracksMessage.getKeyedOrbit1())
+                  .setKeyedOrbit2(collectedTracksMessage.getKeyedOrbit2())
+                  .setTracksToGather(Utilities.arrayListToString(tracksToGather))
+                  .setCollectedTracks(collectedTracks)
+                  .setIterator(collectedTracksMessage.getIterator() + 1)
+                  .build();
 
-          } catch (Exception e) {
-            collectedTracks = collectedTracksMessage.getCollectedTracks();
-            Utilities.sendToDefault(
-                context,
-                String.format(
-                    "track with id %s has already been deleted, forwarding CollectedTracksMessage.",
-                    context.self().id()));
-          } finally {
-            // If the CollectedTracksMessage still needs to collect more tracks, forward it to the
-            // next
-            // track, otherwise send it to get a new id
-            ArrayList<String> tracksToGather =
-                Utilities.stringToArrayList(collectedTracksMessage.getTracksToGather());
+          context.send(
+              TrackStatefulFunction.TYPE,
+              tracksToGather.get(collectedTracksMessage.getIterator()),
+              newCollectedTracksMessage);
+        } else {
 
-            if (tracksToGather.size() > collectedTracksMessage.getIterator()) {
-              // Send to next track on list
-
-              CollectedTracksMessage newCollectedTracksMessage =
-                  CollectedTracksMessage.newBuilder()
-                      .setKeyedOrbit1(collectedTracksMessage.getKeyedOrbit1())
-                      .setKeyedOrbit2(collectedTracksMessage.getKeyedOrbit2())
-                      .setTracksToGather(Utilities.arrayListToString(tracksToGather))
-                      .setCollectedTracks(collectedTracks)
-                      .setIterator(collectedTracksMessage.getIterator() + 1)
-                      .build();
-
-              context.send(
-                  TrackStatefulFunction.TYPE,
-                  tracksToGather.get(collectedTracksMessage.getIterator()),
-                  newCollectedTracksMessage);
-            } else {
-
-              CollectedTracksMessage newCollectedTracksMessage =
-                  CollectedTracksMessage.newBuilder()
-                      .setKeyedOrbit1(collectedTracksMessage.getKeyedOrbit1())
-                      .setKeyedOrbit2(collectedTracksMessage.getKeyedOrbit2())
-                      .setCollectedTracks(collectedTracks)
-                      .build();
-              // Route to orbitIdManager to get an ID for the new orbit
-              context.send(OrbitIdManager.TYPE, "orbit-id-manager", newCollectedTracksMessage);
-            }
-          }
+          CollectedTracksMessage newCollectedTracksMessage =
+              CollectedTracksMessage.newBuilder()
+                  .setKeyedOrbit1(collectedTracksMessage.getKeyedOrbit1())
+                  .setKeyedOrbit2(collectedTracksMessage.getKeyedOrbit2())
+                  .setCollectedTracks(collectedTracks)
+                  .build();
+          // Route to orbitIdManager to get an ID for the new orbit
+          context.send(OrbitIdManager.TYPE, "orbit-id-manager", newCollectedTracksMessage);
         }
       }
     }
