@@ -7,6 +7,9 @@ import org.junit.Test;
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.PositionAngle;
 import org.orekit.propagation.analytical.tle.TLE;
+import io.springbok.statefun.examples.utility.MockConsumer;
+import io.springbok.statefun.examples.utility.MockTracksSourceFunction;
+import io.springbok.statefun.examples.utility.TrackGenerator;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -14,7 +17,7 @@ import java.util.ArrayList;
 /*
  NOTE: Tests assume that the delayed delete message in the OrbitStatefulFunction will be send after a 4 second delay
 */
-public class UnitTests {
+public class IntegrationTests {
 
   static TrackGenerator trackGenerator;
   static String tlePath = "../../tle-data/globalstar_tles_05_18_2020.txt";
@@ -29,9 +32,9 @@ public class UnitTests {
   @Test
   public void testTrackCreation() throws Exception {
 
-    TestTracksSourceFunction singleTracksSource =
-        new TestTracksSourceFunction(trackGenerator.getXMessages(1));
-    TestConsumer testConsumer = new TestConsumer();
+    MockTracksSourceFunction singleTracksSource =
+        new MockTracksSourceFunction(trackGenerator.getXMessages(1));
+    MockConsumer testConsumer = new MockConsumer();
     singleTracksSource.runTimeMS = 2000;
     OrbitStatefulFunction.deleteTimer = 1;
 
@@ -75,9 +78,9 @@ public class UnitTests {
   @Test
   public void testOrbitCorrelation() throws Exception {
 
-    TestTracksSourceFunction finiteTracksSource =
-        new TestTracksSourceFunction(trackGenerator.getXSingleObjectMessages(2));
-    TestConsumer testConsumer = new TestConsumer();
+    MockTracksSourceFunction finiteTracksSource =
+        new MockTracksSourceFunction(trackGenerator.getXSingleObjectMessages(2));
+    MockConsumer testConsumer = new MockConsumer();
     finiteTracksSource.runTimeMS = 8000;
     OrbitStatefulFunction.deleteTimer = 4;
 
@@ -149,28 +152,18 @@ public class UnitTests {
               (Math.cbrt(OrbitFactory.mu))
                   / (Math.cbrt(Math.pow(tle.getMeanMotion(), 2))); // semi major axis in M
 
-          // Assert true within 1000th of the value
-          Assert.assertTrue("Semimajor Axis", tleA - tleA / 1000 < a && a < tleA + tleA / 1000);
+          // Assert true within delta
+          Assert.assertEquals(tleA, a, 10);
 
-          Assert.assertTrue(
-              "Eccentricity",
-              tle.getE() - tle.getE() / 1000 < e && e < tle.getE() + tle.getE() / 1000);
+          Assert.assertEquals(tle.getE(), e, 0.0001);
 
-          Assert.assertTrue(
-              "Inclination",
-              tle.getI() - tle.getI() / 1000 < i && i < tle.getI() + tle.getI() / 1000);
+          Assert.assertEquals(tle.getI(), i, 0.0001);
 
           Assert.assertEquals(tle.getPerigeeArgument(), orbitPerigee, 0.0001);
 
-          Assert.assertTrue(
-              "RAAN",
-              tle.getRaan() - tle.getRaan() / 1000 < raan
-                  && raan < tle.getRaan() + tle.getRaan() / 1000);
+          Assert.assertEquals(tle.getRaan(), raan, 0.0001);
 
-          Assert.assertTrue(
-              "Anomaly",
-              tle.getMeanAnomaly() - tle.getMeanAnomaly() / 1000 < anomaly
-                  && anomaly < tle.getMeanAnomaly() + tle.getMeanAnomaly() / 1000);
+          Assert.assertEquals(tle.getMeanAnomaly(), anomaly, 0.0001);
         });
   }
 }

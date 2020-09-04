@@ -1,4 +1,4 @@
-package io.springbok.statefun.examples.demonstration;
+package io.springbok.statefun.examples.utility;
 
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.hipparchus.ode.nonstiff.GillIntegrator;
