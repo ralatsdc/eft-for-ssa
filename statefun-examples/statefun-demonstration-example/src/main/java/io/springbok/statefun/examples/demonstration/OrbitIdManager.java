@@ -84,8 +84,15 @@ public class OrbitIdManager implements StatefulFunction {
 
       // Update orbitIdList with the new orbit
       orbitIdList.add(newRefinedOrbitIdMessage.getNewOrbitId());
-      orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId1());
-      orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId2());
+      try {
+        orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId1());
+      } catch (NullPointerException orbitIdAlreadyDeleted) {
+      }
+      try {
+        orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId2());
+      } catch (NullPointerException orbitIdAlreadyDeleted) {
+      }
+
       Utilities.sendToDefault(context, orbitIdList.toString());
       orbitIds.set(orbitIdList);
     }
@@ -118,17 +125,20 @@ public class OrbitIdManager implements StatefulFunction {
     // This message is sent from an OrbitStatefulFunction when that orbit expires. This removes that
     // orbit id from the orbit id list
     if (input instanceof RemoveOrbitIdMessage) {
-      RemoveOrbitIdMessage removeOrbitIdMessage = (RemoveOrbitIdMessage) input;
+      try {
+        RemoveOrbitIdMessage removeOrbitIdMessage = (RemoveOrbitIdMessage) input;
 
-      String orbitId = removeOrbitIdMessage.getStringContent();
+        String orbitId = removeOrbitIdMessage.getStringContent();
 
-      ArrayList ids = orbitIds.get();
-      ids.remove(orbitId);
+        ArrayList ids = orbitIds.get();
 
-      // Message out that orbit id was removed
-      Utilities.sendToDefault(context, String.format("Removed orbitId %s", orbitId));
+        ids.remove(orbitId);
 
-      orbitIds.set(ids);
+        // Message out that orbit id was removed
+        Utilities.sendToDefault(context, String.format("Removed orbitId %s", orbitId));
+        orbitIds.set(ids);
+      } catch (NullPointerException orbitIdAlreadyDeleted) {
+      }
     }
   }
 
