@@ -27,7 +27,7 @@ Run consumer (from dir with docker-compose file)
     $ docker-compose exec kafka-broker kafka-console-consumer.sh      --bootstrap-server localhost:9092      --isolation-level read_committed      --topic default
 Run producer (from dir with docker-compose file)
     $ docker-compose exec kafka-broker kafka-console-producer.sh      --broker-list localhost:9092      --topic tracks
-OR run io.springbok.statefun.examples.demonstration.KafkaInfiniteTrackProducer
+OR run utilities.KafkaInfiniteTrackProducer
 Ensure KafkaInfiniteTrackProducer is set to produce to localhost:9092 under props in its source code:
 props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
 

@@ -1,4 +1,4 @@
-package io.springbok.statefun.examples.demonstration;
+package io.springbok.statefun.examples.utility;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;

@@ -99,6 +99,7 @@
     <orderEntry type="library" scope="TEST" name="Maven: org.apache.flink:force-shading:1.10.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.12" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.hamcrest:hamcrest-core:1.3" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.flink:flink-streaming-core:1.10.1" level="project" />
     <orderEntry type="library" name="Maven: com.google.auto.service:auto-service-annotations:1.0-rc6" level="project" />
   </component>
 </module>

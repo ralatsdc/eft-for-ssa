@@ -1,4 +1,4 @@
-package io.springbok.statefun.examples.demonstration;
+package io.springbok.statefun.examples.utility;
 
 import io.springbok.statefun.examples.demonstration.generated.TrackIn;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
@@ -6,13 +6,13 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public final class TestTracksSourceFunction implements SourceFunction<TrackIn> {
+public final class MockTracksSourceFunction implements SourceFunction<TrackIn> {
 
   private ArrayList<TrackIn> tracks;
   private volatile boolean isRunning = true;
   public int runTimeMS = 8000;
 
-  TestTracksSourceFunction(ArrayList<String> tracks) {
+  public MockTracksSourceFunction(ArrayList<String> tracks) {
     this.tracks = new ArrayList<>();
     tracks.forEach(
         track -> {
