@@ -59,40 +59,34 @@ public class Track {
     Track track = new Track();
 
     // Create track from string
-    try {
+    track.msgTime = new AbsoluteDate(tokens[0], utc);
+    track.sensorId = Integer.parseInt(tokens[1]);
+    track.objectId = Integer.parseInt(tokens[2]);
 
-      track.msgTime = new AbsoluteDate(tokens[0], utc);
-      track.sensorId = Integer.parseInt(tokens[1]);
-      track.objectId = Integer.parseInt(tokens[2]);
+    ArrayList<Position> positions = new ArrayList<Position>();
+    ArrayList<Double> rcsArr = new ArrayList<Double>();
 
-      ArrayList<Position> positions = new ArrayList<Position>();
-      ArrayList<Double> rcsArr = new ArrayList<Double>();
+    ObservableSatellite satelliteIndex = new ObservableSatellite(0);
 
-      ObservableSatellite satelliteIndex = new ObservableSatellite(0);
+    for (int i = 3; i < tokens.length; i = i + 5) {
 
-      for (int i = 3; i < tokens.length; i = i + 5) {
+      AbsoluteDate date = new AbsoluteDate(tokens[i], utc);
+      double x = Double.parseDouble(tokens[(i + 1)]);
+      double y = Double.parseDouble(tokens[i + 2]);
+      double z = Double.parseDouble(tokens[i + 3]);
+      Vector3D vector = new Vector3D(x, y, z);
+      Position position = new Position(date, vector, 1, 1, satelliteIndex);
 
-        AbsoluteDate date = new AbsoluteDate(tokens[i], utc);
-        double x = Double.parseDouble(tokens[(i + 1)]);
-        double y = Double.parseDouble(tokens[i + 2]);
-        double z = Double.parseDouble(tokens[i + 3]);
-        Vector3D vector = new Vector3D(x, y, z);
-        Position position = new Position(date, vector, 1, 1, satelliteIndex);
+      rcsArr.add(Double.parseDouble(tokens[i + 4]));
 
-        rcsArr.add(Double.parseDouble(tokens[i + 4]));
-
-        positions.add(position);
-      }
-
-      track.positions = positions;
-      track.rcsArr = rcsArr;
-
-      track.trackId = id;
-      track.orbitIds = new ArrayList<>();
-
-    } catch (NumberFormatException nfe) {
-      throw new RuntimeException("Invalid record: " + line, nfe);
+      positions.add(position);
     }
+
+    track.positions = positions;
+    track.rcsArr = rcsArr;
+
+    track.trackId = id;
+    track.orbitIds = new ArrayList<>();
 
     return track;
   }

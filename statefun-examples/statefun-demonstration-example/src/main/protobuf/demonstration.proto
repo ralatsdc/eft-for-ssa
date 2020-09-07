@@ -62,3 +62,7 @@ message CollectedTracksMessage {
 
 message DelayedDeleteMessage {
 }
+
+message DeleteTrackMessage {
+}
+
