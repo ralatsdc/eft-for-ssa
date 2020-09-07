@@ -2,13 +2,35 @@ package io.springbok.statefun.examples.demonstration;
 
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.PositionAngle;
+import org.orekit.propagation.SpacecraftState;
+import org.orekit.time.TimeScalesFactory;
 
 // Class used to determine if two orbits correlate
 public class OrbitCorrelator {
 
   public static boolean correlate(KeyedOrbit keyedOrbit1, KeyedOrbit keyedOrbit2) {
-    KeplerianOrbit orbit1 = (KeplerianOrbit) keyedOrbit1.orbit;
-    KeplerianOrbit orbit2 = (KeplerianOrbit) keyedOrbit2.orbit;
+
+    OrbitFactory.init();
+
+    SpacecraftState spacecraftState1 = new SpacecraftState(keyedOrbit1.orbit);
+    SpacecraftState spacecraftState2 = new SpacecraftState(keyedOrbit2.orbit);
+
+    double offset =
+        keyedOrbit1
+            .orbit
+            .getDate()
+            .offsetFrom(keyedOrbit2.orbit.getDate(), TimeScalesFactory.getUTC());
+    System.out.println("Offset: " + offset);
+
+    SpacecraftState shiftedSpacecraftState2 = spacecraftState2.shiftedBy(offset);
+    System.out.println(spacecraftState1.getDate());
+    System.out.println(shiftedSpacecraftState2.getDate());
+
+    KeplerianOrbit orbit1 = (KeplerianOrbit) spacecraftState1.getOrbit();
+    KeplerianOrbit orbit2 = (KeplerianOrbit) shiftedSpacecraftState2.getOrbit();
+
+    System.out.println("PV coords 1: " + spacecraftState1.getPVCoordinates());
+    System.out.println("PV coords 2: " + shiftedSpacecraftState2.getPVCoordinates());
 
     double a1 = orbit1.getA();
     double a2 = orbit2.getA();
@@ -37,14 +59,14 @@ public class OrbitCorrelator {
       raan2 = raan2 + 2 * Math.PI;
     }
 
-    double anomaly1 = orbit1.getAnomaly(PositionAngle.MEAN);
-    double anomaly2 = orbit2.getAnomaly(PositionAngle.MEAN);
-    //    if (anomaly1 < 0) {
-    //      anomaly1 = anomaly1 + 2 * Math.PI;
-    //    }
-    //    if (anomaly2 < 0) {
-    //      anomaly2 = anomaly2 + 2 * Math.PI;
-    //    }
+    double anomaly1 = orbit1.getAnomaly(PositionAngle.MEAN) % (2 * Math.PI);
+    double anomaly2 = orbit2.getAnomaly(PositionAngle.MEAN) % (2 * Math.PI);
+    if (anomaly1 < 0) {
+      anomaly1 = anomaly1 + 2 * Math.PI;
+    }
+    if (anomaly2 < 0) {
+      anomaly2 = anomaly2 + 2 * Math.PI;
+    }
 
     System.out.println(a1);
     System.out.println(a2);
@@ -68,7 +90,7 @@ public class OrbitCorrelator {
     boolean i = (Math.abs(i1 - i2) < epsilon);
     boolean pa = (Math.abs(pa1 - pa2) < epsilon);
     boolean raan = (Math.abs(raan1 - raan2) < epsilon);
-    boolean anomaly = (Math.abs(anomaly1 - anomaly2) < epsilon);
+    boolean anomaly = (Math.abs(anomaly1 - anomaly2) < 0.1);
 
     System.out.println(a);
     System.out.println(e);
