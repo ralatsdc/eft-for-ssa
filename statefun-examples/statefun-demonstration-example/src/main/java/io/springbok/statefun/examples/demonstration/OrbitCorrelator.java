@@ -2,7 +2,6 @@ package io.springbok.statefun.examples.demonstration;
 
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.PositionAngle;
-import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.TimeScalesFactory;
 
 // Class used to determine if two orbits correlate
@@ -12,25 +11,8 @@ public class OrbitCorrelator {
 
     OrbitFactory.init();
 
-    SpacecraftState spacecraftState1 = new SpacecraftState(keyedOrbit1.orbit);
-    SpacecraftState spacecraftState2 = new SpacecraftState(keyedOrbit2.orbit);
-
-    double offset =
-        keyedOrbit1
-            .orbit
-            .getDate()
-            .offsetFrom(keyedOrbit2.orbit.getDate(), TimeScalesFactory.getUTC());
-    System.out.println("Offset: " + offset);
-
-    SpacecraftState shiftedSpacecraftState2 = spacecraftState2.shiftedBy(offset);
-    System.out.println(spacecraftState1.getDate());
-    System.out.println(shiftedSpacecraftState2.getDate());
-
-    KeplerianOrbit orbit1 = (KeplerianOrbit) spacecraftState1.getOrbit();
-    KeplerianOrbit orbit2 = (KeplerianOrbit) shiftedSpacecraftState2.getOrbit();
-
-    System.out.println("PV coords 1: " + spacecraftState1.getPVCoordinates());
-    System.out.println("PV coords 2: " + shiftedSpacecraftState2.getPVCoordinates());
+    KeplerianOrbit orbit1 = (KeplerianOrbit) keyedOrbit1.orbit;
+    KeplerianOrbit orbit2 = (KeplerianOrbit) keyedOrbit2.orbit;
 
     double a1 = orbit1.getA();
     double a2 = orbit2.getA();
@@ -59,8 +41,9 @@ public class OrbitCorrelator {
       raan2 = raan2 + 2 * Math.PI;
     }
 
-    double anomaly1 = orbit1.getAnomaly(PositionAngle.MEAN) % (2 * Math.PI);
-    double anomaly2 = orbit2.getAnomaly(PositionAngle.MEAN) % (2 * Math.PI);
+    // Calculate anomaly adjusted for time
+    double anomaly1 = orbit1.getAnomaly(PositionAngle.MEAN);
+    double anomaly2 = orbit2.getAnomaly(PositionAngle.MEAN);
     if (anomaly1 < 0) {
       anomaly1 = anomaly1 + 2 * Math.PI;
     }
@@ -68,20 +51,18 @@ public class OrbitCorrelator {
       anomaly2 = anomaly2 + 2 * Math.PI;
     }
 
-    System.out.println(a1);
-    System.out.println(a2);
-    System.out.println(e1);
-    System.out.println(e2);
-    System.out.println(i1);
-    System.out.println(i2);
-    System.out.println(pa1);
-    System.out.println(pa2);
-    System.out.println(raan1);
-    System.out.println(raan2);
-    System.out.println(anomaly1);
-    System.out.println(anomaly2);
-    System.out.println(orbit1.getDate());
-    System.out.println(orbit2.getDate());
+    double offset =
+        keyedOrbit1
+            .orbit
+            .getDate()
+            .offsetFrom(keyedOrbit2.orbit.getDate(), TimeScalesFactory.getUTC());
+
+    double meanMotion2 = orbit2.getKeplerianMeanMotion();
+
+    double adjustedAnomaly2 = (anomaly2 + meanMotion2 * offset) % (2 * Math.PI);
+    if (adjustedAnomaly2 < 0) {
+      adjustedAnomaly2 = adjustedAnomaly2 + 2 * Math.PI;
+    }
 
     double epsilon = 0.0001;
 
@@ -90,14 +71,7 @@ public class OrbitCorrelator {
     boolean i = (Math.abs(i1 - i2) < epsilon);
     boolean pa = (Math.abs(pa1 - pa2) < epsilon);
     boolean raan = (Math.abs(raan1 - raan2) < epsilon);
-    boolean anomaly = (Math.abs(anomaly1 - anomaly2) < 0.1);
-
-    System.out.println(a);
-    System.out.println(e);
-    System.out.println(i);
-    System.out.println(pa);
-    System.out.println(raan);
-    System.out.println(anomaly);
+    boolean anomaly = (Math.abs(anomaly1 - adjustedAnomaly2) < 0.1);
 
     return (a && e && i && pa && raan && anomaly);
   }
