@@ -56,7 +56,8 @@ public class TrackStatefulFunction implements StatefulFunction {
         trackState.set(track);
       } catch (Exception trackNotValid) {
         Utilities.sendToDefault(
-            context, String.format("track given id %s not valid", context.self().id()));
+            context,
+            String.format("track given id %s not valid. Discarding input", context.self().id()));
       }
     }
 
@@ -77,10 +78,12 @@ public class TrackStatefulFunction implements StatefulFunction {
 
         // Set persisted state
         trackState.set(track);
-      } catch (NullPointerException trackDoesNotExist) {
+      } catch (Exception e) {
         Utilities.sendToDefault(
             context,
-            String.format("track with id %s has already been deleted", context.self().id()));
+            String.format(
+                "track with id %s cannot add orbitId - failed with exception %s",
+                context.self().id(), e.toString()));
       }
     }
 
@@ -109,10 +112,12 @@ public class TrackStatefulFunction implements StatefulFunction {
           Utilities.sendToDefault(
               context, String.format("Removed orbitId %s from trackId %s", orbitId, track.trackId));
         }
-      } catch (NullPointerException trackDoesNotExist) {
+      } catch (Exception e) {
         Utilities.sendToDefault(
             context,
-            String.format("track with id %s has already been deleted", context.self().id()));
+            String.format(
+                "track with id %s cannot remove orbit id - failed with exception %s",
+                context.self().id(), e.toString()));
       }
     }
 
@@ -122,10 +127,12 @@ public class TrackStatefulFunction implements StatefulFunction {
         trackState.clear();
         Utilities.sendToDefault(
             context, String.format("Cleared track for trackId %s", context.self().id()));
-      } catch (NullPointerException trackDoesNotExist) {
+      } catch (Exception e) {
         Utilities.sendToDefault(
             context,
-            String.format("track with id %s has already been deleted", context.self().id()));
+            String.format(
+                "track with id %s cannot be deleted - failed with exception %s",
+                context.self().id(), e.toString()));
       }
     }
 
@@ -157,7 +164,7 @@ public class TrackStatefulFunction implements StatefulFunction {
         Utilities.sendToDefault(
             context,
             String.format(
-                "track with id %s has already been deleted, forwarding CollectedTracksMessage.",
+                "track with id %s cannot be added to CollectedTracksMessage, forwarding CollectedTracksMessage.",
                 context.self().id()));
       } finally {
         // If the CollectedTracksMessage still needs to collect more tracks, forward it to the

@@ -140,7 +140,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
                   "Not correlated orbits with ids %s and %s",
                   recievedKeyedOrbit.orbitId, keyedOrbit.orbitId));
         }
-      } catch (Exception ExpiredOrbitException) {
+      } catch (Exception e) {
         Utilities.sendToDefault(
             context,
             String.format(
@@ -209,7 +209,10 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
         // Send message out that orbit refine failed
         Utilities.sendToDefault(
-            context, String.format("Orbit refine for orbit id %s failed", context.self().id()));
+            context,
+            String.format(
+                "Orbit refine for orbit id %s failed with exception %s",
+                context.self().id(), e.toString()));
       }
     }
   }

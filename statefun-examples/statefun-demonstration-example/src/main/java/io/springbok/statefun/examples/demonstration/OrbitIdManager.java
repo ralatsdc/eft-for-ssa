@@ -86,11 +86,21 @@ public class OrbitIdManager implements StatefulFunction {
       orbitIdList.add(newRefinedOrbitIdMessage.getNewOrbitId());
       try {
         orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId1());
-      } catch (NullPointerException orbitIdAlreadyDeleted) {
+      } catch (Exception e) {
+        Utilities.sendToDefault(
+            context,
+            String.format(
+                "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
+                newRefinedOrbitIdMessage.getOldOrbitId1()));
       }
       try {
         orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId2());
-      } catch (NullPointerException orbitIdAlreadyDeleted) {
+      } catch (Exception e) {
+        Utilities.sendToDefault(
+            context,
+            String.format(
+                "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
+                newRefinedOrbitIdMessage.getOldOrbitId2()));
       }
 
       Utilities.sendToDefault(context, orbitIdList.toString());
@@ -125,8 +135,8 @@ public class OrbitIdManager implements StatefulFunction {
     // This message is sent from an OrbitStatefulFunction when that orbit expires. This removes that
     // orbit id from the orbit id list
     if (input instanceof RemoveOrbitIdMessage) {
+      RemoveOrbitIdMessage removeOrbitIdMessage = (RemoveOrbitIdMessage) input;
       try {
-        RemoveOrbitIdMessage removeOrbitIdMessage = (RemoveOrbitIdMessage) input;
 
         String orbitId = removeOrbitIdMessage.getStringContent();
 
@@ -137,7 +147,12 @@ public class OrbitIdManager implements StatefulFunction {
         // Message out that orbit id was removed
         Utilities.sendToDefault(context, String.format("Removed orbitId %s", orbitId));
         orbitIds.set(ids);
-      } catch (NullPointerException orbitIdAlreadyDeleted) {
+      } catch (Exception e) {
+        Utilities.sendToDefault(
+            context,
+            String.format(
+                "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
+                removeOrbitIdMessage.getStringContent()));
       }
     }
   }
