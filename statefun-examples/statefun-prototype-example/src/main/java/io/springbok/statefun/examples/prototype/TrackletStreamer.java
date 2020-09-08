@@ -110,6 +110,7 @@ public class TrackletStreamer {
 
   private static class CreateOrbit implements MapFunction<Tracklet, KeyedOrbit> {
 
+    @Override
     public KeyedOrbit map(Tracklet tracklet) throws Exception {
 
       ArrayList<Position> positions = tracklet.getPositions();
@@ -205,6 +206,7 @@ public class TrackletStreamer {
   private static class Counter<T> extends RichMapFunction<T, T> {
     private transient org.apache.flink.metrics.Counter counter;
 
+    @Override
     public void open(Configuration config) {
       this.counter = getRuntimeContext().getMetricGroup().counter("trackletCounter");
     }
