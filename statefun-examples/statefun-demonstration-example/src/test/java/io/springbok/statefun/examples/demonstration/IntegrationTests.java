@@ -152,7 +152,7 @@ public class IntegrationTests {
               (Math.cbrt(OrbitFactory.mu))
                   / (Math.cbrt(Math.pow(tle.getMeanMotion(), 2))); // semi major axis in M
 
-          // Assert true within delta
+          // Assert true within epsilon
           Assert.assertEquals(tleA, a, 10);
 
           Assert.assertEquals(tle.getE(), e, 0.0001);
