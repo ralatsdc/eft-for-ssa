@@ -177,8 +177,11 @@ public class OrbitStatefulFunction implements StatefulFunction {
         Utilities.sendToDefault(
             context,
             String.format(
-                "Refined orbits with ids %s and %s to create orbit with id %s",
-                keyedOrbit1.orbitId, keyedOrbit2.orbitId, newOrbit.orbitId));
+                "Refined orbits with ids %s and %s to create orbit with id %s: %s",
+                keyedOrbit1.orbitId,
+                keyedOrbit2.orbitId,
+                newOrbit.orbitId,
+                newOrbit.orbit.toString()));
 
         NewRefinedOrbitIdMessage newRefinedOrbitIdMessage =
             NewRefinedOrbitIdMessage.newBuilder()
