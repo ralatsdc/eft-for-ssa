@@ -50,14 +50,19 @@ public class TrackStatefulFunction implements StatefulFunction {
         context.send(OrbitIdManager.TYPE, "orbit-id-manager", newTrackMessage);
 
         // Send message out that track was created
-        Utilities.sendToDefault(context, String.format("Created track for id %s", track.trackId));
+        Utilities.sendToDefault(
+            context,
+            String.format(
+                "Created track for id %s from message with id %s",
+                track.trackId, track.messageUUID));
 
         // Set persisted state
         trackState.set(track);
       } catch (Exception trackNotValid) {
         Utilities.sendToDefault(
             context,
-            String.format("track given id %s not valid. Discarding input", context.self().id()));
+            String.format(
+                "track given id %s not valid. Discarding message with id %s", context.self().id()));
       }
     }
 
