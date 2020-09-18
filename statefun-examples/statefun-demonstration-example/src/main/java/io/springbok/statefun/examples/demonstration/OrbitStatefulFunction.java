@@ -58,7 +58,9 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
         // Send message out that orbit was created
         Utilities.sendToDefault(
-            context, String.format("Created orbit for id %s", keyedOrbit.orbitId));
+            context,
+            String.format(
+                "Created orbit for id %s: %s", keyedOrbit.orbitId, keyedOrbit.orbit.toString()));
 
         orbitState.set(keyedOrbit);
       } catch (Exception e) {

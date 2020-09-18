@@ -46,9 +46,9 @@ public class IntegrationTests {
     harness.start();
 
     Assert.assertTrue(testConsumer.messages.get(0).equals("Created trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(1).equals("Created track for id 0"));
+    Assert.assertTrue(testConsumer.messages.get(1).contains("Created track for id 0"));
     Assert.assertTrue(testConsumer.messages.get(2).equals("Created orbitId 0"));
-    Assert.assertTrue(testConsumer.messages.get(3).equals("Created orbit for id 0"));
+    Assert.assertTrue(testConsumer.messages.get(3).contains("Created orbit for id 0"));
     Assert.assertTrue(testConsumer.messages.get(4).equals("Added orbitId 0 to trackId 0"));
     Assert.assertTrue(testConsumer.messages.get(5).equals("Saved orbitId 0"));
     Assert.assertTrue(testConsumer.messages.get(6).equals("Cleared orbit for id 0"));
