@@ -11,7 +11,23 @@ TestTracksSourceFunction can also be adjusted by modifying an instance's runTime
 OrbitStatefulFunction.deleteTimer = 1;
 
 ---
+Flink-Statefun
 
+Before getting started, verify there's a local docker image with Flink-Statefun 2.1-SNAPSHOT
+    $ docker images
+
+If not, you'll need to build it:
+
+Pull flink-statefun commit 6bdbc25924b264f85fc42abd34d96eab6c3e26e3
+https://github.com/apache/flink-statefun
+
+Build project
+    $ mvn clean package -DskipTests
+Build image
+    $  cd tools/docker/
+    $ ./build-stateful-functions.sh
+Verify with docker images
+___
 Docker-Compose
 
 Startup:

@@ -60,7 +60,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
         Utilities.sendToDefault(
             context,
             String.format(
-                "Created orbit for id %s: %s", keyedOrbit.orbitId, keyedOrbit.orbit.toString()));
+                "Created orbit for id %s from track with id %s: %s",
+                keyedOrbit.orbitId, track.trackId, keyedOrbit.orbit.toString()));
 
         orbitState.set(keyedOrbit);
       } catch (Exception e) {
