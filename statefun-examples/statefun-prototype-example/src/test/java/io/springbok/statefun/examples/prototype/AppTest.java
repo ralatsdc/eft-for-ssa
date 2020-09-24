@@ -5,7 +5,6 @@ import junit.framework.TestResult;
 import org.apache.flink.statefun.flink.harness.Harness;
 import org.apache.flink.statefun.flink.harness.io.SerializableSupplier;
 import org.junit.Test;
-
 import java.io.*;
 
 /** Unit test for simple App. */

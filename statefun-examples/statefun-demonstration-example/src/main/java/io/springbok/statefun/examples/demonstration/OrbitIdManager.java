@@ -86,6 +86,7 @@ public class OrbitIdManager implements StatefulFunction {
       orbitIdList.add(newRefinedOrbitIdMessage.getNewOrbitId());
       try {
         orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId1());
+
       } catch (Exception e) {
         Utilities.sendToDefault(
             context,
@@ -101,6 +102,7 @@ public class OrbitIdManager implements StatefulFunction {
             String.format(
                 "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
                 newRefinedOrbitIdMessage.getOldOrbitId2()));
+
       }
 
       Utilities.sendToDefault(context, orbitIdList.toString());
@@ -136,10 +138,14 @@ public class OrbitIdManager implements StatefulFunction {
     // orbit id from the orbit id list
     if (input instanceof RemoveOrbitIdMessage) {
       RemoveOrbitIdMessage removeOrbitIdMessage = (RemoveOrbitIdMessage) input;
+
       try {
 
         String orbitId = removeOrbitIdMessage.getStringContent();
 
+
+      String orbitId = removeOrbitIdMessage.getStringContent();
+      try {
         ArrayList ids = orbitIds.get();
 
         ids.remove(orbitId);
@@ -147,12 +153,14 @@ public class OrbitIdManager implements StatefulFunction {
         // Message out that orbit id was removed
         Utilities.sendToDefault(context, String.format("Removed orbitId %s", orbitId));
         orbitIds.set(ids);
+
       } catch (Exception e) {
         Utilities.sendToDefault(
             context,
             String.format(
                 "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
                 removeOrbitIdMessage.getStringContent()));
+
       }
     }
   }
