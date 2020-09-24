@@ -91,6 +91,7 @@ under the License.
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-assembly-plugin</artifactId>
                         <dependencies>
+                            <!-- https://mvnrepository.com/artifact/org.apache.apache.resources/apache-source-release-assembly-descriptor -->
                             <dependency>
                                 <groupId>org.apache.apache.resources</groupId>
                                 <artifactId>apache-source-release-assembly-descriptor</artifactId>

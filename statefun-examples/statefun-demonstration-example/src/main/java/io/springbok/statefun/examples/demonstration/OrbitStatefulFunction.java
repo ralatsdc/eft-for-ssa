@@ -65,7 +65,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
         orbitState.set(keyedOrbit);
       } catch (Exception e) {
-        // Send message out that orbit was created
+        // Send message out that orbit creation failed
         Utilities.sendToDefault(
             context,
             String.format(
@@ -78,25 +78,29 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
     // This message is sent from this instance of the OrbitStatefulFunction after a period of time
     if (input instanceof DelayedDeleteMessage) {
-      KeyedOrbit keyedOrbit = orbitState.get();
+      try {
+        KeyedOrbit keyedOrbit = orbitState.get();
 
-      RemoveOrbitIdMessage removeOrbitIdMessage =
-          RemoveOrbitIdMessage.newBuilder().setStringContent(keyedOrbit.orbitId).build();
+        RemoveOrbitIdMessage removeOrbitIdMessage =
+            RemoveOrbitIdMessage.newBuilder().setStringContent(keyedOrbit.orbitId).build();
 
-      // Send message to manager to remove this orbit from list
-      context.send(OrbitIdManager.TYPE, "orbit-id-manager", removeOrbitIdMessage);
+        // Send message to manager to remove this orbit from list
+        context.send(OrbitIdManager.TYPE, "orbit-id-manager", removeOrbitIdMessage);
 
-      // Send message to track(s) to remove this orbit from their lists
-      keyedOrbit.trackIds.forEach(
-          id -> {
-            context.send(TrackStatefulFunction.TYPE, String.valueOf(id), removeOrbitIdMessage);
-          });
+        // Send message to track(s) to remove this orbit from their lists
+        keyedOrbit.trackIds.forEach(
+            id -> {
+              context.send(TrackStatefulFunction.TYPE, String.valueOf(id), removeOrbitIdMessage);
+            });
 
-      // Send message out that this orbit was destroyed
-      Utilities.sendToDefault(
-          context, String.format("Cleared orbit for id %s", keyedOrbit.orbitId));
-
-      orbitState.clear();
+        // Send message out that this orbit was destroyed
+        Utilities.sendToDefault(
+            context, String.format("Cleared orbit for id %s", keyedOrbit.orbitId));
+        orbitState.clear();
+      } catch (NullPointerException e) {
+        Utilities.sendToDefault(
+            context, String.format("Orbit with id %s already deleted", context.self().id()));
+      }
     }
 
     // Message from manager to try to correlate this orbit with incoming orbit
@@ -216,7 +220,6 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
         orbitState.set(newOrbit);
       } catch (Exception e) {
-
         // Send message out that orbit refine failed
         Utilities.sendToDefault(
             context,
