@@ -58,7 +58,10 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
         // Send message out that orbit was created
         Utilities.sendToDefault(
-            context, String.format("Created orbit for id %s", keyedOrbit.orbitId));
+            context,
+            String.format(
+                "Created orbit for id %s from track with id %s: %s",
+                keyedOrbit.orbitId, track.trackId, keyedOrbit.orbit.toString()));
 
         orbitState.set(keyedOrbit);
       } catch (Exception e) {
@@ -144,7 +147,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
                   "Not correlated orbits with ids %s and %s",
                   recievedKeyedOrbit.orbitId, keyedOrbit.orbitId));
         }
-      } catch (Exception ExpiredOrbitException) {
+      } catch (Exception e) {
         Utilities.sendToDefault(
             context,
             String.format(
@@ -179,8 +182,11 @@ public class OrbitStatefulFunction implements StatefulFunction {
         Utilities.sendToDefault(
             context,
             String.format(
-                "Refined orbits with ids %s and %s to create orbit with id %s",
-                keyedOrbit1.orbitId, keyedOrbit2.orbitId, newOrbit.orbitId));
+                "Refined orbits with ids %s and %s to create orbit with id %s: %s",
+                keyedOrbit1.orbitId,
+                keyedOrbit2.orbitId,
+                newOrbit.orbitId,
+                newOrbit.orbit.toString()));
 
         NewRefinedOrbitIdMessage newRefinedOrbitIdMessage =
             NewRefinedOrbitIdMessage.newBuilder()
@@ -212,7 +218,10 @@ public class OrbitStatefulFunction implements StatefulFunction {
       } catch (Exception e) {
         // Send message out that orbit refine failed
         Utilities.sendToDefault(
-            context, String.format("Orbit refine for orbit id %s failed", context.self().id()));
+            context,
+            String.format(
+                "Orbit refine for orbit id %s failed with exception %s",
+                context.self().id(), e.toString()));
       }
     }
   }

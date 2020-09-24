@@ -208,6 +208,8 @@ public class TrackGenerator {
     // obsTime3, x3, y3, z3, rcs3
     String message;
 
+    UUID uuid = UUID.randomUUID();
+
     // Message set to always come in ten minutes after first observation
     AbsoluteDate msgTime = extrapDate.shiftedBy(600);
     // Set sensor ID
@@ -215,7 +217,7 @@ public class TrackGenerator {
     // Set object ID
     int objectId = tle.getSatelliteNumber();
 
-    message = msgTime.toString() + "," + sensorId + "," + objectId;
+    message = uuid.toString() + "," + msgTime.toString() + "," + sensorId + "," + objectId;
 
     // TODO: future random number of readings option
     //    int positionReadingNum = (int) (Math.random() * 10);

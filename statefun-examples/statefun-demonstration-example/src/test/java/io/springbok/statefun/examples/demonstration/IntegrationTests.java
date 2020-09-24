@@ -1,5 +1,8 @@
 package io.springbok.statefun.examples.demonstration;
 
+import io.springbok.statefun.examples.utility.MockConsumer;
+import io.springbok.statefun.examples.utility.MockTracksSourceFunction;
+import io.springbok.statefun.examples.utility.TrackGenerator;
 import org.apache.flink.statefun.flink.harness.Harness;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -7,12 +10,11 @@ import org.junit.Test;
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.PositionAngle;
 import org.orekit.propagation.analytical.tle.TLE;
-import io.springbok.statefun.examples.utility.MockConsumer;
-import io.springbok.statefun.examples.utility.MockTracksSourceFunction;
-import io.springbok.statefun.examples.utility.TrackGenerator;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /*
  NOTE: Tests assume that the delayed delete message in the OrbitStatefulFunction will be send after a 4 second delay
@@ -46,9 +48,9 @@ public class IntegrationTests {
     harness.start();
 
     Assert.assertTrue(testConsumer.messages.get(0).equals("Created trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(1).equals("Created track for id 0"));
+    Assert.assertTrue(testConsumer.messages.get(1).contains("Created track for id 0"));
     Assert.assertTrue(testConsumer.messages.get(2).equals("Created orbitId 0"));
-    Assert.assertTrue(testConsumer.messages.get(3).equals("Created orbit for id 0"));
+    Assert.assertTrue(testConsumer.messages.get(3).contains("Created orbit for id 0"));
     Assert.assertTrue(testConsumer.messages.get(4).equals("Added orbitId 0 to trackId 0"));
     Assert.assertTrue(testConsumer.messages.get(5).equals("Saved orbitId 0"));
     Assert.assertTrue(testConsumer.messages.get(6).equals("Cleared orbit for id 0"));
@@ -104,10 +106,12 @@ public class IntegrationTests {
             || testConsumer.messages.contains("Added track with id 0 to collectedTracksMessage"));
 
     // Test new orbit creation flow
-    Assert.assertTrue(
-        testConsumer.messages.contains("Refined orbits with ids 1 and 0 to create orbit with id 2")
-            || testConsumer.messages.contains(
-                "Refined orbits with ids 0 and 1 to create orbit with id 2"));
+    List<String> refinedOrbitCheck =
+        testConsumer.messages.stream()
+            .filter(message -> message.contains("Refined orbits with ids"))
+            .collect(Collectors.toList());
+    Assert.assertTrue(refinedOrbitCheck.size() == 1);
+
     Assert.assertTrue(testConsumer.messages.contains("Added orbitId 2 to trackId 0"));
     Assert.assertTrue(testConsumer.messages.contains("Added orbitId 2 to trackId 1"));
 

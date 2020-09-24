@@ -8,6 +8,7 @@ import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 // Track stores information from a TrackIn string in a more usable interface
 public class Track {
@@ -18,6 +19,7 @@ public class Track {
   private ArrayList<Position> positions;
   private ArrayList<Double> rcsArr;
 
+  public UUID messageUUID;
   public String trackId;
   private ArrayList<String> orbitIds;
 
@@ -26,7 +28,7 @@ public class Track {
   @Override
   public String toString() {
 
-    String msg = msgTime + "," + sensorId + "," + objectId;
+    String msg = messageUUID + "," + msgTime + "," + sensorId + "," + objectId;
 
     for (int i = 0; i < positions.size(); i++) {
       Position position = positions.get(i);
@@ -52,23 +54,25 @@ public class Track {
     OrbitFactory.init();
 
     String[] tokens = line.split(",");
-    if (tokens.length % 5 != 3) {
+
+    if (tokens.length % 5 != 4) {
       throw new RuntimeException("Invalid string to form Track: " + line);
     }
 
     Track track = new Track();
 
     // Create track from string
-    track.msgTime = new AbsoluteDate(tokens[0], utc);
-    track.sensorId = Integer.parseInt(tokens[1]);
-    track.objectId = Integer.parseInt(tokens[2]);
+    track.messageUUID = UUID.fromString(tokens[0]);
+    track.msgTime = new AbsoluteDate(tokens[1], utc);
+    track.sensorId = Integer.parseInt(tokens[2]);
+    track.objectId = Integer.parseInt(tokens[3]);
 
     ArrayList<Position> positions = new ArrayList<Position>();
     ArrayList<Double> rcsArr = new ArrayList<Double>();
 
     ObservableSatellite satelliteIndex = new ObservableSatellite(0);
 
-    for (int i = 3; i < tokens.length; i = i + 5) {
+    for (int i = 4; i < tokens.length; i = i + 5) {
 
       AbsoluteDate date = new AbsoluteDate(tokens[i], utc);
       double x = Double.parseDouble(tokens[(i + 1)]);
