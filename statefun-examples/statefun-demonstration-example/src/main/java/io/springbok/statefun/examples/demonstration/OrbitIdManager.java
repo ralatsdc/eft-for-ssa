@@ -76,6 +76,8 @@ public class OrbitIdManager implements StatefulFunction {
     if (input instanceof NewRefinedOrbitIdMessage) {
       NewRefinedOrbitIdMessage newRefinedOrbitIdMessage = (NewRefinedOrbitIdMessage) input;
 
+      int trackCutoff = 1;
+
       ArrayList<String> orbitIdList = orbitIds.getOrDefault(new ArrayList<String>());
 
       // Message out that orbit id was saved
@@ -85,8 +87,9 @@ public class OrbitIdManager implements StatefulFunction {
       // Update orbitIdList with the new orbit
       orbitIdList.add(newRefinedOrbitIdMessage.getNewOrbitId());
       try {
-        orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId1());
-
+        if (newRefinedOrbitIdMessage.getOldOrbit1TracksNumber() > trackCutoff) {
+          orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId1());
+        }
       } catch (Exception e) {
         Utilities.sendToDefault(
             context,
@@ -95,14 +98,15 @@ public class OrbitIdManager implements StatefulFunction {
                 newRefinedOrbitIdMessage.getOldOrbitId1()));
       }
       try {
-        orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId2());
+        if (newRefinedOrbitIdMessage.getOldOrbit2TracksNumber() > trackCutoff) {
+          orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId2());
+        }
       } catch (Exception e) {
         Utilities.sendToDefault(
             context,
             String.format(
                 "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
                 newRefinedOrbitIdMessage.getOldOrbitId2()));
-
       }
 
       Utilities.sendToDefault(context, orbitIdList.toString());
@@ -142,10 +146,6 @@ public class OrbitIdManager implements StatefulFunction {
       try {
 
         String orbitId = removeOrbitIdMessage.getStringContent();
-
-
-      String orbitId = removeOrbitIdMessage.getStringContent();
-      try {
         ArrayList ids = orbitIds.get();
 
         ids.remove(orbitId);
@@ -160,7 +160,6 @@ public class OrbitIdManager implements StatefulFunction {
             String.format(
                 "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
                 removeOrbitIdMessage.getStringContent()));
-
       }
     }
   }

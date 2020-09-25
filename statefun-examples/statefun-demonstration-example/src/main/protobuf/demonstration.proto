@@ -50,6 +50,8 @@ message NewRefinedOrbitIdMessage {
   string newOrbitId = 1;
   string oldOrbitId1 = 2;
   string oldOrbitId2 = 3;
+  int32 oldOrbit1TracksNumber = 4;
+  int32 oldOrbit2TracksNumber = 5;
 }
 
 message CollectedTracksMessage {
