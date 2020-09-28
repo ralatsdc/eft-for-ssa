@@ -4,12 +4,21 @@ import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.PositionAngle;
 import org.orekit.time.TimeScalesFactory;
 
+import java.io.FileInputStream;
+import java.util.Properties;
+
 // Class used to determine if two orbits correlate
 public class OrbitCorrelator {
 
-  public static boolean correlate(KeyedOrbit keyedOrbit1, KeyedOrbit keyedOrbit2) {
+  public static boolean correlate(KeyedOrbit keyedOrbit1, KeyedOrbit keyedOrbit2) throws Exception {
 
     OrbitFactory.init();
+
+    Properties defaultProps = new Properties();
+    FileInputStream in = new FileInputStream(System.getProperty("default.properties"));
+    defaultProps.load(in);
+    in.close();
+    Properties applicationProps = new Properties(defaultProps);
 
     KeplerianOrbit orbit1 = (KeplerianOrbit) keyedOrbit1.orbit;
     KeplerianOrbit orbit2 = (KeplerianOrbit) keyedOrbit2.orbit;
@@ -64,9 +73,10 @@ public class OrbitCorrelator {
       adjustedAnomaly2 = adjustedAnomaly2 + 2 * Math.PI;
     }
 
-    double epsilon = 0.0001;
+    double epsilon = Double.parseDouble(applicationProps.getProperty("epsilon"));
+    double aEpsilon = Double.parseDouble(applicationProps.getProperty("aEpsilon"));
 
-    boolean a = (Math.abs(a1 - a2) < 10);
+    boolean a = (Math.abs(a1 - a2) < aEpsilon);
     boolean e = (Math.abs(e1 - e2) < epsilon);
     boolean i = (Math.abs(i1 - i2) < epsilon);
     boolean pa = (Math.abs(pa1 - pa2) < epsilon);

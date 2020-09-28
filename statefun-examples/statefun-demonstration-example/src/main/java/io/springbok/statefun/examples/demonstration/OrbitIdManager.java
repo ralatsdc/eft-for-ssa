@@ -7,7 +7,9 @@ import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
+import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.Properties;
 
 /*
  The OrbitIdManager is responsible for creating new ids for orbits, as well as keeping track of those ids to check for possible correlations between orbits
@@ -76,8 +78,6 @@ public class OrbitIdManager implements StatefulFunction {
     if (input instanceof NewRefinedOrbitIdMessage) {
       NewRefinedOrbitIdMessage newRefinedOrbitIdMessage = (NewRefinedOrbitIdMessage) input;
 
-      int trackCutoff = 1;
-
       ArrayList<String> orbitIdList = orbitIds.getOrDefault(new ArrayList<String>());
 
       // Message out that orbit id was saved
@@ -86,27 +86,45 @@ public class OrbitIdManager implements StatefulFunction {
 
       // Update orbitIdList with the new orbit
       orbitIdList.add(newRefinedOrbitIdMessage.getNewOrbitId());
+
       try {
-        if (newRefinedOrbitIdMessage.getOldOrbit1TracksNumber() > trackCutoff) {
-          orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId1());
+        Properties defaultProps = new Properties();
+        FileInputStream in = new FileInputStream(System.getProperty("default.properties"));
+        defaultProps.load(in);
+        in.close();
+        Properties applicationProps = new Properties(defaultProps);
+        Integer trackCutoff = Integer.parseInt(applicationProps.getProperty("trackCutoff"));
+
+        try {
+          if (newRefinedOrbitIdMessage.getOldOrbit1TracksNumber() > trackCutoff) {
+            orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId1());
+          }
+        } catch (Exception e) {
+          Utilities.sendToDefault(
+              context,
+              String.format(
+                  "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
+                  newRefinedOrbitIdMessage.getOldOrbitId1()));
+        }
+        try {
+          if (newRefinedOrbitIdMessage.getOldOrbit2TracksNumber() > trackCutoff) {
+            orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId2());
+          }
+        } catch (Exception e) {
+          Utilities.sendToDefault(
+              context,
+              String.format(
+                  "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
+                  newRefinedOrbitIdMessage.getOldOrbitId2()));
         }
       } catch (Exception e) {
         Utilities.sendToDefault(
             context,
             String.format(
-                "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
-                newRefinedOrbitIdMessage.getOldOrbitId1()));
-      }
-      try {
-        if (newRefinedOrbitIdMessage.getOldOrbit2TracksNumber() > trackCutoff) {
-          orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId2());
-        }
-      } catch (Exception e) {
-        Utilities.sendToDefault(
-            context,
-            String.format(
-                "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
-                newRefinedOrbitIdMessage.getOldOrbitId2()));
+                "Orbit deletion with ids %s and %s failed with exception: %s",
+                newRefinedOrbitIdMessage.getOldOrbitId1(),
+                newRefinedOrbitIdMessage.getOldOrbitId2(),
+                e.toString()));
       }
 
       Utilities.sendToDefault(context, orbitIdList.toString());

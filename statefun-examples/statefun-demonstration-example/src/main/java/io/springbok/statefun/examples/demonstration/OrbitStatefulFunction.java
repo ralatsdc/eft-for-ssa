@@ -7,8 +7,10 @@ import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
+import java.io.FileInputStream;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Properties;
 
 /*
  TrackStatefulFunction stores instances of the KeyedOrbit class built from the data it receives from the OrbitIdManager.
@@ -19,7 +21,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
   // This FunctionType binding is used in the Demonstration module
   public static final FunctionType TYPE = new FunctionType("springbok", "orbit-stateful-function");
 
-  public static int deleteTimer = 320;
+  public static int deleteTimer;
 
   // PersistedValues can be stored and recalled when this StatefulFunction is invoked
   @Persisted
@@ -149,9 +151,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
         }
       } catch (Exception e) {
         Utilities.sendToDefault(
-            context,
-            String.format(
-                "Not correlated orbits - orbit with id %s has expired", context.self().id()));
+            context, String.format("Not correlated orbits - Exception: %s", e.toString()));
       }
     }
 
@@ -219,6 +219,13 @@ public class OrbitStatefulFunction implements StatefulFunction {
             context, String.format("Created refined orbit for id %s", newOrbit.orbitId));
 
         orbitState.set(newOrbit);
+      } catch (NullPointerException e) {
+        Utilities.sendToDefault(
+            context,
+            String.format(
+                "Orbit refine for orbit id %s failed with exception %s - did you forget to set properties?",
+                context.self().id(), e.toString()));
+
       } catch (Exception e) {
         // Send message out that orbit refine failed
         Utilities.sendToDefault(
@@ -231,8 +238,16 @@ public class OrbitStatefulFunction implements StatefulFunction {
   }
 
   // Sends a delete message after a certain amount of time
-  private void sendSelfDeleteMessage(Context context) {
+  private void sendSelfDeleteMessage(Context context) throws Exception {
+    Properties defaultProps = new Properties();
+    FileInputStream in = new FileInputStream(System.getProperty("default.properties"));
+    defaultProps.load(in);
+    in.close();
+    Properties applicationProps = new Properties(defaultProps);
+
     context.sendAfter(
-        Duration.ofSeconds(deleteTimer), context.self(), DelayedDeleteMessage.newBuilder().build());
+        Duration.ofSeconds(Long.parseLong(applicationProps.getProperty("deleteTimer"))),
+        context.self(),
+        DelayedDeleteMessage.newBuilder().build());
   }
 }

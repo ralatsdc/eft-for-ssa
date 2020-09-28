@@ -27,8 +27,8 @@ import java.util.*;
 // Examples of randomized tracks are shown below but not utilized
 public class TrackGenerator {
 
-  static String tlePath = "./tle-data/globalstar_tles_05_18_2020.txt";
-  private String orekitPath = "../../orekit-data";
+  static String tlePath;
+  private String orekitPath;
 
   ArrayList<String> messages;
   Map<Integer, ArrayList<String>> mappedMessages;
@@ -49,11 +49,20 @@ public class TrackGenerator {
   // infinite generator
   Iterator<TLE> iterator;
 
+  public TrackGenerator() throws Exception {
+
+    // TODO: verify the input is a TLE
+    orekitPath = System.getProperty("orekit-path");
+    tlePath = System.getProperty("tle-path");
+    messages = new ArrayList<>();
+    mappedMessages = new HashMap<>();
+  }
+
   public TrackGenerator(String tlePath) throws Exception {
 
     // TODO: verify the input is a TLE
     this.tlePath = tlePath;
-    this.orekitPath = orekitPath;
+    orekitPath = System.getProperty("orekit-path");
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
   }
