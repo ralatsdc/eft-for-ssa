@@ -52,8 +52,8 @@ public class TrackGenerator {
   public TrackGenerator() throws Exception {
 
     // TODO: verify the input is a TLE
-    orekitPath = System.getProperty("orekit-path");
-    tlePath = System.getProperty("tle-path");
+    orekitPath = System.getProperty("OREKIT_PATH");
+    tlePath = System.getProperty("TLE_PATH");
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
   }
@@ -62,7 +62,7 @@ public class TrackGenerator {
 
     // TODO: verify the input is a TLE
     this.tlePath = tlePath;
-    orekitPath = System.getProperty("orekit-path");
+    orekitPath = System.getProperty("OREKIT_PATH");
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
   }

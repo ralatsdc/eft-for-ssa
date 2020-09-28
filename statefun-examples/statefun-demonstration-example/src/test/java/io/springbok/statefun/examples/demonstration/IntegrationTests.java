@@ -39,7 +39,7 @@ public class IntegrationTests {
     MockTracksSourceFunction singleTracksSource =
         new MockTracksSourceFunction(trackGenerator.getXMessages(1));
     MockConsumer testConsumer = new MockConsumer();
-    singleTracksSource.runTimeMS = 2000;
+    singleTracksSource.runTimeMS = 5000;
     OrbitStatefulFunction.deleteTimer = 1;
 
     Harness harness =
@@ -127,7 +127,7 @@ public class IntegrationTests {
   @Test
   public void testTrackMessages() throws Exception {
 
-    final File tleData = new File(System.getProperty("tle-path"));
+    final File tleData = new File(System.getProperty("TLE_PATH"));
     ArrayList<TLE> tles = TrackGenerator.convertTLES(tleData);
     tles.forEach(
         tle -> {

@@ -15,7 +15,9 @@ public class OrbitCorrelator {
     OrbitFactory.init();
 
     Properties defaultProps = new Properties();
-    FileInputStream in = new FileInputStream(System.getProperty("default.properties"));
+    FileInputStream in =
+        new FileInputStream(
+            System.getProperty("PROPERTIES_PATH", System.getenv("PROPERTIES_PATH")));
     defaultProps.load(in);
     in.close();
     Properties applicationProps = new Properties(defaultProps);

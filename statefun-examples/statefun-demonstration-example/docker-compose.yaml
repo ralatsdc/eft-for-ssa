@@ -51,10 +51,12 @@ services:
     environment:
       - ROLE=master
       - MASTER_HOST=master
-      - orekit-path=../../orekit-data
+      - OREKIT_PATH=../../orekit-data
+      - PROPERTIES_PATH=../../resources/docker.properties
     volumes:
       - ./checkpoint-dir:/checkpoint-dir
       - ../../orekit-data:/orekit-data
+      - ./src/resources/docker.properties:/resources/docker.properties
       - ./conf/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
   worker:
     build:
@@ -71,9 +73,11 @@ services:
     environment:
       - ROLE=worker
       - MASTER_HOST=master
-      - orekit-path=../../orekit-data
+      - OREKIT_PATH=../../orekit-data
+      - PROPERTIES_PATH=../../resources/docker.properties
     volumes:
       - ./checkpoint-dir:/checkpoint-dir
       - ../../orekit-data:/orekit-data
+      - ./src/resources/docker.properties:/resources/docker.properties
       - ./conf/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
 

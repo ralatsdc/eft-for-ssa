@@ -42,7 +42,9 @@ public class OrbitFactory {
   public static void init() {
     // Ensure Orekit is configured
     if (manager == null) {
-      inputPath = System.getProperty("orekit-path");
+      inputPath =
+          System.getProperty(
+              "OREKIT_PATH", System.getProperty("OREKIT_PATH", System.getenv("OREKIT_PATH")));
       final File orekitData = new File(inputPath);
       manager = DataContext.getDefault().getDataProvidersManager();
       manager.addProvider(new DirectoryCrawler(orekitData));
