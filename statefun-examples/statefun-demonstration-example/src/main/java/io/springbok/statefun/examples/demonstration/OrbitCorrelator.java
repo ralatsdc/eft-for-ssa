@@ -67,13 +67,13 @@ public class OrbitCorrelator {
     double axisEpsilon = ApplicationProperties.getAxisEpsilon();
     double epsilon = ApplicationProperties.getEpsilon();
 
-    boolean aEqual = (Math.abs(a1 - a2) < axisEpsilon);
-    boolean eEqual = (Math.abs(e1 - e2) < epsilon);
-    boolean iEqual = (Math.abs(i1 - i2) < epsilon);
-    boolean paEqual = (Math.abs(pa1 - pa2) < epsilon);
-    boolean raanEqual = (Math.abs(raan1 - raan2) < epsilon);
-    boolean anomalyEqual = (Math.abs(anomaly1 - adjustedAnomaly2) < 0.1);
+    boolean isAEqual = (Math.abs(a1 - a2) < axisEpsilon);
+    boolean isEEqual = (Math.abs(e1 - e2) < epsilon);
+    boolean isIEqual = (Math.abs(i1 - i2) < epsilon);
+    boolean isPAEqual = (Math.abs(pa1 - pa2) < epsilon);
+    boolean isRAANEqual = (Math.abs(raan1 - raan2) < epsilon);
+    boolean isAnomalyEqual = (Math.abs(anomaly1 - adjustedAnomaly2) < 0.1);
 
-    return (aEqual && eEqual && iEqual && paEqual && raanEqual && anomalyEqual);
+    return (isAEqual && isEEqual && isIEqual && isPAEqual && isRAANEqual && isAnomalyEqual);
   }
 }
