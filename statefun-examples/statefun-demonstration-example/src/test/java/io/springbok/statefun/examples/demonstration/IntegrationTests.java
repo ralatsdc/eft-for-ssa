@@ -2,6 +2,7 @@ package io.springbok.statefun.examples.demonstration;
 
 import io.springbok.statefun.examples.utility.MockConsumer;
 import io.springbok.statefun.examples.utility.MockTracksSourceFunction;
+import io.springbok.statefun.examples.utility.SetTestPaths;
 import io.springbok.statefun.examples.utility.TrackGenerator;
 import org.apache.flink.statefun.flink.harness.Harness;
 import org.junit.Assert;
@@ -22,11 +23,12 @@ import java.util.stream.Collectors;
 public class IntegrationTests {
 
   static TrackGenerator trackGenerator;
-  static String tlePath = "../../tle-data/globalstar_tles_05_18_2020.txt";
 
   @BeforeClass
   public static void setUp() throws Exception {
-    trackGenerator = new TrackGenerator(tlePath);
+    SetTestPaths.init();
+
+    trackGenerator = new TrackGenerator();
     trackGenerator.init();
     trackGenerator.finitePropagation();
   }
@@ -37,7 +39,7 @@ public class IntegrationTests {
     MockTracksSourceFunction singleTracksSource =
         new MockTracksSourceFunction(trackGenerator.getXMessages(1));
     MockConsumer testConsumer = new MockConsumer();
-    singleTracksSource.runTimeMS = 2000;
+    singleTracksSource.runTimeMS = 5000;
     OrbitStatefulFunction.deleteTimer = 1;
 
     Harness harness =
@@ -125,7 +127,7 @@ public class IntegrationTests {
   @Test
   public void testTrackMessages() throws Exception {
 
-    final File tleData = new File(tlePath);
+    final File tleData = new File(System.getProperty("TLE_PATH"));
     ArrayList<TLE> tles = TrackGenerator.convertTLES(tleData);
     tles.forEach(
         tle -> {

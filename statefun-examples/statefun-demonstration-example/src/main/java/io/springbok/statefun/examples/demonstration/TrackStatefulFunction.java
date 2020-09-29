@@ -31,12 +31,13 @@ public class TrackStatefulFunction implements StatefulFunction {
     // incoming data
     if (input instanceof TrackIn) {
 
+      TrackIn trackIn = (TrackIn) input;
+
+      // OrbitFactory.init() ensures Orekit data is loaded into the current context
+      // Not in try block since orekit must be loaded for project to work
+      OrbitFactory.init();
+
       try {
-        TrackIn trackIn = (TrackIn) input;
-
-        // OrbitFactory.init() ensures Orekit data is loaded into the current context
-        OrbitFactory.init();
-
         // Create track from input
         Track track = Track.fromString(trackIn.getTrack(), context.self().id());
 
@@ -58,7 +59,7 @@ public class TrackStatefulFunction implements StatefulFunction {
 
         // Set persisted state
         trackState.set(track);
-      } catch (Exception trackNotValid) {
+      } catch (Exception e) {
         Utilities.sendToDefault(
             context,
             String.format(

@@ -50,10 +50,12 @@ services:
       - "8082:8081"
     environment:
       - ROLE=master
-      - MASTER_HOST=master
+    env_file:
+      - docker-variables.env
     volumes:
       - ./checkpoint-dir:/checkpoint-dir
       - ../../orekit-data:/orekit-data
+      - ./src/resources/docker.properties:/resources/docker.properties
       - ./conf/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
   worker:
     build:
@@ -69,9 +71,11 @@ services:
       - "kafka-broker:kafka-broker"
     environment:
       - ROLE=worker
-      - MASTER_HOST=master
+    env_file:
+      - docker-variables.env
     volumes:
       - ./checkpoint-dir:/checkpoint-dir
       - ../../orekit-data:/orekit-data
+      - ./src/resources/docker.properties:/resources/docker.properties
       - ./conf/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
 

@@ -1,5 +1,6 @@
 package io.springbok.statefun.examples.demonstration;
 
+import io.springbok.statefun.examples.utility.SetTestPaths;
 import io.springbok.statefun.examples.utility.TrackGenerator;
 
 import java.util.ArrayList;
@@ -8,8 +9,8 @@ public class OrbitFactoryTest {
 
   public static void main(String[] args) throws Exception {
 
-    TrackGenerator trackGenerator =
-        new TrackGenerator("../../tle-data/globalstar_tles_05_18_2020.txt");
+    SetTestPaths.init();
+    TrackGenerator trackGenerator = new TrackGenerator();
     trackGenerator.init();
     trackGenerator.finitePropagation();
 
@@ -38,9 +39,10 @@ public class OrbitFactoryTest {
     System.out.println(keyedOrbit3.orbit);
 
     System.out.println(singleIdMessages);
+    orbitCorrelation(trackGenerator);
   }
 
-  private static void orbitCorrelation(TrackGenerator trackGenerator) {
+  private static void orbitCorrelation(TrackGenerator trackGenerator) throws Exception {
     ArrayList<String> singleObjectMessages = trackGenerator.getXSingleObjectMessages(2);
 
     Track track0 = Track.fromString(singleObjectMessages.get(0), "0");
@@ -54,12 +56,14 @@ public class OrbitFactoryTest {
     KeyedOrbit keyedOrbit0 = OrbitFactory.createOrbit(track0, "0");
     KeyedOrbit keyedOrbit1 = OrbitFactory.createOrbit(track1, "1");
 
-    KeyedOrbit keyedOrbit2 =
-        OrbitFactory.refineOrbit(keyedOrbit0.orbit, keyedOrbit0.trackIds, trackArrayList1, "2");
-    KeyedOrbit keyedOrbit3 =
-        OrbitFactory.refineOrbit(keyedOrbit1.orbit, keyedOrbit1.trackIds, trackArrayList0, "3");
+    if (OrbitCorrelator.correlate(keyedOrbit0, keyedOrbit1)) {
+      KeyedOrbit keyedOrbit2 =
+          OrbitFactory.refineOrbit(keyedOrbit0.orbit, keyedOrbit0.trackIds, trackArrayList1, "2");
+      KeyedOrbit keyedOrbit3 =
+          OrbitFactory.refineOrbit(keyedOrbit1.orbit, keyedOrbit1.trackIds, trackArrayList0, "3");
 
-    System.out.println(keyedOrbit2.orbit);
-    System.out.println(keyedOrbit3.orbit);
+      System.out.println(keyedOrbit2.orbit);
+      System.out.println(keyedOrbit3.orbit);
+    }
   }
 }

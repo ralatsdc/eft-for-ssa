@@ -36,13 +36,16 @@ public class OrbitFactory {
   static final Frame inertialFrame = FramesFactory.getGCRF();
 
   // Configure Orekit
-  static String inputPath = "../../orekit-data";
-  static final File orekitData = new File(inputPath);
-  static DataProvidersManager manager = null;
+  static String inputPath;
+  static DataProvidersManager manager;
 
   public static void init() {
     // Ensure Orekit is configured
     if (manager == null) {
+      inputPath =
+          System.getProperty(
+              "OREKIT_PATH", System.getProperty("OREKIT_PATH", System.getenv("OREKIT_PATH")));
+      final File orekitData = new File(inputPath);
       manager = DataContext.getDefault().getDataProvidersManager();
       manager.addProvider(new DirectoryCrawler(orekitData));
     }

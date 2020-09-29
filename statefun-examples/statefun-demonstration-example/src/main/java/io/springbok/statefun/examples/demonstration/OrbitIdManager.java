@@ -76,8 +76,6 @@ public class OrbitIdManager implements StatefulFunction {
     if (input instanceof NewRefinedOrbitIdMessage) {
       NewRefinedOrbitIdMessage newRefinedOrbitIdMessage = (NewRefinedOrbitIdMessage) input;
 
-      int trackCutoff = 1;
-
       ArrayList<String> orbitIdList = orbitIds.getOrDefault(new ArrayList<String>());
 
       // Message out that orbit id was saved
@@ -86,27 +84,39 @@ public class OrbitIdManager implements StatefulFunction {
 
       // Update orbitIdList with the new orbit
       orbitIdList.add(newRefinedOrbitIdMessage.getNewOrbitId());
+
       try {
-        if (newRefinedOrbitIdMessage.getOldOrbit1TracksNumber() > trackCutoff) {
-          orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId1());
+        Integer trackCutoff = ApplicationProperties.getTrackCutoff();
+        try {
+          if (newRefinedOrbitIdMessage.getOldOrbit1TracksNumber() > trackCutoff) {
+            orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId1());
+          }
+        } catch (Exception e) {
+          Utilities.sendToDefault(
+              context,
+              String.format(
+                  "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
+                  newRefinedOrbitIdMessage.getOldOrbitId1()));
+        }
+        try {
+          if (newRefinedOrbitIdMessage.getOldOrbit2TracksNumber() > trackCutoff) {
+            orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId2());
+          }
+        } catch (Exception e) {
+          Utilities.sendToDefault(
+              context,
+              String.format(
+                  "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
+                  newRefinedOrbitIdMessage.getOldOrbitId2()));
         }
       } catch (Exception e) {
         Utilities.sendToDefault(
             context,
             String.format(
-                "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
-                newRefinedOrbitIdMessage.getOldOrbitId1()));
-      }
-      try {
-        if (newRefinedOrbitIdMessage.getOldOrbit2TracksNumber() > trackCutoff) {
-          orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId2());
-        }
-      } catch (Exception e) {
-        Utilities.sendToDefault(
-            context,
-            String.format(
-                "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
-                newRefinedOrbitIdMessage.getOldOrbitId2()));
+                "Orbit deletion with ids %s and %s failed with exception: %s",
+                newRefinedOrbitIdMessage.getOldOrbitId1(),
+                newRefinedOrbitIdMessage.getOldOrbitId2(),
+                e.toString()));
       }
 
       Utilities.sendToDefault(context, orbitIdList.toString());

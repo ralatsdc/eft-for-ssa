@@ -27,8 +27,9 @@ public class KafkaInfiniteTrackProducer {
     props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
     props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 
-    TrackGenerator trackGenerator =
-        new TrackGenerator("tle-data/globalstar_tles_05_18_2020.txt", "orekit-data");
+    SetTestPaths.init();
+
+    TrackGenerator trackGenerator = new TrackGenerator();
     trackGenerator.init();
 
     tleIterator = trackGenerator.tles.iterator();

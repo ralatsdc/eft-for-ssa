@@ -7,7 +7,7 @@ import org.orekit.time.TimeScalesFactory;
 // Class used to determine if two orbits correlate
 public class OrbitCorrelator {
 
-  public static boolean correlate(KeyedOrbit keyedOrbit1, KeyedOrbit keyedOrbit2) {
+  public static boolean correlate(KeyedOrbit keyedOrbit1, KeyedOrbit keyedOrbit2) throws Exception {
 
     OrbitFactory.init();
 
@@ -64,15 +64,16 @@ public class OrbitCorrelator {
       adjustedAnomaly2 = adjustedAnomaly2 + 2 * Math.PI;
     }
 
-    double epsilon = 0.0001;
+    double axisEpsilon = ApplicationProperties.getAxisEpsilon();
+    double epsilon = ApplicationProperties.getEpsilon();
 
-    boolean a = (Math.abs(a1 - a2) < 10);
-    boolean e = (Math.abs(e1 - e2) < epsilon);
-    boolean i = (Math.abs(i1 - i2) < epsilon);
-    boolean pa = (Math.abs(pa1 - pa2) < epsilon);
-    boolean raan = (Math.abs(raan1 - raan2) < epsilon);
-    boolean anomaly = (Math.abs(anomaly1 - adjustedAnomaly2) < 0.1);
+    boolean isAEqual = (Math.abs(a1 - a2) < axisEpsilon);
+    boolean isEEqual = (Math.abs(e1 - e2) < epsilon);
+    boolean isIEqual = (Math.abs(i1 - i2) < epsilon);
+    boolean isPAEqual = (Math.abs(pa1 - pa2) < epsilon);
+    boolean isRAANEqual = (Math.abs(raan1 - raan2) < epsilon);
+    boolean isAnomalyEqual = (Math.abs(anomaly1 - adjustedAnomaly2) < 0.1);
 
-    return (a && e && i && pa && raan && anomaly);
+    return (isAEqual && isEEqual && isIEqual && isPAEqual && isRAANEqual && isAnomalyEqual);
   }
 }
