@@ -7,10 +7,8 @@ import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
-import java.io.FileInputStream;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Properties;
 
 /*
  TrackStatefulFunction stores instances of the KeyedOrbit class built from the data it receives from the OrbitIdManager.
@@ -239,17 +237,10 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
   // Sends a delete message after a certain amount of time
   private void sendSelfDeleteMessage(Context context) throws Exception {
-    Properties defaultProps = new Properties();
-    FileInputStream in =
-        new FileInputStream(
-            System.getProperty("PROPERTIES_PATH", System.getenv("PROPERTIES_PATH")));
-    defaultProps.load(in);
-    in.close();
-    Properties applicationProps = new Properties(defaultProps);
+
+    long deleteTimer = ApplicationProperties.getDeleteTimer();
 
     context.sendAfter(
-        Duration.ofSeconds(Long.parseLong(applicationProps.getProperty("deleteTimer"))),
-        context.self(),
-        DelayedDeleteMessage.newBuilder().build());
+        Duration.ofSeconds(deleteTimer), context.self(), DelayedDeleteMessage.newBuilder().build());
   }
 }

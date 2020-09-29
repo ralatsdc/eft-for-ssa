@@ -27,7 +27,7 @@ public class KafkaInfiniteTrackProducer {
     props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
     props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 
-    SetSystemProperties.init();
+    SetTestPaths.init();
 
     TrackGenerator trackGenerator = new TrackGenerator();
     trackGenerator.init();

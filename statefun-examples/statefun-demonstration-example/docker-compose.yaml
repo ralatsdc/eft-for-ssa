@@ -50,9 +50,8 @@ services:
       - "8082:8081"
     environment:
       - ROLE=master
-      - MASTER_HOST=master
-      - OREKIT_PATH=../../orekit-data
-      - PROPERTIES_PATH=../../resources/docker.properties
+    env_file:
+      - docker-variables.env
     volumes:
       - ./checkpoint-dir:/checkpoint-dir
       - ../../orekit-data:/orekit-data
@@ -72,9 +71,8 @@ services:
       - "kafka-broker:kafka-broker"
     environment:
       - ROLE=worker
-      - MASTER_HOST=master
-      - OREKIT_PATH=../../orekit-data
-      - PROPERTIES_PATH=../../resources/docker.properties
+    env_file:
+      - docker-variables.env
     volumes:
       - ./checkpoint-dir:/checkpoint-dir
       - ../../orekit-data:/orekit-data

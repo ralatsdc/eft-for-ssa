@@ -1,6 +1,6 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.utility.SetSystemProperties;
+import io.springbok.statefun.examples.utility.SetTestPaths;
 import io.springbok.statefun.examples.utility.TrackGenerator;
 
 import java.util.ArrayList;
@@ -9,7 +9,7 @@ public class OrbitFactoryTest {
 
   public static void main(String[] args) throws Exception {
 
-    SetSystemProperties.init();
+    SetTestPaths.init();
     TrackGenerator trackGenerator = new TrackGenerator();
     trackGenerator.init();
     trackGenerator.finitePropagation();

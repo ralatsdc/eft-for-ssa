@@ -1,6 +1,6 @@
 package io.springbok.statefun.examples.utility;
 
-public class SetSystemProperties {
+public class SetTestPaths {
   public static void init() {
     String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
     rootPath = rootPath.substring(0, rootPath.indexOf("eft-for-ssa"));

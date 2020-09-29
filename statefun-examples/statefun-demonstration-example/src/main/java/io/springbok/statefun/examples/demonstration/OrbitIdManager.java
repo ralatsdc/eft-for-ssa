@@ -7,9 +7,7 @@ import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
-import java.io.FileInputStream;
 import java.util.ArrayList;
-import java.util.Properties;
 
 /*
  The OrbitIdManager is responsible for creating new ids for orbits, as well as keeping track of those ids to check for possible correlations between orbits
@@ -88,15 +86,7 @@ public class OrbitIdManager implements StatefulFunction {
       orbitIdList.add(newRefinedOrbitIdMessage.getNewOrbitId());
 
       try {
-        Properties defaultProps = new Properties();
-        FileInputStream in =
-            new FileInputStream(
-                System.getProperty("PROPERTIES_PATH", System.getenv("PROPERTIES_PATH")));
-        defaultProps.load(in);
-        in.close();
-        Properties applicationProps = new Properties(defaultProps);
-        Integer trackCutoff = Integer.parseInt(applicationProps.getProperty("trackCutoff"));
-
+        Integer trackCutoff = ApplicationProperties.getTrackCutoff();
         try {
           if (newRefinedOrbitIdMessage.getOldOrbit1TracksNumber() > trackCutoff) {
             orbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId1());
