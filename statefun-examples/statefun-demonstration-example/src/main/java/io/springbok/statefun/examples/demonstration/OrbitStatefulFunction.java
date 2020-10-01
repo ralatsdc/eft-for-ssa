@@ -69,8 +69,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
         Utilities.sendToDefault(
             context,
             String.format(
-                "Orbit with id %s failed to create. Discarding track with id %s",
-                context.self().id(), track.trackId));
+                "Orbit with id %s failed to create. Discarding track with id %s: %s",
+                context.self().id(), track.trackId, e));
         context.send(
             TrackStatefulFunction.TYPE, track.trackId, DeleteTrackMessage.newBuilder().build());
       }
@@ -99,7 +99,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
         orbitState.clear();
       } catch (NullPointerException e) {
         Utilities.sendToDefault(
-            context, String.format("Orbit with id %s already deleted", context.self().id()));
+            context, String.format("Orbit with id %s already deleted: %s", context.self().id(), e));
       }
     }
 
@@ -148,8 +148,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
                   recievedKeyedOrbit.orbitId, keyedOrbit.orbitId));
         }
       } catch (Exception e) {
-        Utilities.sendToDefault(
-            context, String.format("Not correlated orbits - Exception: %s", e.toString()));
+        Utilities.sendToDefault(context, String.format("Not correlated orbits: %s", e));
       }
     }
 
@@ -222,15 +221,13 @@ public class OrbitStatefulFunction implements StatefulFunction {
             context,
             String.format(
                 "Orbit refine for orbit id %s failed with exception %s - did you forget to set properties?",
-                context.self().id(), e.toString()));
+                context.self().id(), e));
 
       } catch (Exception e) {
         // Send message out that orbit refine failed
         Utilities.sendToDefault(
             context,
-            String.format(
-                "Orbit refine for orbit id %s failed with exception %s",
-                context.self().id(), e.toString()));
+            String.format("Orbit refine for orbit id %s failed: %s", context.self().id(), e));
       }
     }
   }
