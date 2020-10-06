@@ -14,8 +14,7 @@ import org.orekit.propagation.analytical.tle.TLE;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 /*
  NOTE: Tests assume that the delayed delete message in the OrbitStatefulFunction will be send after a 4 second delay
@@ -49,15 +48,15 @@ public class IntegrationTests {
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
-    Assert.assertTrue(testConsumer.messages.get(0).equals("Created trackId 0"));
+    Assert.assertTrue(testConsumer.messages.get(0).contains("Created trackId 0"));
     Assert.assertTrue(testConsumer.messages.get(1).contains("Created track for id 0"));
-    Assert.assertTrue(testConsumer.messages.get(2).equals("Created orbitId 0"));
+    Assert.assertTrue(testConsumer.messages.get(2).contains("Created orbitId 0"));
     Assert.assertTrue(testConsumer.messages.get(3).contains("Created orbit for id 0"));
-    Assert.assertTrue(testConsumer.messages.get(4).equals("Added orbitId 0 to trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(5).equals("Saved orbitId 0"));
-    Assert.assertTrue(testConsumer.messages.get(6).equals("Cleared orbit for id 0"));
-    Assert.assertTrue(testConsumer.messages.get(7).equals("Cleared track for trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(8).equals("Removed orbitId 0"));
+    Assert.assertTrue(testConsumer.messages.get(4).contains("Added orbitId 0 to trackId 0"));
+    Assert.assertTrue(testConsumer.messages.get(5).contains("Saved orbitId 0"));
+    Assert.assertTrue(testConsumer.messages.get(6).contains("Cleared orbit for id 0"));
+    Assert.assertTrue(testConsumer.messages.get(7).contains("Cleared track for trackId 0"));
+    Assert.assertTrue(testConsumer.messages.get(8).contains("Removed orbitId 0"));
   }
 
   @Test
@@ -97,31 +96,48 @@ public class IntegrationTests {
 
     // Test correlation
     Assert.assertTrue(
-        testConsumer.messages.contains("Correlated orbits with ids 1 and 0")
-            || testConsumer.messages.contains("Correlated orbits with ids 0 and 1"));
-    Assert.assertFalse(testConsumer.messages.contains("Correlated orbits with ids 0 and 0"));
-    Assert.assertFalse(testConsumer.messages.contains("Correlated orbits with ids 1 and 1"));
+        IntegrationTests.arrayListContainsInclusive(
+                testConsumer.messages, "Correlated orbits with ids 1 and 0")
+            || IntegrationTests.arrayListContainsInclusive(
+                testConsumer.messages, "Correlated orbits with ids 0 and 1"));
+    Assert.assertFalse(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Correlated orbits with ids 0 and 0"));
+    Assert.assertFalse(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Correlated orbits with ids 1 and 1"));
 
     // Test track collection
     Assert.assertTrue(
-        testConsumer.messages.contains("Added track with id 1 to collectedTracksMessage")
-            || testConsumer.messages.contains("Added track with id 0 to collectedTracksMessage"));
+        IntegrationTests.arrayListContainsInclusive(
+                testConsumer.messages, "Added track with id 1 to collectedTracksMessage")
+            || IntegrationTests.arrayListContainsInclusive(
+                testConsumer.messages, "Added track with id 0 to collectedTracksMessage"));
 
     // Test new orbit creation flow
-    List<String> refinedOrbitCheck =
-        testConsumer.messages.stream()
-            .filter(message -> message.contains("Refined orbits with ids"))
-            .collect(Collectors.toList());
-    Assert.assertTrue(refinedOrbitCheck.size() == 1);
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Refined orbits with ids"));
 
-    Assert.assertTrue(testConsumer.messages.contains("Added orbitId 2 to trackId 0"));
-    Assert.assertTrue(testConsumer.messages.contains("Added orbitId 2 to trackId 1"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Added orbitId 2 to trackId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Added orbitId 2 to trackId 1"));
 
-    Assert.assertTrue(testConsumer.messages.contains("Cleared orbit for id 2"));
-    Assert.assertTrue(testConsumer.messages.contains("Removed orbitId 2"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Cleared orbit for id 2"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Removed orbitId 2"));
 
-    Assert.assertTrue(testConsumer.messages.contains("Cleared track for trackId 0"));
-    Assert.assertTrue(testConsumer.messages.contains("Cleared track for trackId 1"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Cleared track for trackId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Cleared track for trackId 1"));
   }
 
   @Test
@@ -171,5 +187,18 @@ public class IntegrationTests {
 
           Assert.assertEquals(tle.getMeanAnomaly(), anomaly, 0.0001);
         });
+  }
+
+  static boolean arrayListContainsInclusive(ArrayList<String> list, String string) {
+
+    String regex = "(.*)" + string + "(.*)";
+    Pattern p = Pattern.compile(regex);
+
+    for (String s : list) {
+      if (p.matcher(s).matches()) {
+        return true;
+      }
+    }
+    return false;
   }
 }

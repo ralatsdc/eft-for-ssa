@@ -57,7 +57,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
         sendSelfDeleteMessage(context);
 
         // Send message out that orbit was created
-        Utilities.sendToDefault(
+        Utilities.log(
             context,
             String.format(
                 "Created orbit for id %s from track with id %s: %s",
@@ -66,7 +66,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
         orbitState.set(keyedOrbit);
       } catch (Exception e) {
         // Send message out that orbit creation failed
-        Utilities.sendToDefault(
+        Utilities.log(
             context,
             String.format(
                 "Orbit with id %s failed to create. Discarding track with id %s: %s",
@@ -94,11 +94,10 @@ public class OrbitStatefulFunction implements StatefulFunction {
             });
 
         // Send message out that this orbit was destroyed
-        Utilities.sendToDefault(
-            context, String.format("Cleared orbit for id %s", keyedOrbit.orbitId));
+        Utilities.log(context, String.format("Cleared orbit for id %s", keyedOrbit.orbitId));
         orbitState.clear();
       } catch (NullPointerException e) {
-        Utilities.sendToDefault(
+        Utilities.log(
             context, String.format("Orbit with id %s already deleted: %s", context.self().id(), e));
       }
     }
@@ -116,7 +115,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
         if (OrbitCorrelator.correlate(recievedKeyedOrbit, keyedOrbit)) {
 
           // Send message out that correlation successful
-          Utilities.sendToDefault(
+          Utilities.log(
               context,
               String.format(
                   "Correlated orbits with ids %s and %s",
@@ -141,14 +140,14 @@ public class OrbitStatefulFunction implements StatefulFunction {
           context.send(TrackStatefulFunction.TYPE, nextTrack, collectedTracksMessage);
         } else {
           // Send message out that correlation not successful
-          Utilities.sendToDefault(
+          Utilities.log(
               context,
               String.format(
                   "Not correlated orbits with ids %s and %s",
                   recievedKeyedOrbit.orbitId, keyedOrbit.orbitId));
         }
       } catch (Exception e) {
-        Utilities.sendToDefault(context, String.format("Not correlated orbits: %s", e));
+        Utilities.log(context, String.format("Not correlated orbits: %s", e));
       }
     }
 
@@ -178,7 +177,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
                 keyedOrbit1.orbit, trackIds, collectedTracks, context.self().id());
 
         // Send message out that orbit was refined
-        Utilities.sendToDefault(
+        Utilities.log(
             context,
             String.format(
                 "Refined orbits with ids %s and %s to create orbit with id %s: %s",
@@ -212,12 +211,11 @@ public class OrbitStatefulFunction implements StatefulFunction {
         sendSelfDeleteMessage(context);
 
         // Send message out that orbit was created and saved
-        Utilities.sendToDefault(
-            context, String.format("Created refined orbit for id %s", newOrbit.orbitId));
+        Utilities.log(context, String.format("Created refined orbit for id %s", newOrbit.orbitId));
 
         orbitState.set(newOrbit);
       } catch (NullPointerException e) {
-        Utilities.sendToDefault(
+        Utilities.log(
             context,
             String.format(
                 "Orbit refine for orbit id %s failed with exception %s - did you forget to set properties?",
@@ -225,7 +223,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
       } catch (Exception e) {
         // Send message out that orbit refine failed
-        Utilities.sendToDefault(
+        Utilities.log(
             context,
             String.format("Orbit refine for orbit id %s failed: %s", context.self().id(), e));
       }
