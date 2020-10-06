@@ -7,6 +7,7 @@ import io.springbok.statefun.examples.utility.TrackGenerator;
 import org.apache.flink.statefun.flink.harness.Harness;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.PositionAngle;
@@ -32,6 +33,7 @@ public class IntegrationTests {
     trackGenerator.finitePropagation();
   }
 
+  @Ignore("Only one Harness can be run at a time")
   @Test
   public void testTrackCreation() throws Exception {
 
