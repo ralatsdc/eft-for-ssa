@@ -69,12 +69,18 @@ Kubernetes
 
 Startup:
 
+Apply java changes (see section below)
+
 Start Minikube
     $ minikube start
-configure flink
+configure flink (I am not even 100% sure if this is doing anything or needs to be done - it opens a command prompt and I just esc. out of it)
     $ minikube ssh 'sudo ip link set docker0 promisc on’
 add orekit data to node:
     $ scp -r -i $(minikube ssh-key) <absolute path to data> docker@$(minikube ip):/home/docker/orekit-data
+    example: scp -r -i $(minikube ssh-key) /Users/williamspear/projects/orbits/eft-for-ssa/orekit-data docker@$(minikube ip):/home/docker/orekit-data
+add properties data to node:
+    $ scp -r -i $(minikube ssh-key) <absolute path to properties file> docker@$(minikube ip):/home/docker/resources/kubernetes.properties
+    example: scp -r -i $(minikube ssh-key) /Users/williamspear/projects/orbits/eft-for-ssa/statefun-examples/statefun-demonstration-example/src/resources/kubernetes.properties docker@$(minikube ip):/home/docker/kubernetes.properties
 Add resources to cluster by directory name (apply works for files or directories)
     $ kubectl apply -f kubernetes-deployment
 Check pod status (will be a minute or two and kafka will throw errors until zookeeper is fully up and running - can reduce the time of startup by starting zookeeper files first with previous command)
@@ -83,7 +89,7 @@ get node ip
     $ minikube ip
 OR, for non-minikube nodes, first get node name
     $ kubectl get nodes
-And then use name to get ip
+And then use name to get ip (can skip this step also if using minikube)
     $ kubectl get node <NodeName> -o=jsonpath='{range .status.addresses[*]}{.type}{"\t"}{.address}{"\n"}'
 Get external port (should be 30092)
     $ kubectl get svc kafka-broker
@@ -101,7 +107,7 @@ If it's working, it'll show both default and tracks topics with a valid leader; 
         partition 0, leader 1001, replicas: 1001, isrs: 1001
 
 Start consumer
-    $ bin/kafka-console-consumer.sh --topic tracks --from-beginning --bootstrap-server <node ip>:<external port>
+    $ bin/kafka-console-consumer.sh --topic default --from-beginning --bootstrap-server <node ip>:<external port>
 Start producer
     $ bin/kafka-console-producer.sh --broker-list <node ip>:<external port> --topic tracks
 OR, InfiniteTrackProducer; props needs to have the right server value
@@ -116,6 +122,8 @@ Access container
     $ kubectl exec --stdin --tty <pod name> -- /bin/bash
 Flink dashboard (in browser)
     http://<node ip>:30081
+Look at logs of previously crashed pod
+    $ kubectl logs <podname> --previous
 
 Applying java changes:
 
@@ -129,6 +137,8 @@ Check the new image id
 There will be a worker and a master image. They will both have the same id and it doesn't matter which one is used. Either can be uploaded
 Tag the image using the id
     $ docker tag <image id> <dockerhubusername>/eft-for-ssa:<containerversionname>
+Push to dockerhub
+    $ docker push <dockerhubusername>/eft-for-ssa:<containerversionname>
 The image upload can be verified by going to dockerhub.
 Next edit the kubernetes-deployment/master-deployment and kubernetes-deployment/worker-deployment images to reflect the new image names
     image: spearw/eft-for-ssa:protobuf-master
