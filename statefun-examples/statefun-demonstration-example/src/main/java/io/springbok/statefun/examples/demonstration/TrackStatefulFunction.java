@@ -55,7 +55,8 @@ public class TrackStatefulFunction implements StatefulFunction {
             context,
             String.format(
                 "Created track for id %s from message with id %s",
-                track.trackId, track.messageUUID));
+                track.trackId, track.messageUUID),
+            1);
 
         // Set persisted state
         trackState.set(track);
@@ -64,7 +65,8 @@ public class TrackStatefulFunction implements StatefulFunction {
             context,
             String.format(
                 "track given id %s not valid. Discarding message with id %s: %s",
-                context.self().id(), e));
+                context.self().id(), e),
+            1);
       }
     }
 
@@ -81,14 +83,16 @@ public class TrackStatefulFunction implements StatefulFunction {
         Utilities.log(
             context,
             String.format(
-                "Added orbitId %s to trackId %s", newOrbitIdMessage.getId(), track.trackId));
+                "Added orbitId %s to trackId %s", newOrbitIdMessage.getId(), track.trackId),
+            1);
 
         // Set persisted state
         trackState.set(track);
       } catch (Exception e) {
         Utilities.log(
             context,
-            String.format("track with id %s cannot add orbitId: %s", context.self().id(), e));
+            String.format("track with id %s cannot add orbitId: %s", context.self().id(), e),
+            1);
       }
     }
 
@@ -110,16 +114,19 @@ public class TrackStatefulFunction implements StatefulFunction {
         // If the track still has orbits associated with it, save it otherwise delete this value
         if (track.getOrbitIds().size() == 0) {
           trackState.clear();
-          Utilities.log(context, String.format("Cleared track for trackId %s", track.trackId));
+          Utilities.log(context, String.format("Cleared track for trackId %s", track.trackId), 1);
         } else {
           trackState.set(track);
           Utilities.log(
-              context, String.format("Removed orbitId %s from trackId %s", orbitId, track.trackId));
+              context,
+              String.format("Removed orbitId %s from trackId %s", orbitId, track.trackId),
+              1);
         }
       } catch (Exception e) {
         Utilities.log(
             context,
-            String.format("track with id %s cannot remove orbit id: %s", context.self().id(), e));
+            String.format("track with id %s cannot remove orbit id: %s", context.self().id(), e),
+            1);
       }
     }
 
@@ -127,11 +134,13 @@ public class TrackStatefulFunction implements StatefulFunction {
     if (input instanceof DeleteTrackMessage) {
       try {
         trackState.clear();
-        Utilities.log(context, String.format("Cleared track for trackId %s", context.self().id()));
+        Utilities.log(
+            context, String.format("Cleared track for trackId %s", context.self().id()), 1);
       } catch (Exception e) {
         Utilities.log(
             context,
-            String.format("track with id %s cannot be deleted: %s", context.self().id(), e));
+            String.format("track with id %s cannot be deleted: %s", context.self().id(), e),
+            1);
       }
     }
 
@@ -156,7 +165,8 @@ public class TrackStatefulFunction implements StatefulFunction {
         // Send message out
         Utilities.log(
             context,
-            String.format("Added track with id %s to collectedTracksMessage", track.trackId));
+            String.format("Added track with id %s to collectedTracksMessage", track.trackId),
+            1);
 
       } catch (Exception e) {
         collectedTracks = collectedTracksMessage.getCollectedTracks();
@@ -164,7 +174,8 @@ public class TrackStatefulFunction implements StatefulFunction {
             context,
             String.format(
                 "track with id %s cannot be added to CollectedTracksMessage, forwarding CollectedTracksMessage: %s",
-                context.self().id(), e));
+                context.self().id(), e),
+            1);
       } finally {
         // If the CollectedTracksMessage still needs to collect more tracks, forward it to the
         // next

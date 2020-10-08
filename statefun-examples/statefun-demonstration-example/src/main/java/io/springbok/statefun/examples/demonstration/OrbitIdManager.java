@@ -44,7 +44,7 @@ public class OrbitIdManager implements StatefulFunction {
       context.send(OrbitStatefulFunction.TYPE, String.valueOf(id), newTrackMessage);
 
       // Message out that orbit id was created
-      Utilities.log(context, String.format("Created orbitId %s", id));
+      Utilities.log(context, String.format("Created orbitId %s", id), 1);
 
       // Set persisted state
       lastOrbitId.set(id);
@@ -64,7 +64,7 @@ public class OrbitIdManager implements StatefulFunction {
       context.send(OrbitStatefulFunction.TYPE, String.valueOf(id), collectedTracksMessage);
 
       // Message out that orbit id was created
-      Utilities.log(context, String.format("Created orbitId %s", id));
+      Utilities.log(context, String.format("Created orbitId %s", id), 1);
 
       // Set persisted state
       lastOrbitId.set(id);
@@ -80,7 +80,7 @@ public class OrbitIdManager implements StatefulFunction {
 
       // Message out that orbit id was saved
       Utilities.log(
-          context, String.format("Saved orbitId %s", newRefinedOrbitIdMessage.getNewOrbitId()));
+          context, String.format("Saved orbitId %s", newRefinedOrbitIdMessage.getNewOrbitId()), 1);
 
       // Update orbitIdList with the new orbit
       orbitIdList.add(newRefinedOrbitIdMessage.getNewOrbitId());
@@ -96,7 +96,8 @@ public class OrbitIdManager implements StatefulFunction {
               context,
               String.format(
                   "Orbit with id %s is not registered with OrbitIdManager - delete canceled: %s",
-                  newRefinedOrbitIdMessage.getOldOrbitId1(), e));
+                  newRefinedOrbitIdMessage.getOldOrbitId1(), e),
+              1);
         }
         try {
           if (newRefinedOrbitIdMessage.getOldOrbit2TracksNumber() > trackCutoff) {
@@ -107,7 +108,8 @@ public class OrbitIdManager implements StatefulFunction {
               context,
               String.format(
                   "Orbit with id %s is not registered with OrbitIdManager - delete canceled: %s",
-                  newRefinedOrbitIdMessage.getOldOrbitId2(), e));
+                  newRefinedOrbitIdMessage.getOldOrbitId2(), e),
+              1);
         }
       } catch (Exception e) {
         Utilities.log(
@@ -116,11 +118,12 @@ public class OrbitIdManager implements StatefulFunction {
                 "Orbit deletion with ids %s and %s failed: %s",
                 newRefinedOrbitIdMessage.getOldOrbitId1(),
                 newRefinedOrbitIdMessage.getOldOrbitId2(),
-                e));
+                e),
+            1);
       }
       try {
         if (ApplicationProperties.getLogLevel() > 1) {
-          Utilities.log(context, "orbitIdList: " + orbitIdList.toString());
+          Utilities.log(context, "orbitIdList: " + orbitIdList.toString(), 1);
         }
       } catch (Exception e) {
       }
@@ -146,7 +149,7 @@ public class OrbitIdManager implements StatefulFunction {
       KeyedOrbit keyedOrbit = KeyedOrbit.fromString(correlateOrbitsMessage.getStringContent());
 
       // Message out that orbit id was saved
-      Utilities.log(context, String.format("Saved orbitId %s", keyedOrbit.orbitId));
+      Utilities.log(context, String.format("Saved orbitId %s", keyedOrbit.orbitId), 1);
 
       // Update orbitIdList with the new orbit
       orbitIdList.add(keyedOrbit.orbitId);
@@ -166,7 +169,7 @@ public class OrbitIdManager implements StatefulFunction {
         ids.remove(orbitId);
 
         // Message out that orbit id was removed
-        Utilities.log(context, String.format("Removed orbitId %s", orbitId));
+        Utilities.log(context, String.format("Removed orbitId %s", orbitId), 1);
         orbitIds.set(ids);
 
       } catch (Exception e) {
@@ -174,7 +177,8 @@ public class OrbitIdManager implements StatefulFunction {
             context,
             String.format(
                 "Orbit with id %s is not registered with OrbitIdManager - delete canceled: %s",
-                removeOrbitIdMessage.getStringContent(), e));
+                removeOrbitIdMessage.getStringContent(), e),
+            1);
       }
     }
   }

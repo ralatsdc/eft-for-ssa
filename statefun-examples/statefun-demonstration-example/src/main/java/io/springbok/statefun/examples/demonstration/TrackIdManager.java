@@ -34,7 +34,7 @@ public class TrackIdManager implements StatefulFunction {
     context.send(TrackStatefulFunction.TYPE, String.valueOf(id), trackIn);
 
     // Send a message out that the id creation was successful
-    Utilities.log(context, String.format("Created trackId %d", id));
+    Utilities.log(context, String.format("Created trackId %d", id), 1);
 
     // Update the persisted value so the next created id is unique
     lastTrackId.set(id);

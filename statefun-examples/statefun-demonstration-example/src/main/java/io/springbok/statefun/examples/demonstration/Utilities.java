@@ -13,20 +13,22 @@ public class Utilities {
   static Integer logLevel = 0;
 
   // Sending string messages to the default out
-  public static void log(Context context, String content) {
+  public static void log(Context context, String content, Integer messageLevel) {
 
     try {
       logLevel = ApplicationProperties.getLogLevel();
     } catch (Exception e) {
       content = "WARNING! COULD NOT READ CONFIG FILE. CHECK PATH. " + content;
+      context.send(
+          DemonstrationIO.DEFAULT_EGRESS_ID, DefaultOut.newBuilder().setContent(content).build());
     }
 
-    if (logLevel > 0) {
+    if (logLevel >= messageLevel) {
       Timestamp timestamp = new Timestamp(System.currentTimeMillis());
       content = "[" + timestamp + "] " + content;
+      context.send(
+          DemonstrationIO.DEFAULT_EGRESS_ID, DefaultOut.newBuilder().setContent(content).build());
     }
-    context.send(
-        DemonstrationIO.DEFAULT_EGRESS_ID, DefaultOut.newBuilder().setContent(content).build());
   }
 
   public static String arrayListToString(ArrayList<String> arrayList) {

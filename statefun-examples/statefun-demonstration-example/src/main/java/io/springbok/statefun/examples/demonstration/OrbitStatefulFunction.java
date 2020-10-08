@@ -61,7 +61,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
             context,
             String.format(
                 "Created orbit for id %s from track with id %s: %s",
-                keyedOrbit.orbitId, track.trackId, keyedOrbit.orbit.toString()));
+                keyedOrbit.orbitId, track.trackId, keyedOrbit.orbit.toString()),
+            1);
 
         orbitState.set(keyedOrbit);
       } catch (Exception e) {
@@ -70,7 +71,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
             context,
             String.format(
                 "Orbit with id %s failed to create. Discarding track with id %s: %s",
-                context.self().id(), track.trackId, e));
+                context.self().id(), track.trackId, e),
+            1);
         context.send(
             TrackStatefulFunction.TYPE, track.trackId, DeleteTrackMessage.newBuilder().build());
       }
@@ -94,11 +96,13 @@ public class OrbitStatefulFunction implements StatefulFunction {
             });
 
         // Send message out that this orbit was destroyed
-        Utilities.log(context, String.format("Cleared orbit for id %s", keyedOrbit.orbitId));
+        Utilities.log(context, String.format("Cleared orbit for id %s", keyedOrbit.orbitId), 1);
         orbitState.clear();
       } catch (NullPointerException e) {
         Utilities.log(
-            context, String.format("Orbit with id %s already deleted: %s", context.self().id(), e));
+            context,
+            String.format("Orbit with id %s already deleted: %s", context.self().id(), e),
+            1);
       }
     }
 
@@ -122,7 +126,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
                   recievedKeyedOrbit.orbitId,
                   keyedOrbit.orbitId,
                   recievedKeyedOrbit.objectIds.get(0),
-                  recievedKeyedOrbit.objectIds.get(0)));
+                  recievedKeyedOrbit.objectIds.get(0)),
+              1);
 
           // CollectedTracksMessage gathers all Tracks from one orbit, and keeps the orbit of the
           // other to refine with a least squares
@@ -144,10 +149,11 @@ public class OrbitStatefulFunction implements StatefulFunction {
               context,
               String.format(
                   "Not correlated orbits with ids %s and %s",
-                  recievedKeyedOrbit.orbitId, keyedOrbit.orbitId));
+                  recievedKeyedOrbit.orbitId, keyedOrbit.orbitId),
+              1);
         }
       } catch (Exception e) {
-        Utilities.log(context, String.format("Not correlated orbits: %s", e));
+        Utilities.log(context, String.format("Not correlated orbits: %s", e), 1);
       }
     }
 
@@ -184,7 +190,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
                 keyedOrbit1.orbitId,
                 keyedOrbit2.orbitId,
                 newOrbit.orbitId,
-                newOrbit.orbit.toString()));
+                newOrbit.orbit.toString()),
+            1);
 
         NewRefinedOrbitIdMessage newRefinedOrbitIdMessage =
             NewRefinedOrbitIdMessage.newBuilder()
@@ -211,7 +218,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
         sendSelfDeleteMessage(context);
 
         // Send message out that orbit was created and saved
-        Utilities.log(context, String.format("Created refined orbit for id %s", newOrbit.orbitId));
+        Utilities.log(
+            context, String.format("Created refined orbit for id %s", newOrbit.orbitId), 1);
 
         orbitState.set(newOrbit);
       } catch (NullPointerException e) {
@@ -219,13 +227,15 @@ public class OrbitStatefulFunction implements StatefulFunction {
             context,
             String.format(
                 "Orbit refine for orbit id %s failed with exception %s - did you forget to set properties?",
-                context.self().id(), e));
+                context.self().id(), e),
+            1);
 
       } catch (Exception e) {
         // Send message out that orbit refine failed
         Utilities.log(
             context,
-            String.format("Orbit refine for orbit id %s failed: %s", context.self().id(), e));
+            String.format("Orbit refine for orbit id %s failed: %s", context.self().id(), e),
+            1);
       }
     }
   }
