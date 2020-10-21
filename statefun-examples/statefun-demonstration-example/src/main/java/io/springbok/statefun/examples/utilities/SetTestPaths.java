@@ -1,4 +1,4 @@
-package io.springbok.statefun.examples.utility;
+package io.springbok.statefun.examples.utilities;
 
 public class SetTestPaths {
   public static void init() {

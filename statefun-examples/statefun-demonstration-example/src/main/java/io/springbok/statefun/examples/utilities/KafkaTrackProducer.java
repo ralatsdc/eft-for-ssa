@@ -1,4 +1,4 @@
-package io.springbok.statefun.examples.utility;
+package io.springbok.statefun.examples.utilities;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -18,7 +18,7 @@ public class KafkaTrackProducer {
     props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
     props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 
-    SetTestPaths.init();
+    // SetTestPaths.init();
 
     TrackGenerator trackGenerator = new TrackGenerator();
     trackGenerator.init();

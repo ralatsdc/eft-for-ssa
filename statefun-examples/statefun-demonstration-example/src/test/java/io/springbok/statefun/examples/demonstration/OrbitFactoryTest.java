@@ -1,7 +1,7 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.utility.SetTestPaths;
-import io.springbok.statefun.examples.utility.TrackGenerator;
+import io.springbok.statefun.examples.utilities.SetTestPaths;
+import io.springbok.statefun.examples.utilities.TrackGenerator;
 
 import java.util.ArrayList;
 

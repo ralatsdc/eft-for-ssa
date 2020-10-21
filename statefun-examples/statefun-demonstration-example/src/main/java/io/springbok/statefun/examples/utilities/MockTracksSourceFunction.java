@@ -1,4 +1,4 @@
-package io.springbok.statefun.examples.utility;
+package io.springbok.statefun.examples.utilities;
 
 import io.springbok.statefun.examples.demonstration.generated.TrackIn;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;

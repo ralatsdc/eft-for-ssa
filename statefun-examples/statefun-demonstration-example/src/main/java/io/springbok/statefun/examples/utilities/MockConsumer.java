@@ -1,4 +1,4 @@
-package io.springbok.statefun.examples.utility;
+package io.springbok.statefun.examples.utilities;
 
 import io.springbok.statefun.examples.demonstration.generated.DefaultOut;
 import org.apache.flink.statefun.flink.harness.io.SerializableConsumer;
