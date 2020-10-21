@@ -1,0 +1,27 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+  <id>dependencies</id>
+  <formats>
+    <format>jar</format>
+  </formats>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <dependencySets>
+    <dependencySet>
+      <outputDirectory>/</outputDirectory>
+      <useProjectArtifact>true</useProjectArtifact>
+      <unpack>true</unpack>
+      <scope>runtime</scope>
+      <includes>
+        <include>org.orekit:orekit</include>
+        <include>org.hipparchus:hipparchus-core</include>
+        <include>org.hipparchus:hipparchus-filtering</include>
+        <include>org.hipparchus:hipparchus-fitting</include>
+        <include>org.hipparchus:hipparchus-geometry</include>
+        <include>org.hipparchus:hipparchus-ode</include>
+        <include>org.hipparchus:hipparchus-optim</include>
+        <include>org.hipparchus:hipparchus-stat</include>
+      </includes>
+    </dependencySet>
+  </dependencySets>
+</assembly>

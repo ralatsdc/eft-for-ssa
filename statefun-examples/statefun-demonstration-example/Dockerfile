@@ -20,5 +20,5 @@ FROM flink-statefun:2.1-SNAPSHOT
 RUN mkdir -p /opt/statefun/modules/statefun-demonstration-example
 
 COPY target/statefun-demonstration-example-0.0.1-SNAPSHOT.jar /opt/statefun/modules/statefun-demonstration-example/
-COPY target/statefun-demonstration-example-0.0.1-SNAPSHOT-dependencies-only.jar /opt/statefun/modules/statefun-demonstration-example/
+COPY target/statefun-demonstration-example-0.0.1-SNAPSHOT-dependencies.jar /opt/statefun/modules/statefun-demonstration-example/
 COPY conf/flink-conf.yaml /opt/flink/conf/flink-conf.yaml
