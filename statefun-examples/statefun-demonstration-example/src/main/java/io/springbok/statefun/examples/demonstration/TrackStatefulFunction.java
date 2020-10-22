@@ -63,7 +63,8 @@ public class TrackStatefulFunction implements StatefulFunction {
         Utilities.sendToDefault(
             context,
             String.format(
-                "track given id %s not valid. Discarding message with id %s", context.self().id()));
+                "track given id %s not valid. Discarding message with id %s: %s",
+                context.self().id(), e));
       }
     }
 
@@ -87,9 +88,7 @@ public class TrackStatefulFunction implements StatefulFunction {
       } catch (Exception e) {
         Utilities.sendToDefault(
             context,
-            String.format(
-                "track with id %s cannot add orbitId - failed with exception %s",
-                context.self().id(), e.toString()));
+            String.format("track with id %s cannot add orbitId: %s", context.self().id(), e));
       }
     }
 
@@ -121,9 +120,7 @@ public class TrackStatefulFunction implements StatefulFunction {
       } catch (Exception e) {
         Utilities.sendToDefault(
             context,
-            String.format(
-                "track with id %s cannot remove orbit id - failed with exception %s",
-                context.self().id(), e.toString()));
+            String.format("track with id %s cannot remove orbit id: %s", context.self().id(), e));
       }
     }
 
@@ -136,9 +133,7 @@ public class TrackStatefulFunction implements StatefulFunction {
       } catch (Exception e) {
         Utilities.sendToDefault(
             context,
-            String.format(
-                "track with id %s cannot be deleted - failed with exception %s",
-                context.self().id(), e.toString()));
+            String.format("track with id %s cannot be deleted: %s", context.self().id(), e));
       }
     }
 
@@ -170,8 +165,8 @@ public class TrackStatefulFunction implements StatefulFunction {
         Utilities.sendToDefault(
             context,
             String.format(
-                "track with id %s cannot be added to CollectedTracksMessage, forwarding CollectedTracksMessage.",
-                context.self().id()));
+                "track with id %s cannot be added to CollectedTracksMessage, forwarding CollectedTracksMessage: %s",
+                context.self().id(), e));
       } finally {
         // If the CollectedTracksMessage still needs to collect more tracks, forward it to the
         // next

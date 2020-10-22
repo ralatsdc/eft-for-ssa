@@ -95,8 +95,8 @@ public class OrbitIdManager implements StatefulFunction {
           Utilities.sendToDefault(
               context,
               String.format(
-                  "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
-                  newRefinedOrbitIdMessage.getOldOrbitId1()));
+                  "Orbit with id %s is not registered with OrbitIdManager - delete canceled: %s",
+                  newRefinedOrbitIdMessage.getOldOrbitId1(), e));
         }
         try {
           if (newRefinedOrbitIdMessage.getOldOrbit2TracksNumber() > trackCutoff) {
@@ -106,17 +106,17 @@ public class OrbitIdManager implements StatefulFunction {
           Utilities.sendToDefault(
               context,
               String.format(
-                  "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
-                  newRefinedOrbitIdMessage.getOldOrbitId2()));
+                  "Orbit with id %s is not registered with OrbitIdManager - delete canceled: %s",
+                  newRefinedOrbitIdMessage.getOldOrbitId2(), e));
         }
       } catch (Exception e) {
         Utilities.sendToDefault(
             context,
             String.format(
-                "Orbit deletion with ids %s and %s failed with exception: %s",
+                "Orbit deletion with ids %s and %s failed: %s",
                 newRefinedOrbitIdMessage.getOldOrbitId1(),
                 newRefinedOrbitIdMessage.getOldOrbitId2(),
-                e.toString()));
+                e));
       }
 
       Utilities.sendToDefault(context, orbitIdList.toString());
@@ -168,8 +168,8 @@ public class OrbitIdManager implements StatefulFunction {
         Utilities.sendToDefault(
             context,
             String.format(
-                "Orbit with id %s is not registered with OrbitIdManager - delete canceled",
-                removeOrbitIdMessage.getStringContent()));
+                "Orbit with id %s is not registered with OrbitIdManager - delete canceled: %s",
+                removeOrbitIdMessage.getStringContent(), e));
       }
     }
   }
