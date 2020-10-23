@@ -139,11 +139,19 @@ public class TrackGenerator {
           }
         });
 
-    Collections.sort(messages);
+    // Sort messages by track start time
+    Collections.sort(messages, new Comparator<String>() {
+      public int compare(String msgOne, String msgTwo) {
+        String[] fldsOne = msgOne.split(",");
+        String[] fldsTwo = msgTwo.split(",");
+        // Sort lexicographically since times are in YYYY-MM-DDTHH:MM:SS.SSS format
+        return fldsOne[4].compareTo(fldsTwo[4]);
+      }
+    });
     return messages;
   }
 
-  public String propagate(TLE tle, Double timePassedMS) {
+  public String propagate(TLE tle, Double timePassed) {
 
     // Get orbit from TLE
     Orbit initialOrbit = createOrbit(tle);
@@ -153,7 +161,7 @@ public class TrackGenerator {
     numericalPropagator.setInitialState(initialState);
 
     // Get working date
-    AbsoluteDate extrapDate = tle.getDate().shiftedBy(timePassedMS);
+    AbsoluteDate extrapDate = tle.getDate().shiftedBy(timePassed);
 
     String message = createMessage(extrapDate, smallStep, numericalPropagator, pvBuilder, tle);
 
@@ -281,6 +289,13 @@ public class TrackGenerator {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
+
+    // Sort TLEs by TLE epoch
+    Collections.sort(tles, new Comparator<TLE>() {
+      public int compare(TLE tleOne, TLE tleTwo) {
+        return tleOne.getDate().compareTo(tleTwo.getDate());
+      }
+    });
     return tles;
   }
 
