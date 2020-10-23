@@ -127,6 +127,12 @@ public class OrbitIdManager implements StatefulFunction {
         }
       } catch (Exception e) {
       }
+      try {
+        if (ApplicationProperties.getLogLevel() > 1) {
+          Utilities.log(context, "orbitIdList: " + orbitIdList.toString());
+        }
+      } catch (Exception e) {
+      }
 
       orbitIds.set(orbitIdList);
     }

@@ -30,6 +30,10 @@ spec:
               value: master
             - name: ROLE
               value: master
+            - name: OREKIT_PATH
+              value: ../../orekit-data
+            - name: PROPERTIES_PATH
+              value: ../../resources/kubernetes.properties
           image: spearw/eft-for-ssa:protobuf-master
           imagePullPolicy: ""
           name: master
@@ -44,6 +48,8 @@ spec:
               name: master-hostpath1
             - name: flink-config-volume
               mountPath: /opt/flink/conf/
+            - name: properties
+              mountPath: /resources/kubernetes.properties
       restartPolicy: Always
       serviceAccountName: ""
       volumes:
@@ -53,6 +59,9 @@ spec:
         - hostPath:
             path: /home/docker/orekit-data
           name: master-hostpath1
+        - hostPath:
+            path: /home/docker/kubernetes.properties
+          name: properties
         - name: flink-config-volume
           configMap:
             name: flink-config
