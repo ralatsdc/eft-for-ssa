@@ -2,7 +2,6 @@ package io.springbok.statefun.examples.demonstration;
 
 import io.springbok.statefun.examples.utilities.MockConsumer;
 import io.springbok.statefun.examples.utilities.MockTracksSourceFunction;
-import io.springbok.statefun.examples.utilities.SetTestPaths;
 import io.springbok.statefun.examples.utilities.TrackGenerator;
 import org.apache.flink.statefun.flink.harness.Harness;
 import org.junit.Assert;
@@ -26,7 +25,7 @@ public class IntegrationTests {
 
   @BeforeClass
   public static void setUp() throws Exception {
-    SetTestPaths.init();
+    ApplicationEnvironment.setPathProperties();
 
     trackGenerator = new TrackGenerator();
     trackGenerator.init();
