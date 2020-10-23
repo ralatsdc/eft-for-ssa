@@ -8,8 +8,9 @@ public class ApplicationProperties {
   private static Properties properties = null;
   private static Double epsilon = null;
   private static Double axisEpsilon = null;
-  private static Integer trackCutoff = null;
   private static Long deleteTimer = null;
+  private static Integer trackCutoff = null;
+  private static Integer logLevel = null;
 
   public static Properties getProperties() throws Exception {
     if (properties == null) {
@@ -50,5 +51,12 @@ public class ApplicationProperties {
       deleteTimer = Long.parseLong(getProperties().getProperty("deleteTimer"));
     }
     return deleteTimer;
+  }
+
+  public static Integer getLogLevel() throws Exception {
+    if (logLevel == null) {
+      logLevel = Integer.parseInt(getProperties().getProperty("logLevel"));
+    }
+    return logLevel;
   }
 }
