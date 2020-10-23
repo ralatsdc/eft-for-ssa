@@ -29,6 +29,7 @@ public class KafkaTrackProducer {
         // Define command line options, then parse command line
         Options options = new Options();
         options.addOption("i", "infinite-producer", false, "use infinite track producer");
+        options.addOption("t", "tracks-per-second", true, "number of tracks per second");
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;
         try {
@@ -36,6 +37,9 @@ public class KafkaTrackProducer {
         } catch (ParseException e) {
             System.out.println("Cannot parse command line: " + e);
             System.exit(1);
+        }
+        if (cmd.hasOption("t")) {
+            tracksPerSecond = Long.parseLong(cmd.getOptionValue("t"));
         }
 
         // Set Orekit, TLE, and properties path
