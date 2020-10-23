@@ -12,11 +12,14 @@ public class ApplicationEnvironment {
   }
 
   public static void setPathProperty(String property) throws Exception {
+    if (System.getProperty(property) != null) {
+      return;
+    }
     String path = null;
     if (System.getenv(property) != null) {
       path = System.getenv(property);
     } else {
-      String rootPath = Thread.currentThread().getContextClassLoader().getResource("").getPath();
+      String rootPath = System.getProperty("user.dir");
       rootPath = rootPath.substring(0, rootPath.indexOf("eft-for-ssa"));
       switch (property) {
         case "OREKIT_PATH":
