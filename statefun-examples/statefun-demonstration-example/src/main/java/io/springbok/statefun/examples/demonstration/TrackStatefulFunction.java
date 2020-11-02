@@ -27,15 +27,15 @@ public class TrackStatefulFunction implements StatefulFunction {
   @Override
   public void invoke(Context context, Object input) {
 
+    // OrbitFactory.init() ensures Orekit data is loaded into the current context
+    // Not in try block since orekit must be loaded for project to work
+    OrbitFactory.init();
+
     // TrackIn is a message from the TrackStateful Function. This constructs a new Track from
     // incoming data
     if (input instanceof TrackIn) {
 
       TrackIn trackIn = (TrackIn) input;
-
-      // OrbitFactory.init() ensures Orekit data is loaded into the current context
-      // Not in try block since orekit must be loaded for project to work
-      OrbitFactory.init();
 
       try {
         // Create track from input
