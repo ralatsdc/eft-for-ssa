@@ -149,12 +149,14 @@ public class OrbitStatefulFunction implements StatefulFunction {
           context.send(TrackStatefulFunction.TYPE, nextTrack, collectedTracksMessage);
         } else {
           // Send message out that correlation not successful
-          Utilities.log(
-              context,
-              String.format(
-                  "Not correlated orbits with ids %s and %s",
-                  recievedKeyedOrbit.orbitId, keyedOrbit.orbitId),
-              1);
+          if (ApplicationProperties.getLogLevel() > 1) {
+            Utilities.log(
+                context,
+                String.format(
+                    "Not correlated orbits with ids %s and %s",
+                    recievedKeyedOrbit.orbitId, keyedOrbit.orbitId),
+                1);
+          }
         }
       } catch (Exception e) {
         Utilities.log(context, String.format("Not correlated orbits: %s", e), 1);
