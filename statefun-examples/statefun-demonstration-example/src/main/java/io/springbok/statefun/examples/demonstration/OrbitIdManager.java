@@ -44,7 +44,7 @@ public class OrbitIdManager implements StatefulFunction {
       context.send(OrbitStatefulFunction.TYPE, String.valueOf(id), newTrackMessage);
 
       // Message out that orbit id was created
-      Utilities.log(context, String.format("Created orbitId %s", id), 1);
+      Utilities.log(context, String.format("Created orbitId %s", id), 2);
 
       // Set persisted state
       lastOrbitId.set(id);
@@ -64,7 +64,7 @@ public class OrbitIdManager implements StatefulFunction {
       context.send(OrbitStatefulFunction.TYPE, String.valueOf(id), collectedTracksMessage);
 
       // Message out that orbit id was created
-      Utilities.log(context, String.format("Created orbitId %s", id), 1);
+      Utilities.log(context, String.format("Created orbitId %s", id), 2);
 
       // Set persisted state
       lastOrbitId.set(id);
@@ -80,7 +80,7 @@ public class OrbitIdManager implements StatefulFunction {
 
       // Message out that orbit id was saved
       Utilities.log(
-          context, String.format("Saved orbitId %s", newRefinedOrbitIdMessage.getNewOrbitId()), 1);
+          context, String.format("Saved orbitId %s", newRefinedOrbitIdMessage.getNewOrbitId()), 2);
 
       // Update orbitIdList with the new orbit
       orbitIdList.add(newRefinedOrbitIdMessage.getNewOrbitId());
@@ -122,15 +122,11 @@ public class OrbitIdManager implements StatefulFunction {
             1);
       }
       try {
-        if (ApplicationProperties.getLogLevel() > 1) {
-          Utilities.log(context, "orbitIdList: " + orbitIdList.toString(), 1);
-        }
+        Utilities.log(context, "orbitIdList: " + orbitIdList.toString(), 3);
       } catch (Exception e) {
       }
       try {
-        if (ApplicationProperties.getLogLevel() > 1) {
-          Utilities.log(context, "orbitIdList: " + orbitIdList.toString(), 1);
-        }
+        Utilities.log(context, "orbitIdList: " + orbitIdList.toString(), 3);
       } catch (Exception e) {
       }
 
@@ -155,7 +151,7 @@ public class OrbitIdManager implements StatefulFunction {
       KeyedOrbit keyedOrbit = KeyedOrbit.fromString(correlateOrbitsMessage.getStringContent());
 
       // Message out that orbit id was saved
-      Utilities.log(context, String.format("Saved orbitId %s", keyedOrbit.orbitId), 1);
+      Utilities.log(context, String.format("Saved orbitId %s", keyedOrbit.orbitId), 2);
 
       // Update orbitIdList with the new orbit
       orbitIdList.add(keyedOrbit.orbitId);

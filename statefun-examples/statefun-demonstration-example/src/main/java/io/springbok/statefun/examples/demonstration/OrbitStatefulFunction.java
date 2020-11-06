@@ -149,14 +149,12 @@ public class OrbitStatefulFunction implements StatefulFunction {
           context.send(TrackStatefulFunction.TYPE, nextTrack, collectedTracksMessage);
         } else {
           // Send message out that correlation not successful
-          if (ApplicationProperties.getLogLevel() > 1) {
-            Utilities.log(
-                context,
-                String.format(
-                    "Not correlated orbits with ids %s and %s",
-                    recievedKeyedOrbit.orbitId, keyedOrbit.orbitId),
-                1);
-          }
+          Utilities.log(
+              context,
+              String.format(
+                  "Not correlated orbits with ids %s and %s",
+                  recievedKeyedOrbit.orbitId, keyedOrbit.orbitId),
+              3);
         }
       } catch (Exception e) {
         Utilities.log(context, String.format("Not correlated orbits: %s", e), 1);
@@ -225,7 +223,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
         // Send message out that orbit was created and saved
         Utilities.log(
-            context, String.format("Created refined orbit for id %s", newOrbit.orbitId), 1);
+            context, String.format("Created refined orbit for id %s", newOrbit.orbitId), 2);
 
         orbitState.set(newOrbit);
       } catch (NullPointerException e) {
