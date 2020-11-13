@@ -32,6 +32,34 @@ public class IntegrationTests {
     trackGenerator.finitePropagation();
   }
 
+    @Ignore("Only one Harness can be run at a time")
+    @Test
+    public void testSatelliteCreation() throws Exception {
+
+        MockTracksSourceFunction singleTracksSource =
+                new MockTracksSourceFunction(trackGenerator.getXMessages(1));
+        MockConsumer testConsumer = new MockConsumer();
+        singleTracksSource.runTimeMS = 5000;
+        OrbitStatefulFunction.deleteTimer = 1;
+
+        Harness harness =
+                new Harness()
+                        .withKryoMessageSerializer()
+                        .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
+                        .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
+        harness.start();
+
+        Assert.assertTrue(testConsumer.messages.get(0).contains("Created trackId 0"));
+        Assert.assertTrue(testConsumer.messages.get(1).contains("Created track for id 0"));
+        Assert.assertTrue(testConsumer.messages.get(2).contains("Created orbitId 0"));
+        Assert.assertTrue(testConsumer.messages.get(3).contains("Created orbit for id 0"));
+        Assert.assertTrue(testConsumer.messages.get(4).contains("Added orbitId 0 to trackId 0"));
+        Assert.assertTrue(testConsumer.messages.get(5).contains("Saved orbitId 0"));
+        Assert.assertTrue(testConsumer.messages.get(6).contains("Cleared orbit for id 0"));
+        Assert.assertTrue(testConsumer.messages.get(7).contains("Cleared track for trackId 0"));
+        Assert.assertTrue(testConsumer.messages.get(8).contains("Removed orbitId 0"));
+    }
+
   @Ignore("Only one Harness can be run at a time")
   @Test
   public void testTrackCreation() throws Exception {
@@ -152,7 +180,7 @@ public class IntegrationTests {
           String trackObject = trackGenerator.getMessagesById(satelliteNumber).get(0);
           Track track = Track.fromString(trackObject, "0");
 
-          KeyedOrbit keyedOrbit = OrbitFactory.createOrbit(track, "0");
+          KeyedOrbit keyedOrbit = OrbitFactory.createKeyedOrbit(track, "0");
           KeplerianOrbit orbit = (KeplerianOrbit) keyedOrbit.orbit;
 
           double a = orbit.getA();

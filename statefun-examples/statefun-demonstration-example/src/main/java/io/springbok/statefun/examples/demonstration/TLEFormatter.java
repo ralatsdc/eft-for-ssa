@@ -13,7 +13,7 @@ import java.net.URISyntaxException;
 
 public class TLEFormatter extends FileInputFormat<TLE> {
 
-  private transient FileSystem fileSystem;
+  private transient FilePath filePath;
   private transient BufferedReader reader;
   private final String inputPath;
   private String line1;

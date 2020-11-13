@@ -23,8 +23,8 @@ public class OrbitFactoryTest {
     ArrayList<Track> trackArrayList1 = new ArrayList<>();
     trackArrayList1.add(track1);
 
-    KeyedOrbit keyedOrbit0 = OrbitFactory.createOrbit(track0, "0");
-    KeyedOrbit keyedOrbit1 = OrbitFactory.createOrbit(track1, "1");
+    KeyedOrbit keyedOrbit0 = OrbitFactory.createKeyedOrbit(track0, "0");
+    KeyedOrbit keyedOrbit1 = OrbitFactory.createKeyedOrbit(track1, "1");
 
     System.out.println(keyedOrbit0.orbit);
     System.out.println(keyedOrbit1.orbit);
@@ -52,8 +52,8 @@ public class OrbitFactoryTest {
     ArrayList<Track> trackArrayList1 = new ArrayList<>();
     trackArrayList1.add(track1);
 
-    KeyedOrbit keyedOrbit0 = OrbitFactory.createOrbit(track0, "0");
-    KeyedOrbit keyedOrbit1 = OrbitFactory.createOrbit(track1, "1");
+    KeyedOrbit keyedOrbit0 = OrbitFactory.createKeyedOrbit(track0, "0");
+    KeyedOrbit keyedOrbit1 = OrbitFactory.createKeyedOrbit(track1, "1");
 
     if (OrbitCorrelator.correlate(keyedOrbit0, keyedOrbit1)) {
       KeyedOrbit keyedOrbit2 =

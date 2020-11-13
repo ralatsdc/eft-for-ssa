@@ -43,7 +43,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
       Track track = Track.fromString(newTrackMessage.getStringTrack(), newTrackMessage.getId());
       try {
         // Create KeyedOrbit
-        KeyedOrbit keyedOrbit = OrbitFactory.createOrbit(track, context.self().id());
+        KeyedOrbit keyedOrbit = OrbitFactory.createKeyedOrbit(track, context.self().id());
 
         // Send new orbit id to TrackStatefulFunction
         context.send(
