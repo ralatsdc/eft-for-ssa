@@ -17,6 +17,8 @@ public class DemonstrationModule implements StatefulFunctionModule {
 
   private static final String DEFAULT_KAFKA_ADDRESS = "kafka-broker:9093";
 
+  private static String TLEPATH = "../../tle-data";
+
   @Override
   public void configure(Map<String, String> globalConfiguration, Binder binder) {
 
@@ -25,9 +27,13 @@ public class DemonstrationModule implements StatefulFunctionModule {
         (String) globalConfiguration.getOrDefault(KAFKA_KEY, DEFAULT_KAFKA_ADDRESS);
     DemonstrationIO ioModule = new DemonstrationIO(kafkaAddress);
 
-    // Bind the application ingress and router
+    // Bind the track ingress and router
     binder.bindIngress(ioModule.getIngressSpec());
     binder.bindIngressRouter(DemonstrationIO.TRACKS_INGRESS_ID, new TrackRouter());
+
+    // Bind the tle ingress
+    binder.bindIngress(ioModule.getTLEIngressSpec(TLEPATH));
+    binder.bindIngressRouter(DemonstrationIO.TLE_INGRESS_ID, new TLERouter());
 
     // Bind application egress
     binder.bindEgress(ioModule.getEgressSpec());
@@ -37,5 +43,7 @@ public class DemonstrationModule implements StatefulFunctionModule {
     binder.bindFunctionProvider(OrbitStatefulFunction.TYPE, unused -> new OrbitStatefulFunction());
     binder.bindFunctionProvider(TrackStatefulFunction.TYPE, unused -> new TrackStatefulFunction());
     binder.bindFunctionProvider(OrbitIdManager.TYPE, unused -> new OrbitIdManager());
+    binder.bindFunctionProvider(
+        SatelliteStatefulFunction.TYPE, unused -> new SatelliteStatefulFunction());
   }
 }
