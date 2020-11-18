@@ -61,7 +61,7 @@ public class TrackGenerator {
   public TrackGenerator(String tlePath) throws Exception {
 
     // TODO: verify the input is a TLE
-    this.tlePath = tlePath;
+    tlePath = tlePath;
     orekitPath = System.getProperty("OREKIT_PATH");
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
@@ -70,7 +70,7 @@ public class TrackGenerator {
   public TrackGenerator(String tlePath, String orekitPath) throws Exception {
 
     // TODO: verify the input is a TLE
-    this.tlePath = tlePath;
+    tlePath = tlePath;
     this.orekitPath = orekitPath;
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
@@ -85,7 +85,7 @@ public class TrackGenerator {
 
     // Add tles to list
     final File tleData = new File(tlePath);
-    tles = convertTLES(tleData);
+    tles = TLEReader.readTLEs(tleData);
 
     // Set up propagator
     final GillIntegrator gillIntegrator = new GillIntegrator(largeStep);
@@ -140,14 +140,17 @@ public class TrackGenerator {
         });
 
     // Sort messages by track start time
-    Collections.sort(messages, new Comparator<String>() {
-      public int compare(String msgOne, String msgTwo) {
-        String[] fldsOne = msgOne.split(",");
-        String[] fldsTwo = msgTwo.split(",");
-        // Sort lexicographically since times are in YYYY-MM-DDTHH:MM:SS.SSS format
-        return fldsOne[4].compareTo(fldsTwo[4]);
-      }
-    });
+    Collections.sort(
+        messages,
+        new Comparator<String>() {
+          @Override
+          public int compare(String msgOne, String msgTwo) {
+            String[] fldsOne = msgOne.split(",");
+            String[] fldsTwo = msgTwo.split(",");
+            // Sort lexicographically since times are in YYYY-MM-DDTHH:MM:SS.SSS format
+            return fldsOne[4].compareTo(fldsTwo[4]);
+          }
+        });
     return messages;
   }
 
@@ -266,37 +269,6 @@ public class TrackGenerator {
       message = message + "," + obs;
     }
     return message;
-  }
-
-  public static ArrayList<TLE> convertTLES(File tleData) throws IOException {
-
-    ArrayList<TLE> tles = new ArrayList<TLE>();
-    BufferedReader tleReader;
-    try {
-      tleReader = new BufferedReader(new FileReader(tleData));
-      String line = tleReader.readLine();
-
-      // Loop until file end
-      while (line != null) {
-
-        TLE tle = new TLE(line, tleReader.readLine());
-        tles.add(tle);
-
-        line = tleReader.readLine();
-      }
-
-    } catch (FileNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-
-    // Sort TLEs by TLE epoch
-    Collections.sort(tles, new Comparator<TLE>() {
-      public int compare(TLE tleOne, TLE tleTwo) {
-        return tleOne.getDate().compareTo(tleTwo.getDate());
-      }
-    });
-    return tles;
   }
 
   public ArrayList<String> getMessages() {

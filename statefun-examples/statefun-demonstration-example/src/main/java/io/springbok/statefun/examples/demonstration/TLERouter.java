@@ -1,14 +1,16 @@
 package io.springbok.statefun.examples.demonstration;
 
+import io.springbok.statefun.examples.demonstration.generated.SingleLineTLE;
 import org.apache.flink.statefun.sdk.io.Router;
-import org.orekit.propagation.analytical.tle.TLE;
 
-public class TLERouter implements Router<TLE> {
+public class TLERouter implements Router<SingleLineTLE> {
 
   // route to SatelliteStatefulFunctions based on the Satellite ID
   @Override
-  public void route(TLE tle, Downstream<TLE> downstream) {
+  public void route(SingleLineTLE singleLineTLE, Downstream<SingleLineTLE> downstream) {
+    System.out.println(singleLineTLE);
+
     downstream.forward(
-        SatelliteStatefulFunction.TYPE, String.valueOf(tle.getSatelliteNumber()), tle);
+        SatelliteStatefulFunction.TYPE, singleLineTLE.getSatelliteNumber(), singleLineTLE);
   }
 }

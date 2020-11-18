@@ -1,8 +1,6 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.utilities.MockConsumer;
-import io.springbok.statefun.examples.utilities.MockTracksSourceFunction;
-import io.springbok.statefun.examples.utilities.TrackGenerator;
+import io.springbok.statefun.examples.utilities.*;
 import org.apache.flink.statefun.flink.harness.Harness;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -22,43 +20,47 @@ import java.util.regex.Pattern;
 public class IntegrationTests {
 
   static TrackGenerator trackGenerator;
+  static ArrayList<TLE> tles;
 
   @BeforeClass
   public static void setUp() throws Exception {
     ApplicationEnvironment.setPathProperties();
+    String tlePath = System.getProperty("TLE_PATH");
 
     trackGenerator = new TrackGenerator();
     trackGenerator.init();
     trackGenerator.finitePropagation();
+    final File tleData = new File(tlePath);
+    tles = TLEReader.readTLEs(tleData);
   }
 
-    @Ignore("Only one Harness can be run at a time")
-    @Test
-    public void testSatelliteCreation() throws Exception {
+  @Ignore("Only one Harness can be run at a time")
+  @Test
+  public void testSatelliteCreation() throws Exception {
 
-        MockTracksSourceFunction singleTracksSource =
-                new MockTracksSourceFunction(trackGenerator.getXMessages(1));
-        MockConsumer testConsumer = new MockConsumer();
-        singleTracksSource.runTimeMS = 5000;
-        OrbitStatefulFunction.deleteTimer = 1;
+    MockTLESourceFunction TLESource =
+        new MockTLESourceFunction(tles);
+    MockConsumer testConsumer = new MockConsumer();
+    TLESource.runTimeMS = 5000;
+    OrbitStatefulFunction.deleteTimer = 1;
 
-        Harness harness =
-                new Harness()
-                        .withKryoMessageSerializer()
-                        .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
-                        .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
-        harness.start();
+    Harness harness =
+        new Harness()
+            .withKryoMessageSerializer()
+            .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
+            .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
+    harness.start();
 
-        Assert.assertTrue(testConsumer.messages.get(0).contains("Created trackId 0"));
-        Assert.assertTrue(testConsumer.messages.get(1).contains("Created track for id 0"));
-        Assert.assertTrue(testConsumer.messages.get(2).contains("Created orbitId 0"));
-        Assert.assertTrue(testConsumer.messages.get(3).contains("Created orbit for id 0"));
-        Assert.assertTrue(testConsumer.messages.get(4).contains("Added orbitId 0 to trackId 0"));
-        Assert.assertTrue(testConsumer.messages.get(5).contains("Saved orbitId 0"));
-        Assert.assertTrue(testConsumer.messages.get(6).contains("Cleared orbit for id 0"));
-        Assert.assertTrue(testConsumer.messages.get(7).contains("Cleared track for trackId 0"));
-        Assert.assertTrue(testConsumer.messages.get(8).contains("Removed orbitId 0"));
-    }
+    Assert.assertTrue(testConsumer.messages.get(0).contains("Created trackId 0"));
+    Assert.assertTrue(testConsumer.messages.get(1).contains("Created track for id 0"));
+    Assert.assertTrue(testConsumer.messages.get(2).contains("Created orbitId 0"));
+    Assert.assertTrue(testConsumer.messages.get(3).contains("Created orbit for id 0"));
+    Assert.assertTrue(testConsumer.messages.get(4).contains("Added orbitId 0 to trackId 0"));
+    Assert.assertTrue(testConsumer.messages.get(5).contains("Saved orbitId 0"));
+    Assert.assertTrue(testConsumer.messages.get(6).contains("Cleared orbit for id 0"));
+    Assert.assertTrue(testConsumer.messages.get(7).contains("Cleared track for trackId 0"));
+    Assert.assertTrue(testConsumer.messages.get(8).contains("Removed orbitId 0"));
+  }
 
   @Ignore("Only one Harness can be run at a time")
   @Test
@@ -173,7 +175,7 @@ public class IntegrationTests {
   public void testTrackMessages() throws Exception {
 
     final File tleData = new File(System.getProperty("TLE_PATH"));
-    ArrayList<TLE> tles = TrackGenerator.convertTLES(tleData);
+    ArrayList<TLE> tles = TLEReader.readTLEs(tleData);
     tles.forEach(
         tle -> {
           int satelliteNumber = tle.getSatelliteNumber();

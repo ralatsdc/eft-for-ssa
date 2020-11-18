@@ -1,5 +1,7 @@
 package io.springbok.statefun.examples.demonstration;
 
+import io.springbok.statefun.examples.demonstration.generated.SingleLineTLE;
+import io.springbok.statefun.examples.utilities.TLEReader;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -25,8 +27,9 @@ public class SatelliteStatefulFunction implements StatefulFunction {
     OrbitFactory.init();
 
     // TLE is from reading the source file
-    if (input instanceof TLE) {
-      TLE tle = (TLE) input;
+    if (input instanceof SingleLineTLE) {
+      SingleLineTLE singleLineTLE = (SingleLineTLE) input;
+      TLE tle = TLEReader.fromSingleLineTLE(singleLineTLE);
       Orbit orbit = OrbitFactory.createOrbit(tle);
 
       orbitState.set(orbit);

@@ -17,9 +17,6 @@ public class DemonstrationModule implements StatefulFunctionModule {
 
   private static final String DEFAULT_KAFKA_ADDRESS = "kafka-broker:9093";
 
-  private static String TLEPATH =
-      "/Users/williamspear/projects/orbits/eft-for-ssa/tle-data/globalstar_tles_05_18_2020.txt";
-
   @Override
   public void configure(Map<String, String> globalConfiguration, Binder binder) {
 
@@ -33,7 +30,7 @@ public class DemonstrationModule implements StatefulFunctionModule {
     binder.bindIngressRouter(DemonstrationIO.TRACKS_INGRESS_ID, new TrackRouter());
 
     // Bind the tle ingress
-    binder.bindIngress(ioModule.getTLEIngressSpec(TLEPATH));
+    binder.bindIngress(ioModule.getTLEIngressSpec());
     binder.bindIngressRouter(DemonstrationIO.TLE_INGRESS_ID, new TLERouter());
 
     // Bind application egress

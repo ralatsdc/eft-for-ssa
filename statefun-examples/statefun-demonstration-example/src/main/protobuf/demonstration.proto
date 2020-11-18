@@ -25,6 +25,11 @@ message TrackIn {
   string track = 1;
 }
 
+message SingleLineTLE {
+  string satelliteNumber = 1;
+  string lines = 2;
+}
+
 message DefaultOut {
   string content = 1;
 }
