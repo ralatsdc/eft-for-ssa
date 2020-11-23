@@ -45,7 +45,7 @@ public class TLEReader {
   }
 
   public static SingleLineTLE toSingleLineTLE(TLE tle) {
-    String lines = tle.getLine1() + "&&" + tle.getLine2();
+    String lines = tle.getLine1() + "/n" + tle.getLine2();
 
     return SingleLineTLE.newBuilder()
         .setSatelliteNumber(String.valueOf(tle.getSatelliteNumber()))
@@ -54,7 +54,7 @@ public class TLEReader {
   }
 
   public static TLE fromSingleLineTLE(SingleLineTLE singleLineTLE) {
-    String[] lines = singleLineTLE.getLines().split("&&");
+    String[] lines = singleLineTLE.getLines().split("/n");
     TLE tle = new TLE(lines[0], lines[1]);
 
     return tle;

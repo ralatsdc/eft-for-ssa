@@ -13,6 +13,8 @@ public class MockTLESourceFunction implements SourceFunction<SingleLineTLE> {
   private volatile boolean isRunning = true;
   public int runTimeMS = 8000;
 
+  public MockTLESourceFunction() {}
+
   public MockTLESourceFunction(ArrayList<TLE> tles) {
     this.singleLineTLES = new ArrayList<>();
     tles.forEach(
@@ -25,14 +27,16 @@ public class MockTLESourceFunction implements SourceFunction<SingleLineTLE> {
   @Override
   public void run(SourceContext<SingleLineTLE> sourceContext) throws InterruptedException {
 
-    Iterator<SingleLineTLE> tracksIterator = singleLineTLES.iterator();
+    if (!(singleLineTLES == null)) {
+      Iterator<SingleLineTLE> tracksIterator = singleLineTLES.iterator();
 
-    while (isRunning && tracksIterator.hasNext())
-      for (SingleLineTLE singleLineTLE : singleLineTLES) {
-        sourceContext.collect(tracksIterator.next());
-      }
-    sourceContext.close();
-    Thread.sleep(runTimeMS);
+      while (isRunning && tracksIterator.hasNext())
+        for (SingleLineTLE singleLineTLE : singleLineTLES) {
+          sourceContext.collect(tracksIterator.next());
+        }
+      sourceContext.close();
+      Thread.sleep(runTimeMS);
+    }
   }
 
   @Override

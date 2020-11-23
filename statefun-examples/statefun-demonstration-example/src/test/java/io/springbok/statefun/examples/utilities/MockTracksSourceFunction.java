@@ -12,6 +12,8 @@ public final class MockTracksSourceFunction implements SourceFunction<TrackIn> {
   private volatile boolean isRunning = true;
   public int runTimeMS = 8000;
 
+  public MockTracksSourceFunction() {}
+
   public MockTracksSourceFunction(ArrayList<String> tracks) {
     this.tracks = new ArrayList<>();
     tracks.forEach(
@@ -24,14 +26,16 @@ public final class MockTracksSourceFunction implements SourceFunction<TrackIn> {
   @Override
   public void run(SourceContext<TrackIn> sourceContext) throws InterruptedException {
 
-    Iterator<TrackIn> tracksIterator = tracks.iterator();
+    if (!(tracks == null)) {
+      Iterator<TrackIn> tracksIterator = tracks.iterator();
 
-    while (isRunning && tracksIterator.hasNext())
-      for (TrackIn track : tracks) {
-        sourceContext.collect(tracksIterator.next());
-      }
-    sourceContext.close();
-    Thread.sleep(runTimeMS);
+      while (isRunning && tracksIterator.hasNext())
+        for (TrackIn track : tracks) {
+          sourceContext.collect(tracksIterator.next());
+        }
+      sourceContext.close();
+      Thread.sleep(runTimeMS);
+    }
   }
 
   @Override

@@ -28,6 +28,7 @@ public class SatelliteStatefulFunction implements StatefulFunction {
 
     // TLE is from reading the source file
     if (input instanceof SingleLineTLE) {
+
       SingleLineTLE singleLineTLE = (SingleLineTLE) input;
       TLE tle = TLEReader.fromSingleLineTLE(singleLineTLE);
       Orbit orbit = OrbitFactory.createOrbit(tle);
@@ -35,7 +36,7 @@ public class SatelliteStatefulFunction implements StatefulFunction {
       orbitState.set(orbit);
 
       Utilities.log(
-          context, String.format("Saved orbit with satellite ID: ", context.self().id()), 1);
+          context, String.format("Saved orbit with satellite ID: %s", context.self().id()), 1);
     }
   }
 }

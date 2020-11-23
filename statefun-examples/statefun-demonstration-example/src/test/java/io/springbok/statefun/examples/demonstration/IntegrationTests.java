@@ -38,8 +38,13 @@ public class IntegrationTests {
   @Test
   public void testSatelliteCreation() throws Exception {
 
-    MockTLESourceFunction TLESource =
-        new MockTLESourceFunction(tles);
+    // All ingress must be bound for harness to work; creating empty source
+    MockTracksSourceFunction singleTracksSource = new MockTracksSourceFunction();
+
+    // Specific source function for testing
+    ArrayList<TLE> testTLES = new ArrayList<>();
+    testTLES.add(tles.get(0));
+    MockTLESourceFunction TLESource = new MockTLESourceFunction(testTLES);
     MockConsumer testConsumer = new MockConsumer();
     TLESource.runTimeMS = 5000;
     OrbitStatefulFunction.deleteTimer = 1;
@@ -48,26 +53,23 @@ public class IntegrationTests {
         new Harness()
             .withKryoMessageSerializer()
             .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
+            .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
-    Assert.assertTrue(testConsumer.messages.get(0).contains("Created trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(1).contains("Created track for id 0"));
-    Assert.assertTrue(testConsumer.messages.get(2).contains("Created orbitId 0"));
-    Assert.assertTrue(testConsumer.messages.get(3).contains("Created orbit for id 0"));
-    Assert.assertTrue(testConsumer.messages.get(4).contains("Added orbitId 0 to trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(5).contains("Saved orbitId 0"));
-    Assert.assertTrue(testConsumer.messages.get(6).contains("Cleared orbit for id 0"));
-    Assert.assertTrue(testConsumer.messages.get(7).contains("Cleared track for trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(8).contains("Removed orbitId 0"));
+    Assert.assertTrue(testConsumer.messages.get(0).contains("Saved orbit with satellite ID:"));
   }
 
   @Ignore("Only one Harness can be run at a time")
   @Test
   public void testTrackCreation() throws Exception {
 
-    MockTracksSourceFunction singleTracksSource =
-        new MockTracksSourceFunction(trackGenerator.getXMessages(1));
+    // All ingress must be bound for harness to work; creating empty source
+    MockTLESourceFunction TLESource = new MockTLESourceFunction();
+
+    // Specific source function for testing
+    MockTracksSourceFunction singleTracksSource = new MockTracksSourceFunction();
+    new MockTracksSourceFunction(trackGenerator.getXMessages(1));
     MockConsumer testConsumer = new MockConsumer();
     singleTracksSource.runTimeMS = 5000;
     OrbitStatefulFunction.deleteTimer = 1;
@@ -76,6 +78,7 @@ public class IntegrationTests {
         new Harness()
             .withKryoMessageSerializer()
             .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
+            .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
@@ -112,6 +115,10 @@ public class IntegrationTests {
   @Test
   public void testOrbitCorrelation() throws Exception {
 
+    // All ingress must be bound for harness to work; creating empty source
+    MockTLESourceFunction TLESource = new MockTLESourceFunction();
+
+    // Specific source function for testing
     MockTracksSourceFunction finiteTracksSource =
         new MockTracksSourceFunction(trackGenerator.getXSingleObjectMessages(2));
     MockConsumer testConsumer = new MockConsumer();
@@ -122,6 +129,7 @@ public class IntegrationTests {
         new Harness()
             .withKryoMessageSerializer()
             .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, finiteTracksSource)
+            .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
