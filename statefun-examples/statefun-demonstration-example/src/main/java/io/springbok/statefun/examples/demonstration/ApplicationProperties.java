@@ -9,6 +9,7 @@ public class ApplicationProperties {
   private static Double epsilon = null;
   private static Double axisEpsilon = null;
   private static Long deleteTimer = null;
+  private static Long wakeupInterval = null;
   private static Integer trackCutoff = null;
   private static Integer logLevel = null;
 
@@ -51,6 +52,13 @@ public class ApplicationProperties {
       deleteTimer = Long.parseLong(getProperties().getProperty("deleteTimer"));
     }
     return deleteTimer;
+  }
+
+  public static long getWakeupInterval() throws Exception {
+    if (wakeupInterval == null) {
+      wakeupInterval = Long.parseLong(getProperties().getProperty("wakeupInterval"));
+    }
+    return wakeupInterval;
   }
 
   public static Integer getLogLevel() throws Exception {
