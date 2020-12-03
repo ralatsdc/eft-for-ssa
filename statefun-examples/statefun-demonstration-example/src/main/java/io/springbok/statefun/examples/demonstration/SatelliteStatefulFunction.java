@@ -1,6 +1,8 @@
 package io.springbok.statefun.examples.demonstration;
 
 import io.springbok.statefun.examples.demonstration.generated.DelayedWakeUpMessage;
+import io.springbok.statefun.examples.demonstration.generated.NewSatelliteMessage;
+import io.springbok.statefun.examples.demonstration.generated.SensorInfoMessage;
 import io.springbok.statefun.examples.demonstration.generated.SingleLineTLE;
 import io.springbok.statefun.examples.utilities.TLEReader;
 import org.apache.flink.statefun.sdk.Context;
@@ -8,10 +10,27 @@ import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.hipparchus.ode.events.Action;
+import org.hipparchus.util.FastMath;
+import org.orekit.bodies.BodyShape;
+import org.orekit.bodies.GeodeticPoint;
+import org.orekit.bodies.OneAxisEllipsoid;
+import org.orekit.frames.Frame;
+import org.orekit.frames.FramesFactory;
+import org.orekit.frames.TopocentricFrame;
 import org.orekit.orbits.Orbit;
+import org.orekit.propagation.Propagator;
+import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.analytical.KeplerianPropagator;
 import org.orekit.propagation.analytical.tle.TLE;
+import org.orekit.propagation.events.ElevationDetector;
+import org.orekit.propagation.events.EventDetector;
+import org.orekit.time.AbsoluteDate;
+import org.orekit.utils.Constants;
+import org.orekit.utils.IERSConventions;
 
 import java.time.Duration;
+import java.util.ArrayList;
 
 public class SatelliteStatefulFunction implements StatefulFunction {
   // This FunctionType binding is used in the Demonstration module
@@ -21,6 +40,10 @@ public class SatelliteStatefulFunction implements StatefulFunction {
   // PersistedValues can be stored and recalled when this StatefulFunction is invoked
   @Persisted
   private final PersistedValue<Orbit> orbitState = PersistedValue.of("orbit", Orbit.class);
+  // Store list of sensor information
+  @Persisted
+  private final PersistedValue<ArrayList> sensorVisibilityStates =
+      PersistedValue.of("sensor-list", ArrayList.class);
 
   @Override
   public void invoke(Context context, Object input) {
@@ -33,12 +56,28 @@ public class SatelliteStatefulFunction implements StatefulFunction {
     if (input instanceof SingleLineTLE) {
 
       try {
+        // Save new satellite information
         SingleLineTLE singleLineTLE = (SingleLineTLE) input;
         TLE tle = TLEReader.fromSingleLineTLE(singleLineTLE);
         Orbit orbit = OrbitFactory.createOrbit(tle);
 
         orbitState.set(orbit);
         sendWakeUpMessage(context);
+
+        // TODO: Calculate whether satellite can be seen by leo, meo, geo sensors
+        // Send message to SensorIdManager that new SatelliteStatefulFunction was created
+
+        NewSatelliteMessage newSatelliteMessage =
+            NewSatelliteMessage.newBuilder()
+                .setId(context.self().id())
+                .setLeo(true)
+                .setMeo(true)
+                .setGeo(true)
+                .build();
+
+        // Send a message to the SensorIdManager to forward to appropriate sensors
+        context.send(SensorIdManager.TYPE, "sensor-id-manager", newSatelliteMessage);
+
         Utilities.log(
             context, String.format("Saved orbit with satellite ID: %s", context.self().id()), 1);
       } catch (Exception e) {
@@ -76,12 +115,77 @@ public class SatelliteStatefulFunction implements StatefulFunction {
             1);
       }
     }
+
+    // Adding sensor information to Satellite
+    if (input instanceof SensorInfoMessage) {
+      SensorInfoMessage sensorInfoMessage = (SensorInfoMessage) input;
+
+      // TODO: add simple check to see if this sensor is the right type
+
+      GeodeticPoint sensor =
+          new GeodeticPoint(
+              sensorInfoMessage.getLatitude(),
+              sensorInfoMessage.getLongitude(),
+              sensorInfoMessage.getAltitude());
+
+      Frame earthFrame = FramesFactory.getITRF(IERSConventions.IERS_2010, true);
+      BodyShape earth =
+          new OneAxisEllipsoid(
+              Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
+              Constants.WGS84_EARTH_FLATTENING,
+              earthFrame);
+      TopocentricFrame sensorFrame =
+          new TopocentricFrame(earth, sensor, sensorInfoMessage.getSensorId());
+
+      // TODO: determine use of these values
+      double maxcheck = 60.0;
+      double threshold = 0.001;
+      double elevation = FastMath.toRadians(5.);
+      // TODO: simplify so return statement is true if visible and false if invisible
+      EventDetector sensorVisibility =
+          new ElevationDetector(maxcheck, threshold, sensorFrame)
+              .withConstantElevation(elevation)
+              .withHandler(
+                  (s, detector, increasing) -> {
+                    System.out.println(
+                        " Visibility on "
+                            + detector.getTopocentricFrame().getName()
+                            + (increasing ? " begins at " : " ends at ")
+                            + s.getDate());
+                    return increasing ? Action.CONTINUE : Action.STOP;
+                  });
+
+      ArrayList<EventDetector> sensorVisibilities =
+          sensorVisibilityStates.getOrDefault(new ArrayList<EventDetector>());
+
+      sensorVisibilities.add(sensorVisibility);
+
+      sensorVisibilityStates.set(sensorVisibilities);
+    }
   }
 
   // Sends a delete message after a certain amount of time
   private void sendWakeUpMessage(Context context) throws Exception {
 
     long wakeupInterval = ApplicationProperties.getWakeupInterval();
+
+    ArrayList<EventDetector> sensorVisibilities =
+        sensorVisibilityStates.getOrDefault(new ArrayList<EventDetector>());
+
+    Propagator kepler = new KeplerianPropagator(orbitState.get());
+
+    sensorVisibilities.forEach(
+        sensorVisibility -> {
+          kepler.clearEventsDetectors();
+          kepler.addEventDetector(sensorVisibility);
+          SpacecraftState finalState =
+              kepler.propagate(new AbsoluteDate(orbitState.get().getDate(), 1500.));
+
+          if (1 <= 0) {
+            Track track = new Track(orbitState.get(), Integer.parseInt(context.self().id()));
+            // TODO: send track out to kafka track ingress
+          }
+        });
 
     context.sendAfter(
         Duration.ofSeconds(wakeupInterval),

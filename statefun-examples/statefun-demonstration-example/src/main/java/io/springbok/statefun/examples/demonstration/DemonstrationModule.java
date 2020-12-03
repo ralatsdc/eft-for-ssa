@@ -33,6 +33,10 @@ public class DemonstrationModule implements StatefulFunctionModule {
     binder.bindIngress(ioModule.getTLEIngressSpec());
     binder.bindIngressRouter(DemonstrationIO.TLE_INGRESS_ID, new TLERouter());
 
+    // Bind the sensor ingress
+    binder.bindIngress(ioModule.getSensorIngressSpec());
+    binder.bindIngressRouter(DemonstrationIO.SENSOR_INGRESS_ID, new SensorRouter());
+
     // Bind application egress
     binder.bindEgress(ioModule.getEgressSpec());
 
@@ -43,5 +47,8 @@ public class DemonstrationModule implements StatefulFunctionModule {
     binder.bindFunctionProvider(OrbitIdManager.TYPE, unused -> new OrbitIdManager());
     binder.bindFunctionProvider(
         SatelliteStatefulFunction.TYPE, unused -> new SatelliteStatefulFunction());
+    binder.bindFunctionProvider(
+        SensorStatefulFunction.TYPE, unused -> new SensorStatefulFunction());
+    binder.bindFunctionProvider(SensorIdManager.TYPE, unused -> new SensorIdManager());
   }
 }

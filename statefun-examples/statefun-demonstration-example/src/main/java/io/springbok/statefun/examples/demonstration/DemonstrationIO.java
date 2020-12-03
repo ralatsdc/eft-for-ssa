@@ -1,6 +1,7 @@
 package io.springbok.statefun.examples.demonstration;
 
 import io.springbok.statefun.examples.demonstration.generated.DefaultOut;
+import io.springbok.statefun.examples.demonstration.generated.SensorIn;
 import io.springbok.statefun.examples.demonstration.generated.SingleLineTLE;
 import io.springbok.statefun.examples.demonstration.generated.TrackIn;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
@@ -31,6 +32,10 @@ public class DemonstrationIO {
   public static final IngressIdentifier<SingleLineTLE> TLE_INGRESS_ID =
       new IngressIdentifier<>(SingleLineTLE.class, "eft-for-ssa", "tle-in");
 
+  // Setting Sensor ingress identifier
+  public static final IngressIdentifier<SensorIn> SENSOR_INGRESS_ID =
+      new IngressIdentifier<>(SensorIn.class, "eft-for-ssa", "sensor-in");
+
   // Setting egress identifier
   public static final EgressIdentifier<DefaultOut> DEFAULT_EGRESS_ID =
       new EgressIdentifier<>("eft-for-ssa", "default-out", DefaultOut.class);
@@ -56,6 +61,16 @@ public class DemonstrationIO {
         .withKafkaAddress(this.kafkaAddress)
         .withTopic("tles")
         .withDeserializer(KafkaTLEDeserializer.class)
+        .withProperty(ConsumerConfig.GROUP_ID_CONFIG, "eft-for-ssa")
+        .build();
+  }
+
+  // Build and return TLE ingress spec
+  public KafkaIngressSpec<SensorIn> getSensorIngressSpec() {
+    return KafkaIngressBuilder.forIdentifier(SENSOR_INGRESS_ID)
+        .withKafkaAddress(this.kafkaAddress)
+        .withTopic("sensors")
+        .withDeserializer(KafkaSensorDeserializer.class)
         .withProperty(ConsumerConfig.GROUP_ID_CONFIG, "eft-for-ssa")
         .build();
   }
@@ -88,6 +103,17 @@ public class DemonstrationIO {
       String lines = new String((byte[]) input.value(), StandardCharsets.UTF_8);
 
       return SingleLineTLE.newBuilder().setLines(lines).build();
+    }
+  }
+
+  // Simple byte deserializer for the ingress
+  private static final class KafkaSensorDeserializer implements KafkaIngressDeserializer<SensorIn> {
+
+    @Override
+    public SensorIn deserialize(ConsumerRecord<byte[], byte[]> input) {
+      String sensor = new String((byte[]) input.value(), StandardCharsets.UTF_8);
+
+      return SensorIn.newBuilder().setSensor(sensor).build();
     }
   }
 
