@@ -84,7 +84,7 @@ public class TrackStatefulFunction implements StatefulFunction {
             context,
             String.format(
                 "Added orbitId %s to trackId %s", newOrbitIdMessage.getId(), track.trackId),
-            1);
+            2);
 
         // Set persisted state
         trackState.set(track);
@@ -120,7 +120,7 @@ public class TrackStatefulFunction implements StatefulFunction {
           Utilities.log(
               context,
               String.format("Removed orbitId %s from trackId %s", orbitId, track.trackId),
-              1);
+              2);
         }
       } catch (Exception e) {
         Utilities.log(
@@ -166,7 +166,7 @@ public class TrackStatefulFunction implements StatefulFunction {
         Utilities.log(
             context,
             String.format("Added track with id %s to collectedTracksMessage", track.trackId),
-            1);
+            2);
 
       } catch (Exception e) {
         collectedTracks = collectedTracksMessage.getCollectedTracks();
