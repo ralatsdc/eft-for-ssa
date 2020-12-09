@@ -103,10 +103,27 @@ public class SatelliteStatefulFunction implements StatefulFunction {
 
       try {
         sendWakeUpMessage(context);
+
         Utilities.log(
             context,
             String.format("Satellite with ID %s is checking sensors", context.self().id()),
             1);
+
+        ArrayList<EventDetector> sensorVisibilities =
+            sensorVisibilityStates.getOrDefault(new ArrayList<EventDetector>());
+
+        Propagator kepler = new KeplerianPropagator(orbitState.get());
+
+        sensorVisibilities.forEach(
+            sensorVisibility -> {
+              kepler.addEventDetector(sensorVisibility);
+            });
+
+        SpacecraftState finalState =
+            kepler.propagate(new AbsoluteDate(orbitState.get().getDate(), 5000.));
+
+        Utilities.log(context, String.format("Satellite State: %s", orbitState.get()), 1);
+        Utilities.log(context, String.format("Time: %s", orbitState.get().getDate()), 1);
       } catch (Exception e) {
         Utilities.log(
             context,
@@ -141,7 +158,7 @@ public class SatelliteStatefulFunction implements StatefulFunction {
       double maxcheck = 60.0;
       double threshold = 0.001;
       double elevation = FastMath.toRadians(5.);
-      // TODO: simplify so return statement is true if visible and false if invisible
+      // TODO: handle logic of sending out tracks in this lambda function
       EventDetector sensorVisibility =
           new ElevationDetector(maxcheck, threshold, sensorFrame)
               .withConstantElevation(elevation)
@@ -168,24 +185,6 @@ public class SatelliteStatefulFunction implements StatefulFunction {
   private void sendWakeUpMessage(Context context) throws Exception {
 
     long wakeupInterval = ApplicationProperties.getWakeupInterval();
-
-    ArrayList<EventDetector> sensorVisibilities =
-        sensorVisibilityStates.getOrDefault(new ArrayList<EventDetector>());
-
-    Propagator kepler = new KeplerianPropagator(orbitState.get());
-
-    sensorVisibilities.forEach(
-        sensorVisibility -> {
-          kepler.clearEventsDetectors();
-          kepler.addEventDetector(sensorVisibility);
-          SpacecraftState finalState =
-              kepler.propagate(new AbsoluteDate(orbitState.get().getDate(), 1500.));
-
-          if (1 <= 0) {
-            Track track = new Track(orbitState.get(), Integer.parseInt(context.self().id()));
-            // TODO: send track out to kafka track ingress
-          }
-        });
 
     context.sendAfter(
         Duration.ofSeconds(wakeupInterval),
