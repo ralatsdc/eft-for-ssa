@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-# Load all required images
-docker load < statefun-demonstration-example_master-<VER>.tar.gz
-docker load < statefun-demonstration-example_worker-<VER>.tar.gz
-docker load < wurstmeister-kafka-02.12-2.0.1.tar.gz
-docker load < wurstmeister-zookeeper-latest.tar.gz

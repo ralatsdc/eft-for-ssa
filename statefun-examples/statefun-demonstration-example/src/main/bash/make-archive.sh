@@ -45,8 +45,13 @@ mv wurstmeister-zookeeper-latest.tar.gz processor-$VER
 # Move needed files into archive directory, and archive
 cat docker-compose.yaml.deploy \
     | sed "s/<VER>/$VER/" > processor-$VER/docker-compose.yaml
-cat load.sh.deploy \
-    | sed "s/<VER>/$VER/" > processor-$VER/load.sh
+cat src/main/bash/load-images.sh.deploy \
+    | sed "s/<VER>/$VER/" > processor-$VER/load-images.sh
+cp src/main/bash/make-archive.sh processor-$VER
+cp src/main/bash/start-consumer.sh processor-$VER
+cp src/main/bash/start-images.sh processor-$VER
+cp src/main/bash/start-producer.sh processor-$VER
+cp src/main/bash/stop-images.sh processor-$VER
 cp docker-variables.env processor-$VER
 cp src/resources/docker.properties processor-$VER
 cp conf/flink-conf.yaml processor-$VER
