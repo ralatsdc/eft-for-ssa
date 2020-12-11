@@ -9,6 +9,7 @@ pushd $DIR
 
 # Package this version
 VER=1.0.2
+BCH=$(git branch --show-current)
 git checkout v$VER
 rm -rf processor-$VER
 mkdir -p processor-$VER/checkpoint-dir
@@ -58,4 +59,5 @@ cp conf/flink-conf.yaml processor-$VER
 cp -r ../../orekit-data processor-$VER
 tar -czvf processor-$VER.tar.gz processor-$VER
 
+git checkout $BCH
 popd
