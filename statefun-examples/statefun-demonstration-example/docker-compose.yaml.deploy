@@ -1,0 +1,78 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+version: "2"
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+  kafka-broker:
+    image: wurstmeister/kafka:2.12-2.0.1
+    ports:
+      - "9092:9092"
+    expose:
+      - "9093"
+    environment:
+      HOSTNAME_COMMAND: "route -n | awk '/UG[ \t]/{print $$2}'"
+      KAFKA_CREATE_TOPICS: "tracks:1:1,default:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INTERNAL_LISTENER://:9093,LOCALHOST_LISTENER://:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL_LISTENER://:9093,LOCALHOST_LISTENER://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL_LISTENER:PLAINTEXT,LOCALHOST_LISTENER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL_LISTENER
+    depends_on:
+      - zookeeper
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  master:
+    image: statefun-demonstration-example_master:<VER>
+    # uncomment to start from a savepoint
+    # command: -s /checkpoint-dir/savepoint/savepoint-bf101a-4e99820085fe
+    expose:
+      - "6123"
+    depends_on:
+      - kafka-broker
+    ports:
+      - "8082:8081"
+    environment:
+      - ROLE=master
+    env_file:
+      - docker-variables.env
+    volumes:
+      - ./checkpoint-dir:/checkpoint-dir
+      - ./orekit-data:/orekit-data
+      - ./docker.properties:/resources/docker.properties
+      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+  worker:
+    image: statefun-demonstration-example_worker:<VER>
+    expose:
+      - "6121"
+      - "6122"
+    depends_on:
+      - master
+      - kafka-broker
+    links:
+      - "master:master"
+      - "kafka-broker:kafka-broker"
+    environment:
+      - ROLE=worker
+    env_file:
+      - docker-variables.env
+    volumes:
+      - ./checkpoint-dir:/checkpoint-dir
+      - ./orekit-data:/orekit-data
+      - ./docker.properties:/resources/docker.properties
+      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
