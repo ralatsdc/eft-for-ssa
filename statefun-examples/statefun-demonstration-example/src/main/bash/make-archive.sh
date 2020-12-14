@@ -49,7 +49,6 @@ cat docker-compose.yaml.deploy \
 cat src/main/bash/load-images.sh.deploy \
     | sed "s/<VER>/$VER/" > processor-$VER/load-images.sh
 chmod +x processor-$VER/load-images.sh
-cp src/main/bash/make-archive.sh processor-$VER
 cp src/main/bash/start-consumer.sh processor-$VER
 cp src/main/bash/start-images.sh processor-$VER
 cp src/main/bash/start-producer.sh processor-$VER
