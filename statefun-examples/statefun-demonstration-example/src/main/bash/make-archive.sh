@@ -44,6 +44,7 @@ docker save wurstmeister/zookeeper:latest \
 mv wurstmeister-zookeeper-latest.tar.gz processor-$VER
 
 # Move needed files into archive directory, and archive
+cp README.md processor-$VER
 cat docker-compose.yaml.deploy \
     | sed "s/<VER>/$VER/" > processor-$VER/docker-compose.yaml
 cat src/main/bash/load-images.sh.deploy \
