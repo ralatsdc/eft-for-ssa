@@ -1,9 +1,6 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.demonstration.generated.DelayedWakeUpMessage;
-import io.springbok.statefun.examples.demonstration.generated.NewSatelliteMessage;
-import io.springbok.statefun.examples.demonstration.generated.SensorInfoMessage;
-import io.springbok.statefun.examples.demonstration.generated.SingleLineTLE;
+import io.springbok.statefun.examples.demonstration.generated.*;
 import io.springbok.statefun.examples.utilities.TLEReader;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -26,6 +23,7 @@ import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.propagation.events.ElevationDetector;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.IERSConventions;
 
@@ -38,12 +36,15 @@ public class SatelliteStatefulFunction implements StatefulFunction {
       new FunctionType("springbok", "satellite-stateful-function");
 
   // PersistedValues can be stored and recalled when this StatefulFunction is invoked
-  @Persisted
-  private final PersistedValue<Orbit> orbitState = PersistedValue.of("orbit", Orbit.class);
+  @Persisted private PersistedValue<Orbit> orbitState = PersistedValue.of("orbit", Orbit.class);
   // Store list of sensor information
   @Persisted
   private final PersistedValue<ArrayList> sensorVisibilityStates =
       PersistedValue.of("sensor-list", ArrayList.class);
+
+  @Persisted
+  private final PersistedValue<AbsoluteDate> nextEvent =
+      PersistedValue.of("next-event", AbsoluteDate.class);
 
   @Override
   public void invoke(Context context, Object input) {
@@ -62,7 +63,6 @@ public class SatelliteStatefulFunction implements StatefulFunction {
         Orbit orbit = OrbitFactory.createOrbit(tle);
 
         orbitState.set(orbit);
-        sendWakeUpMessage(context);
 
         // TODO: Calculate whether satellite can be seen by leo, meo, geo sensors
         // Send message to SensorIdManager that new SatelliteStatefulFunction was created
@@ -99,10 +99,14 @@ public class SatelliteStatefulFunction implements StatefulFunction {
     // and it'll only have to send a message initially to get that object and maybe periodically to
     // make sure it's in sync
     // TODO: save current state
-    if (input instanceof DelayedWakeUpMessage) {
+    if (input instanceof GetNextEventMessage) {
 
       try {
-        sendWakeUpMessage(context);
+
+        GetNextEventMessage getNextEventMessage = (GetNextEventMessage) input;
+
+        AbsoluteDate startDate =
+            new AbsoluteDate(getNextEventMessage.getTime(), TimeScalesFactory.getUTC());
 
         Utilities.log(
             context,
@@ -112,7 +116,13 @@ public class SatelliteStatefulFunction implements StatefulFunction {
         ArrayList<EventDetector> sensorVisibilities =
             sensorVisibilityStates.getOrDefault(new ArrayList<EventDetector>());
 
-        Propagator kepler = new KeplerianPropagator(orbitState.get());
+        // Advance satellite to current time - this will be saved to avoid extra propagation in the
+        // future
+        Propagator initialKeplar = new KeplerianPropagator(orbitState.get());
+        //        SpacecraftState currentState = initialKeplar.propagate(startDate);
+        SpacecraftState currentState = initialKeplar.propagate(startDate);
+
+        Propagator kepler = new KeplerianPropagator(currentState.getOrbit());
 
         sensorVisibilities.forEach(
             sensorVisibility -> {
@@ -120,15 +130,18 @@ public class SatelliteStatefulFunction implements StatefulFunction {
             });
 
         SpacecraftState finalState =
-            kepler.propagate(new AbsoluteDate(orbitState.get().getDate(), 5000.));
+            kepler.propagate(new AbsoluteDate(currentState.getDate(), 5000.));
 
         Utilities.log(context, String.format("Satellite State: %s", orbitState.get()), 1);
         Utilities.log(context, String.format("Time: %s", orbitState.get().getDate()), 1);
+        //        Utilities.log(context, String.format("Next Visibility: %s", nextEvent), 1);
+
+        orbitState.set(currentState.getOrbit());
       } catch (Exception e) {
         Utilities.log(
             context,
             String.format(
-                "Satellite with ID failed to wake up: %s. Exception: %s", context.self().id(), e),
+                "Satellite with ID %s failed to wake up. Exception: %s", context.self().id(), e),
             1);
       }
     }
@@ -169,13 +182,37 @@ public class SatelliteStatefulFunction implements StatefulFunction {
                             + detector.getTopocentricFrame().getName()
                             + (increasing ? " begins at " : " ends at ")
                             + s.getDate());
-                    return increasing ? Action.CONTINUE : Action.STOP;
+                    // TODO: Handle instances where the orbit is currently visible
+                    // Currently, if it's visible the first time
+                    if (increasing) {
+                      nextEvent.set(s.getDate());
+                    }
+                    // Stops the simulation once it finds first visibility; continues if visibility
+                    // is ending until next visibility
+                    return increasing ? Action.CONTINUE : Action.CONTINUE;
                   });
 
       ArrayList<EventDetector> sensorVisibilities =
           sensorVisibilityStates.getOrDefault(new ArrayList<EventDetector>());
 
       sensorVisibilities.add(sensorVisibility);
+
+      // Send a message to the event manager that a new object has been created - this is handled
+      // when the first sensor is registered, as that is the first time the
+      // SatelliteStatefulFunction is capable of generating events.
+      if (sensorVisibilities.size() == 1) {
+        NewEventSourceMessage newEventSourceMessage =
+            NewEventSourceMessage.newBuilder().setId(context.self().id()).build();
+
+        context.send(EventManager.TYPE, "event-manager", newEventSourceMessage);
+      }
+
+      Utilities.log(
+          context,
+          String.format(
+              "Added sensor %s to Satellite with ID: %s",
+              sensorInfoMessage.getSensorId(), context.self().id()),
+          1);
 
       sensorVisibilityStates.set(sensorVisibilities);
     }

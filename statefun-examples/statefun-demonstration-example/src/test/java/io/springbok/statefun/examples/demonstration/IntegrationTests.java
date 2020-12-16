@@ -139,6 +139,44 @@ public class IntegrationTests {
             testConsumer.messages, "Saved satellite with ID 0 to Sensor with ID"));
   }
 
+  // TODO: refine test assertions
+  @Ignore("Only one Harness can be run at a time")
+  @Test
+  public void testEventHandler() throws Exception {
+
+    // All ingress must be bound for harness to work; creating empty source
+    MockTracksSourceFunction singleTracksSource = new MockTracksSourceFunction();
+
+    // Specific source function for testing
+    ArrayList<TLE> testTLES = new ArrayList<>();
+    testTLES.add(tles.get(0));
+    MockTLESourceFunction TLESource = new MockTLESourceFunction(testTLES);
+
+    ArrayList<String> testSensors = new ArrayList<>();
+    testSensors.add(sensors.get(0));
+    MockSensorSourceFunction sensorSourceFunction = new MockSensorSourceFunction(testSensors);
+
+    MockConsumer testConsumer = new MockConsumer();
+    TLESource.runTimeMS = 5000;
+    OrbitStatefulFunction.deleteTimer = 1;
+
+    Harness harness =
+        new Harness()
+            .withKryoMessageSerializer()
+            .withFlinkSourceFunction(DemonstrationIO.SENSOR_INGRESS_ID, sensorSourceFunction)
+            .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
+            .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
+            .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
+    harness.start();
+
+    Assert.assertTrue(
+        arrayListContainsInclusive(testConsumer.messages, "Saved orbit with satellite ID:"));
+    Assert.assertTrue(arrayListContainsInclusive(testConsumer.messages, "Saved sensor with ID: 0"));
+    Assert.assertTrue(
+        arrayListContainsInclusive(
+            testConsumer.messages, "Saved satellite with ID 0 to Sensor with ID"));
+  }
+
   @Ignore("Only one Harness can be run at a time")
   @Test
   public void testTrackCreation() throws Exception {

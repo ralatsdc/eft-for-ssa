@@ -89,6 +89,19 @@ message CollectedTracksMessage {
   int32 iterator = 5;
 }
 
+message NewEventSourceMessage {
+  string id = 1;
+}
+
+message NewEventMessage {
+  string objectId = 1;
+  string time = 2;
+}
+
+message GetNextEventMessage {
+  string time = 1;
+}
+
 message DelayedDeleteMessage {
 }
 
