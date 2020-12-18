@@ -134,6 +134,9 @@ public class SatelliteStatefulFunction implements StatefulFunction {
 
         Utilities.log(context, String.format("Satellite State: %s", orbitState.get()), 1);
         Utilities.log(context, String.format("Time: %s", orbitState.get().getDate()), 1);
+
+        // TODO: send next event back to event handler, and handle the event
+
         //        Utilities.log(context, String.format("Next Visibility: %s", nextEvent), 1);
 
         orbitState.set(currentState.getOrbit());
