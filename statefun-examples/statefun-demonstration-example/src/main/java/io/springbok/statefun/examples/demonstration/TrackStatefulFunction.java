@@ -64,8 +64,8 @@ public class TrackStatefulFunction implements StatefulFunction {
         Utilities.log(
             context,
             String.format(
-                "track given id %s not valid. Discarding message with id %s: %s",
-                context.self().id(), e),
+                "track given id %s not valid. Discarding message '%s' \n Error: %s",
+                context.self().id(), trackIn.getTrack(), e),
             1);
       }
     }
