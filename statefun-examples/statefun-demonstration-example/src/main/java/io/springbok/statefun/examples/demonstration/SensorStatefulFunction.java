@@ -32,7 +32,7 @@ public class SensorStatefulFunction implements StatefulFunction {
       SensorInfoMessage sensorInfoMessage = (SensorInfoMessage) input;
 
       Utilities.log(
-          context, String.format("Saved sensor with ID: %s", sensorInfoMessage.getSensorId()), 1);
+          context, String.format("Saved sensor with ID %s", sensorInfoMessage.getSensorId()), 1);
 
       sensorInfoState.set(sensorInfoMessage);
     }
@@ -50,7 +50,7 @@ public class SensorStatefulFunction implements StatefulFunction {
           context,
           String.format(
               "Saved satellite with ID %s to Sensor with ID %s",
-              context.self().id(), newSatelliteMessage.getId()),
+              newSatelliteMessage.getId(), context.self().id()),
           1);
 
       // Send sensor info to new satellite

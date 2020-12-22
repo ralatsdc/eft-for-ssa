@@ -183,7 +183,7 @@ public class SatelliteStatefulFunction implements StatefulFunction {
       Utilities.log(
           context,
           String.format(
-              "Added sensor %s to Satellite with ID: %s",
+              "Added sensor with ID %s to Satellite with ID %s",
               sensorInfoMessage.getSensorId(), context.self().id()),
           1);
 
