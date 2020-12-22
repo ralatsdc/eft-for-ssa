@@ -135,9 +135,12 @@ public class EventManager implements StatefulFunction {
       context.send(context.self(), fireEventMessage);
       Utilities.log(context, String.format("Next event sent immediately"), 1);
     } else {
-      // TODO: add time speed up factor here
-      context.sendAfter(
-          Duration.ofSeconds((long) timeUntilEvent), context.self(), fireEventMessage);
+      // TODO: make speedup settable
+      // a factor of 43200 makes 1 day pass every 2 seconds
+      double speedUpFactor = 43200;
+      double adjustedTime = timeUntilEvent / speedUpFactor;
+      System.out.println("adjustedTime: " + adjustedTime);
+      context.sendAfter(Duration.ofSeconds((long) adjustedTime), context.self(), fireEventMessage);
       Utilities.log(
           context, String.format("Next event scheduled for %s", nextEventTime.toString()), 1);
     }
