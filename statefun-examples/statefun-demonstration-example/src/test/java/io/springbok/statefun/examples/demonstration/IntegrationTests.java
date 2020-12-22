@@ -175,6 +175,14 @@ public class IntegrationTests {
     Assert.assertTrue(
         arrayListContainsInclusive(
             testConsumer.messages, "Saved satellite with ID 0 to Sensor with ID"));
+    Assert.assertTrue(
+        arrayListContainsInclusive(
+            testConsumer.messages, "Saved satellite with ID 0 to Sensor with ID"));
+    Assert.assertTrue(
+        arrayListContainsInclusive(testConsumer.messages, "Next event sent immediately"));
+    Assert.assertTrue(
+        arrayListContainsInclusive(testConsumer.messages, "Satellite with ID 25772 created track"));
+    Assert.assertTrue(arrayListContainsInclusive(testConsumer.messages, "Next event scheduled"));
   }
 
   @Ignore("Only one Harness can be run at a time")

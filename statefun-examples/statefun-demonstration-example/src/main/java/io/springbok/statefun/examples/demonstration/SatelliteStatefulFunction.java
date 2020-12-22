@@ -27,7 +27,6 @@ import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.IERSConventions;
 
-import java.time.Duration;
 import java.util.ArrayList;
 
 public class SatelliteStatefulFunction implements StatefulFunction {
@@ -101,68 +100,24 @@ public class SatelliteStatefulFunction implements StatefulFunction {
     // TODO: save current state
     if (input instanceof GetNextEventMessage) {
 
-      try {
+      GetNextEventMessage getNextEventMessage = (GetNextEventMessage) input;
 
-        GetNextEventMessage getNextEventMessage = (GetNextEventMessage) input;
+      AbsoluteDate startDate;
 
-        AbsoluteDate startDate;
-
-        if (getNextEventMessage.getTime().isEmpty()) {
-          startDate = orbitState.get().getDate();
-        } else {
-          startDate = new AbsoluteDate(getNextEventMessage.getTime(), TimeScalesFactory.getUTC());
-        }
-
-        Utilities.log(
-            context,
-            String.format("Satellite with ID %s is checking sensors", context.self().id()),
-            1);
-
-        ArrayList<EventDetector> sensorVisibilities =
-            sensorVisibilityStates.getOrDefault(new ArrayList<EventDetector>());
-
-        // log current time
-        Utilities.log(context, String.format("Current time: %s", startDate), 1);
-
-        // Advance satellite to current time - this will be saved to avoid extra propagation in the
-        // future
-        Propagator initialKeplar = new KeplerianPropagator(orbitState.get());
-        SpacecraftState currentState = initialKeplar.propagate(startDate);
-
-        Propagator kepler = new KeplerianPropagator(currentState.getOrbit());
-
-        sensorVisibilities.forEach(
-            sensorVisibility -> {
-              kepler.addEventDetector(sensorVisibility);
-            });
-
-        SpacecraftState finalState =
-            kepler.propagate(new AbsoluteDate(currentState.getDate(), 5000.));
-
-        Utilities.log(context, String.format("Next Visibility: %s", nextEvent.get()), 1);
-
-        // Send next event back to event handler, and handle the event
-        NewEventMessage newEventMessage =
-            NewEventMessage.newBuilder()
-                .setObjectId(context.self().id())
-                .setTime(nextEvent.get().toString())
-                .build();
-
-        context.send(EventManager.TYPE, "event-manager", newEventMessage);
-
-        orbitState.set(currentState.getOrbit());
-      } catch (Exception e) {
-        Utilities.log(
-            context,
-            String.format(
-                "Satellite with ID %s failed to wake up. Exception: %s", context.self().id(), e),
-            1);
+      if (getNextEventMessage.getTime().isEmpty()) {
+        startDate = orbitState.get().getDate();
+      } else {
+        startDate = new AbsoluteDate(getNextEventMessage.getTime(), TimeScalesFactory.getUTC());
       }
+      getNextEvent(context, startDate);
     }
 
     // create track from this Satellite
     if (input instanceof FireEventMessage) {
       FireEventMessage fireEventMessage = (FireEventMessage) input;
+
+      getNextEvent(
+          context, new AbsoluteDate(fireEventMessage.getTime(), TimeScalesFactory.getUTC()));
 
       Utilities.log(
           context, String.format("Satellite with ID %s created track", context.self().id()), 1);
@@ -207,7 +162,7 @@ public class SatelliteStatefulFunction implements StatefulFunction {
                     }
                     // Stops the simulation once it finds first visibility; continues if visibility
                     // is ending until next visibility
-                    return increasing ? Action.STOP : Action.CONTINUE;
+                    return increasing ? Action.CONTINUE : Action.CONTINUE;
                   });
 
       ArrayList<EventDetector> sensorVisibilities =
@@ -236,14 +191,54 @@ public class SatelliteStatefulFunction implements StatefulFunction {
     }
   }
 
-  // Sends a delete message after a certain amount of time
-  private void sendWakeUpMessage(Context context) throws Exception {
+  private void getNextEvent(Context context, AbsoluteDate startDate) {
 
-    long wakeupInterval = ApplicationProperties.getWakeupInterval();
+    try {
 
-    context.sendAfter(
-        Duration.ofSeconds(wakeupInterval),
-        context.self(),
-        DelayedWakeUpMessage.newBuilder().build());
+      Utilities.log(
+          context,
+          String.format("Satellite with ID %s is checking sensors", context.self().id()),
+          1);
+
+      ArrayList<EventDetector> sensorVisibilities =
+          sensorVisibilityStates.getOrDefault(new ArrayList<EventDetector>());
+
+      // log current time
+      Utilities.log(context, String.format("Current time: %s", startDate), 1);
+
+      // Advance satellite to current time - this will be saved to avoid extra propagation in the
+      // future
+      Propagator initialKeplar = new KeplerianPropagator(orbitState.get());
+      SpacecraftState currentState = initialKeplar.propagate(startDate);
+
+      Propagator kepler = new KeplerianPropagator(currentState.getOrbit());
+
+      sensorVisibilities.forEach(
+          sensorVisibility -> {
+            kepler.addEventDetector(sensorVisibility);
+          });
+
+      SpacecraftState finalState =
+          kepler.propagate(new AbsoluteDate(currentState.getDate(), 86400.));
+
+      Utilities.log(context, String.format("Next Visibility: %s", nextEvent.get()), 1);
+
+      // Send next event back to event handler, and handle the event
+      NewEventMessage newEventMessage =
+          NewEventMessage.newBuilder()
+              .setObjectId(context.self().id())
+              .setTime(nextEvent.get().toString())
+              .build();
+
+      context.send(EventManager.TYPE, "event-manager", newEventMessage);
+
+      orbitState.set(currentState.getOrbit());
+    } catch (Exception e) {
+      Utilities.log(
+          context,
+          String.format(
+              "Satellite with ID %s failed to wake up. Exception: %s", context.self().id(), e),
+          1);
+    }
   }
 }
