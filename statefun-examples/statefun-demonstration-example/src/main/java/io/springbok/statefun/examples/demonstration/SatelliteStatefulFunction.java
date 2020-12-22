@@ -105,8 +105,13 @@ public class SatelliteStatefulFunction implements StatefulFunction {
 
         GetNextEventMessage getNextEventMessage = (GetNextEventMessage) input;
 
-        AbsoluteDate startDate =
-            new AbsoluteDate(getNextEventMessage.getTime(), TimeScalesFactory.getUTC());
+        AbsoluteDate startDate;
+
+        if (getNextEventMessage.getTime().isEmpty()) {
+          startDate = orbitState.get().getDate();
+        } else {
+          startDate = new AbsoluteDate(getNextEventMessage.getTime(), TimeScalesFactory.getUTC());
+        }
 
         Utilities.log(
             context,
@@ -116,10 +121,12 @@ public class SatelliteStatefulFunction implements StatefulFunction {
         ArrayList<EventDetector> sensorVisibilities =
             sensorVisibilityStates.getOrDefault(new ArrayList<EventDetector>());
 
+        // log current time
+        Utilities.log(context, String.format("Current time: %s", startDate), 1);
+
         // Advance satellite to current time - this will be saved to avoid extra propagation in the
         // future
         Propagator initialKeplar = new KeplerianPropagator(orbitState.get());
-        //        SpacecraftState currentState = initialKeplar.propagate(startDate);
         SpacecraftState currentState = initialKeplar.propagate(startDate);
 
         Propagator kepler = new KeplerianPropagator(currentState.getOrbit());
@@ -132,12 +139,16 @@ public class SatelliteStatefulFunction implements StatefulFunction {
         SpacecraftState finalState =
             kepler.propagate(new AbsoluteDate(currentState.getDate(), 5000.));
 
-        Utilities.log(context, String.format("Satellite State: %s", orbitState.get()), 1);
-        Utilities.log(context, String.format("Time: %s", orbitState.get().getDate()), 1);
+        Utilities.log(context, String.format("Next Visibility: %s", nextEvent.get()), 1);
 
-        // TODO: send next event back to event handler, and handle the event
+        // Send next event back to event handler, and handle the event
+        NewEventMessage newEventMessage =
+            NewEventMessage.newBuilder()
+                .setObjectId(context.self().id())
+                .setTime(nextEvent.get().toString())
+                .build();
 
-        //        Utilities.log(context, String.format("Next Visibility: %s", nextEvent), 1);
+        context.send(EventManager.TYPE, "event-manager", newEventMessage);
 
         orbitState.set(currentState.getOrbit());
       } catch (Exception e) {
@@ -147,6 +158,15 @@ public class SatelliteStatefulFunction implements StatefulFunction {
                 "Satellite with ID %s failed to wake up. Exception: %s", context.self().id(), e),
             1);
       }
+    }
+
+    // create track from this Satellite
+    if (input instanceof FireEventMessage) {
+      FireEventMessage fireEventMessage = (FireEventMessage) input;
+
+      Utilities.log(
+          context, String.format("Satellite with ID %s created track", context.self().id()), 1);
+      // TODO: send track to Kafka tracks
     }
 
     // Adding sensor information to Satellite
@@ -180,11 +200,6 @@ public class SatelliteStatefulFunction implements StatefulFunction {
               .withConstantElevation(elevation)
               .withHandler(
                   (s, detector, increasing) -> {
-                    System.out.println(
-                        " Visibility on "
-                            + detector.getTopocentricFrame().getName()
-                            + (increasing ? " begins at " : " ends at ")
-                            + s.getDate());
                     // TODO: Handle instances where the orbit is currently visible
                     // Currently, if it's visible the first time
                     if (increasing) {
@@ -192,7 +207,7 @@ public class SatelliteStatefulFunction implements StatefulFunction {
                     }
                     // Stops the simulation once it finds first visibility; continues if visibility
                     // is ending until next visibility
-                    return increasing ? Action.CONTINUE : Action.CONTINUE;
+                    return increasing ? Action.STOP : Action.CONTINUE;
                   });
 
       ArrayList<EventDetector> sensorVisibilities =

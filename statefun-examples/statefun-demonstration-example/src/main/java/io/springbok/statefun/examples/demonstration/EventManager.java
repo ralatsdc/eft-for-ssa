@@ -1,8 +1,8 @@
 package io.springbok.statefun.examples.demonstration;
 
 import io.springbok.statefun.examples.demonstration.generated.FireEventMessage;
-import io.springbok.statefun.examples.demonstration.generated.NewEventMessage;
 import io.springbok.statefun.examples.demonstration.generated.GetNextEventMessage;
+import io.springbok.statefun.examples.demonstration.generated.NewEventMessage;
 import io.springbok.statefun.examples.demonstration.generated.NewEventSourceMessage;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
@@ -43,7 +43,14 @@ public class EventManager implements StatefulFunction {
 
       events.add(newEventMessage);
       // TODO: sort list by time
+
+      // if this is the first event received, fire it off
       if (hasSentMessage.getOrDefault(false) == false) {
+
+        // if lastEventTimeState has not been set, set it as equal to incoming event message
+        lastEventTimeState.set(
+            lastEventTimeState.getOrDefault(
+                new AbsoluteDate(newEventMessage.getTime(), TimeScalesFactory.getUTC())));
 
         NewEventMessage nextEvent = events.get(0);
         events.remove(0);
@@ -75,30 +82,43 @@ public class EventManager implements StatefulFunction {
           SatelliteStatefulFunction.TYPE, fireEventMessage.getObjectId(), fireEventMessage);
 
       ArrayList<NewEventMessage> events = eventsState.get();
-      NewEventMessage nextEvent = events.get(0);
-      events.remove(0);
 
-      scheduleEvent(context, nextEvent);
+      // if there are no more events, wait for next event to come in
+      if (events.size() < 1) {
+        hasSentMessage.set(false);
+      } else {
+        NewEventMessage nextEvent = events.get(0);
+        events.remove(0);
 
-      eventsState.set(events);
+        scheduleEvent(context, nextEvent);
+
+        eventsState.set(events);
+      }
     }
 
     if (input instanceof NewEventSourceMessage) {
       NewEventSourceMessage newEventSourceMessage = (NewEventSourceMessage) input;
 
-      GetNextEventMessage getNextEventMessage =
-          GetNextEventMessage.newBuilder().setTime(lastEventTimeState.get().toString()).build();
+      GetNextEventMessage getNextEventMessage;
+
+      AbsoluteDate lastEventTime = lastEventTimeState.get();
+      if (lastEventTime == null) {
+        getNextEventMessage = GetNextEventMessage.newBuilder().buildPartial();
+      } else {
+        getNextEventMessage =
+            GetNextEventMessage.newBuilder().setTime(lastEventTimeState.get().toString()).build();
+      }
 
       context.send(
           SatelliteStatefulFunction.TYPE, newEventSourceMessage.getId(), getNextEventMessage);
     }
   }
 
-  // TODO: handle simulation timing as well as real life time
-  // TODO: use a switch where, if simulation is flagged, checkTime() just adds to the current time
-  // by some amount
-  private void checkTime() {
-    lastEventTimeState.set(new AbsoluteDate(new java.util.Date(), TimeScalesFactory.getUTC()));
+  // TODO: have time set be more intelligent
+  private void init() {
+    if (lastEventTimeState.get() == null) {
+      lastEventTimeState.set(new AbsoluteDate());
+    }
   }
 
   private void updateTime(NewEventMessage newEventMessage) {}
@@ -108,20 +128,27 @@ public class EventManager implements StatefulFunction {
     AbsoluteDate currentEventTime = lastEventTimeState.get();
     AbsoluteDate nextEventTime = new AbsoluteDate(nextEvent.getTime(), TimeScalesFactory.getUTC());
 
-    FireEventMessage nextEventMessage =
+    FireEventMessage fireEventMessage =
         FireEventMessage.newBuilder()
             .setObjectId(nextEvent.getObjectId())
             .setTime(nextEvent.getTime())
             .build();
 
-    int timeUntilEvent = nextEventTime.compareTo(currentEventTime);
+    double timeUntilEvent = nextEventTime.durationFrom(currentEventTime);
+    System.out.println("nextEventTime: " + nextEventTime);
+    System.out.println("currentEventTime: " + currentEventTime);
+    System.out.println("timeUntilEvent: " + timeUntilEvent);
 
     // next event time is before current event - event fires immediately
     if (timeUntilEvent <= 0) {
-      context.send(context.self(), nextEventMessage);
+      context.send(context.self(), fireEventMessage);
+      Utilities.log(context, String.format("Next event sent immediately"), 1);
     } else {
       // TODO: add time speed up factor here
-      context.sendAfter(Duration.ofMillis(timeUntilEvent), context.self(), nextEventMessage);
+      context.sendAfter(
+          Duration.ofSeconds((long) timeUntilEvent), context.self(), fireEventMessage);
+      Utilities.log(
+          context, String.format("Next event scheduled for %s", nextEventTime.toString()), 1);
     }
   }
 }
