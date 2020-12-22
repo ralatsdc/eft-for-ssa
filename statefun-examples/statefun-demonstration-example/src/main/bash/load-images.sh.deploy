@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# Load all required Docker images
+echo "loading statefun-demonstration-example_master-<VER> ..."
+docker load < statefun-demonstration-example_master-<VER>.tar.gz
+echo "loading statefun-demonstration-example_worker-<VER> ..."
+docker load < statefun-demonstration-example_worker-<VER>.tar.gz
+echo "loading wurstmeister-kafka-02.12-2.0.1 ..."
+docker load < wurstmeister-kafka-02.12-2.0.1.tar.gz
+echo "loading wurstmeister-zookeeper-latest ..."
+docker load < wurstmeister-zookeeper-latest.tar.gz
