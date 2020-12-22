@@ -54,7 +54,7 @@ $ docker load < statefun-demonstration-example_worker-1.0.1.tar.gz
 $ docker load < wurstmeister-kafka-2.12-2.0.1.tar.gz
 $ docker load < wurstmeister-zookeeper-latest.tar.gz
 ```
-Or, use the `install-images.sh` script.
+Or, use the `load-images.sh` script.
 
 Processing
 ----------

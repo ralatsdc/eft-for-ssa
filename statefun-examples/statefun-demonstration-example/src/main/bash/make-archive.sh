@@ -8,7 +8,7 @@ DIR="$( dirname "$( dirname "$( dirname $DIR )" )" )"
 pushd $DIR
 
 # Package this version
-VER=1.0.2
+VER=1.0.3
 BCH=$(git branch --show-current)
 git checkout v$VER
 rm -rf processor-$VER
