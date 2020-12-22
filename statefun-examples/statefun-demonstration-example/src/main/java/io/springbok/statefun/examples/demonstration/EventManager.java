@@ -114,15 +114,6 @@ public class EventManager implements StatefulFunction {
     }
   }
 
-  // TODO: have time set be more intelligent
-  private void init() {
-    if (lastEventTimeState.get() == null) {
-      lastEventTimeState.set(new AbsoluteDate());
-    }
-  }
-
-  private void updateTime(NewEventMessage newEventMessage) {}
-
   private void scheduleEvent(Context context, NewEventMessage nextEvent) {
 
     AbsoluteDate currentEventTime = lastEventTimeState.get();
