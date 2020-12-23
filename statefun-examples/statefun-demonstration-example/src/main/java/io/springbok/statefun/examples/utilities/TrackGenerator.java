@@ -271,6 +271,61 @@ public class TrackGenerator {
     return message;
   }
 
+  // Overloaded method adds sensorId specification
+  String createMessage(
+      AbsoluteDate extrapDate,
+      double smallStep,
+      NumericalPropagator nPropagator,
+      PVBuilder pvBuilder,
+      TLE tle,
+      String sensorId) {
+
+    // Message format:
+    // msgTime, sensorId, objectId, obsTime1, x1, y1, z1, rcs1, obsTime2, x2, y2, z2, rcs2,
+    // obsTime3, x3, y3, z3, rcs3
+    String message;
+
+    UUID uuid = UUID.randomUUID();
+
+    // Message set to always come in ten minutes after first observation
+    AbsoluteDate msgTime = extrapDate.shiftedBy(600);
+    // Set object ID
+    int objectId = tle.getSatelliteNumber();
+
+    message = uuid.toString() + "," + msgTime.toString() + "," + sensorId + "," + objectId;
+
+    // TODO: future random number of readings option
+    //    int positionReadingNum = (int) (Math.random() * 10);
+    int positionReadingNum = 3;
+
+    // 3 readings separated by smallStep
+    for (int i = 0; i <= positionReadingNum; i++) {
+      AbsoluteDate currentDate = extrapDate.shiftedBy(smallStep * i);
+      final SpacecraftState currentState = nPropagator.propagate(currentDate);
+      // Add Az/El measurement to container
+      SpacecraftState[] states = new SpacecraftState[] {currentState};
+      PV pv = pvBuilder.build(states);
+      Vector3D position = pv.getPosition();
+
+      // TODO: generate RCS in a more specified way.
+      double rcs = 5;
+
+      String obs =
+          currentDate.toString()
+              + ","
+              + position.getX()
+              + ","
+              + position.getY()
+              + ","
+              + position.getZ()
+              + ","
+              + rcs;
+
+      message = message + "," + obs;
+    }
+    return message;
+  }
+
   public ArrayList<String> getMessages() {
     return messages;
   }

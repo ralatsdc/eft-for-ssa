@@ -35,6 +35,8 @@ public class SatelliteStatefulFunction implements StatefulFunction {
       new FunctionType("springbok", "satellite-stateful-function");
 
   // PersistedValues can be stored and recalled when this StatefulFunction is invoked
+  @Persisted private PersistedValue<TLE> tleState = PersistedValue.of("tle", TLE.class);
+  // PersistedValues can be stored and recalled when this StatefulFunction is invoked
   @Persisted private PersistedValue<Orbit> orbitState = PersistedValue.of("orbit", Orbit.class);
   // Store list of sensor information
   @Persisted
@@ -59,6 +61,9 @@ public class SatelliteStatefulFunction implements StatefulFunction {
         // Save new satellite information
         SingleLineTLE singleLineTLE = (SingleLineTLE) input;
         TLE tle = TLEReader.fromSingleLineTLE(singleLineTLE);
+
+        tleState.set(tle);
+
         Orbit orbit = OrbitFactory.createOrbit(tle);
 
         orbitState.set(orbit);
@@ -114,14 +119,26 @@ public class SatelliteStatefulFunction implements StatefulFunction {
 
     // create track from this Satellite
     if (input instanceof FireEventMessage) {
-      FireEventMessage fireEventMessage = (FireEventMessage) input;
+      try {
+        FireEventMessage fireEventMessage = (FireEventMessage) input;
 
-      getNextEvent(
-          context, new AbsoluteDate(fireEventMessage.getTime(), TimeScalesFactory.getUTC()));
+        AbsoluteDate eventTime =
+            new AbsoluteDate(fireEventMessage.getTime(), TimeScalesFactory.getUTC());
 
-      Utilities.log(
-          context, String.format("Satellite with ID %s created track", context.self().id()), 1);
-      // TODO: send track to Kafka tracks
+        getNextEvent(context, eventTime);
+
+        Utilities.log(
+            context, String.format("Satellite with ID %s created track", context.self().id()), 1);
+        // TODO: send track to Kafka tracks
+
+        Utilities.sendKafkaMessage("tracks", "1");
+      } catch (Exception e) {
+
+        Utilities.log(
+            context,
+            String.format("Satellite with id %s cannot form track: \n %s", context.self().id(), e),
+            1);
+      }
     }
 
     // Adding sensor information to Satellite

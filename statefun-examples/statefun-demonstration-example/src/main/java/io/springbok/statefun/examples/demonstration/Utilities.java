@@ -3,11 +3,17 @@ package io.springbok.statefun.examples.demonstration;
 import io.springbok.statefun.examples.demonstration.generated.DefaultOut;
 import io.springbok.statefun.examples.demonstration.generated.SensorInfoMessage;
 import org.apache.flink.statefun.sdk.Context;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Properties;
 
 // Containing Utilities used for convenience in the application
 public class Utilities {
@@ -107,5 +113,23 @@ public class Utilities {
     Vector3D vector3D = new Vector3D(x, y, z);
 
     return vector3D;
+  }
+
+  public static void sendKafkaMessage(String topic, String message) throws Exception {
+    Properties props = new Properties();
+
+    // TODO: set these arguments from config/command line
+    props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+    props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+    props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+
+    ApplicationEnvironment.setPathProperties();
+
+    Producer producer = new KafkaProducer(props);
+
+    producer.send(new ProducerRecord<>(topic, message));
+
+    producer.flush();
+    producer.close();
   }
 }
