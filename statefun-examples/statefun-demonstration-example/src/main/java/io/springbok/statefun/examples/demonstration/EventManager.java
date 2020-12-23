@@ -134,15 +134,23 @@ public class EventManager implements StatefulFunction {
     } else {
       // TODO: make speedup settable
       // a factor of 43200 makes 1 day pass every 2 seconds
-      double speedUpFactor = 43200;
-      double adjustedTime = timeUntilEvent / speedUpFactor;
+      try {
+        double speedUpFactor = ApplicationProperties.getSpeedUpFactor();
+        double adjustedTime = timeUntilEvent / speedUpFactor;
+        Utilities.log(context, String.format("Time until event: %s", timeUntilEvent), 3);
+        Utilities.log(context, String.format("Adjusted Time %s", adjustedTime), 3);
 
-      Utilities.log(context, String.format("Time until event: %s", nextEventTime.toString()), 3);
-      Utilities.log(context, String.format("Adjusted Time %s", nextEventTime.toString()), 3);
-
-      context.sendAfter(Duration.ofSeconds((long) adjustedTime), context.self(), fireEventMessage);
-      Utilities.log(
-          context, String.format("Next event scheduled for %s", nextEventTime.toString()), 1);
+        context.sendAfter(
+            Duration.ofSeconds((long) adjustedTime), context.self(), fireEventMessage);
+        Utilities.log(
+            context, String.format("Next event scheduled for %s", nextEventTime.toString()), 1);
+      } catch (Exception e) {
+        Utilities.log(
+            context,
+            String.format(
+                "Event scheduler cannot schedule next event - check properties. \n %s", e),
+            1);
+      }
     }
   }
 }
