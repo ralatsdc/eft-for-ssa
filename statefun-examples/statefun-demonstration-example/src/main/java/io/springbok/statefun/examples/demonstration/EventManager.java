@@ -126,9 +126,6 @@ public class EventManager implements StatefulFunction {
             .build();
 
     double timeUntilEvent = nextEventTime.durationFrom(currentEventTime);
-    System.out.println("nextEventTime: " + nextEventTime);
-    System.out.println("currentEventTime: " + currentEventTime);
-    System.out.println("timeUntilEvent: " + timeUntilEvent);
 
     // next event time is before current event - event fires immediately
     if (timeUntilEvent <= 0) {
@@ -139,7 +136,10 @@ public class EventManager implements StatefulFunction {
       // a factor of 43200 makes 1 day pass every 2 seconds
       double speedUpFactor = 43200;
       double adjustedTime = timeUntilEvent / speedUpFactor;
-      System.out.println("adjustedTime: " + adjustedTime);
+
+      Utilities.log(context, String.format("Time until event: %s", nextEventTime.toString()), 3);
+      Utilities.log(context, String.format("Adjusted Time %s", nextEventTime.toString()), 3);
+
       context.sendAfter(Duration.ofSeconds((long) adjustedTime), context.self(), fireEventMessage);
       Utilities.log(
           context, String.format("Next event scheduled for %s", nextEventTime.toString()), 1);
