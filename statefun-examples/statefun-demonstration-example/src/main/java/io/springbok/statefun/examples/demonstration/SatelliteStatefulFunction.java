@@ -2,6 +2,7 @@ package io.springbok.statefun.examples.demonstration;
 
 import io.springbok.statefun.examples.demonstration.generated.*;
 import io.springbok.statefun.examples.utilities.TLEReader;
+import io.springbok.statefun.examples.utilities.TrackGenerator;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -129,9 +130,19 @@ public class SatelliteStatefulFunction implements StatefulFunction {
 
         Utilities.log(
             context, String.format("Satellite with ID %s created track", context.self().id()), 1);
-        // TODO: send track to Kafka tracks
 
-        Utilities.sendKafkaMessage("tracks", "1");
+        TrackGenerator trackGenerator = new TrackGenerator();
+        trackGenerator.init();
+
+        // TODO: get correct sensorId
+        String track = trackGenerator.produceTrackAtTime(tleState.get(), eventTime, "1");
+
+        if (ApplicationProperties.getIsTest()) {
+          TrackIn trackIn = TrackIn.newBuilder().setTrack(track).build();
+          context.send(TrackIdManager.TYPE, "track-id-manager", trackIn);
+        } else {
+          Utilities.sendKafkaMessage("tracks", track);
+        }
       } catch (Exception e) {
 
         Utilities.log(
@@ -174,6 +185,8 @@ public class SatelliteStatefulFunction implements StatefulFunction {
                   (s, detector, increasing) -> {
                     // TODO: Handle instances where the orbit is currently visible
                     // Currently, if it's visible the first time
+                    // TODO: handle correctly getting next event for multiple satellites + getting
+                    // sensor ID
                     if (increasing) {
                       nextEvent.set(s.getDate());
                     }

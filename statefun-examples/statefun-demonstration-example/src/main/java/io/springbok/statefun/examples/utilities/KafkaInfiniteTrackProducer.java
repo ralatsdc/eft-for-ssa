@@ -29,8 +29,9 @@ public class KafkaInfiniteTrackProducer {
     props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
 
     ApplicationEnvironment.setPathProperties();
+    String tlePath = System.getProperty("TLE_PATH");
 
-    TrackGenerator trackGenerator = new TrackGenerator();
+    TrackGenerator trackGenerator = new TrackGenerator(tlePath);
     trackGenerator.init();
 
     tleIterator = trackGenerator.tles.iterator();

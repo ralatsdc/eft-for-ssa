@@ -19,7 +19,10 @@ import org.orekit.propagation.numerical.NumericalPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -53,24 +56,23 @@ public class TrackGenerator {
 
     // TODO: verify the input is a TLE
     orekitPath = System.getProperty("OREKIT_PATH");
-    tlePath = System.getProperty("TLE_PATH");
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
   }
 
-  public TrackGenerator(String tlePath) throws Exception {
+  public TrackGenerator(String tleLocation) throws Exception {
 
     // TODO: verify the input is a TLE
-    tlePath = tlePath;
+    tlePath = tleLocation;
     orekitPath = System.getProperty("OREKIT_PATH");
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
   }
 
-  public TrackGenerator(String tlePath, String orekitPath) throws Exception {
+  public TrackGenerator(String tleLocation, String orekitPath) throws Exception {
 
     // TODO: verify the input is a TLE
-    tlePath = tlePath;
+    tlePath = tleLocation;
     this.orekitPath = orekitPath;
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
@@ -83,9 +85,11 @@ public class TrackGenerator {
     final DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
     manager.addProvider(new DirectoryCrawler(orekitData));
 
-    // Add tles to list
-    final File tleData = new File(tlePath);
-    tles = TLEReader.readTLEs(tleData);
+    if (tlePath != null) {
+      // Add tles to list
+      final File tleData = new File(tlePath);
+      tles = TLEReader.readTLEs(tleData);
+    }
 
     // Set up propagator
     final GillIntegrator gillIntegrator = new GillIntegrator(largeStep);
@@ -167,6 +171,21 @@ public class TrackGenerator {
     AbsoluteDate extrapDate = tle.getDate().shiftedBy(timePassed);
 
     String message = createMessage(extrapDate, smallStep, numericalPropagator, pvBuilder, tle);
+
+    return message;
+  }
+
+  public String produceTrackAtTime(TLE tle, AbsoluteDate endDate, String sensorId) {
+
+    // Get orbit from TLE
+    Orbit initialOrbit = createOrbit(tle);
+
+    // Set initial state
+    final SpacecraftState initialState = new SpacecraftState(initialOrbit);
+    numericalPropagator.setInitialState(initialState);
+
+    String message =
+        createMessage(endDate, smallStep, numericalPropagator, pvBuilder, tle, sensorId);
 
     return message;
   }
@@ -272,7 +291,7 @@ public class TrackGenerator {
   }
 
   // Overloaded method adds sensorId specification
-  String createMessage(
+  public static String createMessage(
       AbsoluteDate extrapDate,
       double smallStep,
       NumericalPropagator nPropagator,

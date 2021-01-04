@@ -28,7 +28,7 @@ public class IntegrationTests {
     ApplicationEnvironment.setPathProperties();
     String tlePath = System.getProperty("TLE_PATH");
 
-    trackGenerator = new TrackGenerator();
+    trackGenerator = new TrackGenerator(tlePath);
     trackGenerator.init();
     trackGenerator.finitePropagation();
     final File tleData = new File(tlePath);

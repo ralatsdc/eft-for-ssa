@@ -12,6 +12,7 @@ public class ApplicationProperties {
   private static Long speedUpFactor = null;
   private static Integer trackCutoff = null;
   private static Integer logLevel = null;
+  private static Boolean isTest = null;
 
   public static Properties getProperties() throws Exception {
     if (properties == null) {
@@ -66,5 +67,12 @@ public class ApplicationProperties {
       logLevel = Integer.parseInt(getProperties().getProperty("logLevel"));
     }
     return logLevel;
+  }
+
+  public static Boolean getIsTest() throws Exception {
+    if (isTest == null) {
+      isTest = Boolean.parseBoolean(getProperties().getProperty("isTest"));
+    }
+    return isTest;
   }
 }
