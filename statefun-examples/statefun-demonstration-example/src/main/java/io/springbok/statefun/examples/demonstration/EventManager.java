@@ -14,6 +14,8 @@ import org.orekit.time.TimeScalesFactory;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class EventManager implements StatefulFunction {
 
@@ -42,7 +44,21 @@ public class EventManager implements StatefulFunction {
           eventsState.getOrDefault(new ArrayList<NewEventMessage>());
 
       events.add(newEventMessage);
+
       // TODO: sort list by time
+
+      Collections.sort(
+          events,
+          new Comparator<NewEventMessage>() {
+            @Override
+            public int compare(NewEventMessage message1, NewEventMessage message2) {
+              AbsoluteDate time1 = new AbsoluteDate(message1.getTime(), TimeScalesFactory.getUTC());
+              AbsoluteDate time2 = new AbsoluteDate(message2.getTime(), TimeScalesFactory.getUTC());
+              return time1.compareTo(time2);
+            }
+          });
+
+      System.out.println("events: " + events);
 
       // if this is the first event received, fire it off
       if (hasSentMessage.getOrDefault(false) == false) {

@@ -48,6 +48,10 @@ public class SatelliteStatefulFunction implements StatefulFunction {
   private final PersistedValue<AbsoluteDate> nextEvent =
       PersistedValue.of("next-event", AbsoluteDate.class);
 
+  @Persisted
+  private final PersistedValue<Boolean> hasDecreased =
+      PersistedValue.of("has-decreased", Boolean.class);
+
   @Override
   public void invoke(Context context, Object input) {
 
@@ -190,9 +194,15 @@ public class SatelliteStatefulFunction implements StatefulFunction {
                     if (increasing) {
                       nextEvent.set(s.getDate());
                     }
-                    // Stops the simulation once it finds first visibility; continues if visibility
-                    // is ending until next visibility
-                    return increasing ? Action.CONTINUE : Action.CONTINUE;
+                    // Stops the simulation once it finds first visibility after current visibility
+                    if (!increasing) {
+                      hasDecreased.set(true);
+                    }
+                    if (hasDecreased.getOrDefault(false)) {
+                      return increasing ? Action.STOP : Action.CONTINUE;
+                    } else {
+                      return Action.CONTINUE;
+                    }
                   });
 
       ArrayList<EventDetector> sensorVisibilities =
@@ -235,6 +245,8 @@ public class SatelliteStatefulFunction implements StatefulFunction {
 
       // log current time
       Utilities.log(context, String.format("Current time: %s", startDate), 1);
+
+      hasDecreased.set(false);
 
       // Advance satellite to current time - this will be saved to avoid extra propagation in the
       // future
