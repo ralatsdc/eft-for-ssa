@@ -13,6 +13,7 @@ public class ApplicationProperties {
   private static Integer trackCutoff = null;
   private static Integer logLevel = null;
   private static Boolean isTest = null;
+  private static Integer eventTestNumber = null;
 
   public static Properties getProperties() throws Exception {
     if (properties == null) {
@@ -74,5 +75,12 @@ public class ApplicationProperties {
       isTest = Boolean.parseBoolean(getProperties().getProperty("isTest"));
     }
     return isTest;
+  }
+
+  public static Integer getTestEventNumber() throws Exception {
+    if (eventTestNumber == null) {
+      eventTestNumber = Integer.parseInt(getProperties().getProperty("eventTestNumber"));
+    }
+    return eventTestNumber;
   }
 }

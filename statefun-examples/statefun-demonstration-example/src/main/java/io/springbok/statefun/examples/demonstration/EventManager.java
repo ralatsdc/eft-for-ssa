@@ -34,6 +34,10 @@ public class EventManager implements StatefulFunction {
   private PersistedValue<Boolean> hasSentMessage =
       PersistedValue.of("has-sent-message", Boolean.class);
 
+  @Persisted
+  private PersistedValue<Integer> eventsHandledState =
+      PersistedValue.of("events-handled", Integer.class);
+
   @Override
   public void invoke(Context context, Object input) {
 
@@ -57,8 +61,6 @@ public class EventManager implements StatefulFunction {
               return time1.compareTo(time2);
             }
           });
-
-      System.out.println("events: " + events);
 
       // if this is the first event received, fire it off
       if (hasSentMessage.getOrDefault(false) == false) {
@@ -131,6 +133,19 @@ public class EventManager implements StatefulFunction {
   }
 
   private void scheduleEvent(Context context, NewEventMessage nextEvent) {
+
+    try {
+      if (ApplicationProperties.getIsTest()) {
+        Integer eventsHandled = eventsHandledState.getOrDefault(0);
+        Integer testEventNumber = ApplicationProperties.getTestEventNumber();
+        if (eventsHandled.equals(testEventNumber)) {
+          return;
+        }
+        eventsHandledState.set(eventsHandled + 1);
+      }
+    } catch (Exception e) {
+      Utilities.log(context, e.toString(), 1);
+    }
 
     AbsoluteDate currentEventTime = lastEventTimeState.get();
     AbsoluteDate nextEventTime = new AbsoluteDate(nextEvent.getTime(), TimeScalesFactory.getUTC());

@@ -61,7 +61,8 @@ public class IntegrationTests {
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
-    Assert.assertTrue(testConsumer.messages.get(0).contains("Saved orbit with satellite ID:"));
+    Assert.assertTrue(
+        arrayListContainsInclusive(testConsumer.messages, "Saved orbit with satellite ID [\\d]+"));
   }
 
   @Ignore("Only one Harness can be run at a time")
@@ -94,11 +95,12 @@ public class IntegrationTests {
     harness.start();
 
     Assert.assertTrue(
-        arrayListContainsInclusive(testConsumer.messages, "Saved orbit with satellite ID:"));
-    Assert.assertTrue(arrayListContainsInclusive(testConsumer.messages, "Saved sensor with ID: 0"));
+        arrayListContainsInclusive(testConsumer.messages, "Saved orbit with satellite ID [\\d]+"));
+    Assert.assertTrue(
+        arrayListContainsInclusive(testConsumer.messages, "Saved sensor with ID [\\d]+"));
     Assert.assertTrue(
         arrayListContainsInclusive(
-            testConsumer.messages, "Saved satellite with ID 0 to Sensor with ID"));
+            testConsumer.messages, "Saved satellite with ID [\\d]+ to Sensor with ID [\\d]+"));
   }
 
   @Ignore("Only one Harness can be run at a time")
@@ -119,7 +121,7 @@ public class IntegrationTests {
     MockSensorSourceFunction sensorSourceFunction = new MockSensorSourceFunction(testSensors);
 
     MockConsumer testConsumer = new MockConsumer();
-    TLESource.runTimeMS = 5000;
+    TLESource.runTimeMS = 8000;
     OrbitStatefulFunction.deleteTimer = 1;
 
     Harness harness =
@@ -132,11 +134,15 @@ public class IntegrationTests {
     harness.start();
 
     Assert.assertTrue(
-        arrayListContainsInclusive(testConsumer.messages, "Saved orbit with satellite ID:"));
-    Assert.assertTrue(arrayListContainsInclusive(testConsumer.messages, "Saved sensor with ID: 0"));
+        arrayListContainsInclusive(testConsumer.messages, "Saved orbit with satellite ID"));
+    Assert.assertTrue(arrayListContainsInclusive(testConsumer.messages, "Saved sensor with ID 0"));
+    Assert.assertTrue(arrayListContainsInclusive(testConsumer.messages, "Saved sensor with ID 1"));
     Assert.assertTrue(
         arrayListContainsInclusive(
-            testConsumer.messages, "Saved satellite with ID 0 to Sensor with ID"));
+            testConsumer.messages, "Saved satellite with ID [\\d]+ to Sensor with ID 0"));
+    Assert.assertTrue(
+        arrayListContainsInclusive(
+            testConsumer.messages, "Saved satellite with ID [\\d]+ to Sensor with ID 0"));
   }
 
   @Ignore("Only one Harness can be run at a time")
@@ -161,20 +167,20 @@ public class IntegrationTests {
     OrbitStatefulFunction.deleteTimer = 1;
 
     Harness harness =
-            new Harness()
-                    .withKryoMessageSerializer()
-                    .withFlinkSourceFunction(DemonstrationIO.SENSOR_INGRESS_ID, sensorSourceFunction)
-                    .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
-                    .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
-                    .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
+        new Harness()
+            .withKryoMessageSerializer()
+            .withFlinkSourceFunction(DemonstrationIO.SENSOR_INGRESS_ID, sensorSourceFunction)
+            .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
+            .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
+            .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
     Assert.assertTrue(
-            arrayListContainsInclusive(testConsumer.messages, "Saved orbit with satellite ID:"));
-    Assert.assertTrue(arrayListContainsInclusive(testConsumer.messages, "Saved sensor with ID: 0"));
+        arrayListContainsInclusive(testConsumer.messages, "Saved orbit with satellite ID [\\d]+"));
+    Assert.assertTrue(arrayListContainsInclusive(testConsumer.messages, "Saved sensor with ID 0"));
     Assert.assertTrue(
-            arrayListContainsInclusive(
-                    testConsumer.messages, "Saved satellite with ID 0 to Sensor with ID"));
+        arrayListContainsInclusive(
+            testConsumer.messages, "Saved satellite with ID [\\d]+ to Sensor with ID [\\d]+"));
   }
 
   // TODO: refine test assertions
@@ -208,18 +214,20 @@ public class IntegrationTests {
     harness.start();
 
     Assert.assertTrue(
-        arrayListContainsInclusive(testConsumer.messages, "Saved orbit with satellite ID:"));
-    Assert.assertTrue(arrayListContainsInclusive(testConsumer.messages, "Saved sensor with ID: 0"));
+        arrayListContainsInclusive(testConsumer.messages, "Saved orbit with satellite ID"));
+    Assert.assertTrue(
+        arrayListContainsInclusive(testConsumer.messages, "Saved sensor with ID [\\d]+"));
     Assert.assertTrue(
         arrayListContainsInclusive(
-            testConsumer.messages, "Saved satellite with ID 0 to Sensor with ID"));
+            testConsumer.messages, "Saved satellite with ID [\\d]+ to Sensor with ID"));
     Assert.assertTrue(
         arrayListContainsInclusive(
-            testConsumer.messages, "Saved satellite with ID 0 to Sensor with ID"));
+            testConsumer.messages, "Saved satellite with ID [\\d]+ to Sensor with ID"));
     Assert.assertTrue(
         arrayListContainsInclusive(testConsumer.messages, "Next event sent immediately"));
     Assert.assertTrue(
-        arrayListContainsInclusive(testConsumer.messages, "Satellite with ID 25772 created track"));
+        arrayListContainsInclusive(
+            testConsumer.messages, "Satellite with ID [\\d]+ created track"));
     Assert.assertTrue(arrayListContainsInclusive(testConsumer.messages, "Next event scheduled"));
   }
 
@@ -232,16 +240,16 @@ public class IntegrationTests {
     MockSensorSourceFunction sensorSourceFunction = new MockSensorSourceFunction();
 
     // Specific source function for testing
-    MockTracksSourceFunction singleTracksSource = new MockTracksSourceFunction();
-    new MockTracksSourceFunction(trackGenerator.getXMessages(1));
+    MockTracksSourceFunction finiteTracksSource =
+        new MockTracksSourceFunction(trackGenerator.getXMessages(1));
     MockConsumer testConsumer = new MockConsumer();
-    singleTracksSource.runTimeMS = 5000;
-    OrbitStatefulFunction.deleteTimer = 1;
+    finiteTracksSource.runTimeMS = 8000;
+    OrbitStatefulFunction.deleteTimer = 4;
 
     Harness harness =
         new Harness()
             .withKryoMessageSerializer()
-            .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
+            .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, finiteTracksSource)
             .withFlinkSourceFunction(DemonstrationIO.SENSOR_INGRESS_ID, sensorSourceFunction)
             .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);

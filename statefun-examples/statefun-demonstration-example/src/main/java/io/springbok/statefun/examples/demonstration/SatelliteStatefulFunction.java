@@ -88,13 +88,12 @@ public class SatelliteStatefulFunction implements StatefulFunction {
         context.send(SensorIdManager.TYPE, "sensor-id-manager", newSatelliteMessage);
 
         Utilities.log(
-            context, String.format("Saved orbit with satellite ID: %s", context.self().id()), 1);
+            context, String.format("Saved orbit with satellite ID %s", context.self().id()), 1);
       } catch (Exception e) {
         Utilities.log(
             context,
             String.format(
-                "Failed to save orbit with satellite ID: %s. Exception: %s",
-                context.self().id(), e),
+                "Failed to save orbit with satellite ID %s. Exception: %s", context.self().id(), e),
             1);
       }
     }
