@@ -239,9 +239,16 @@ public class IntegrationTests {
     MockTLESourceFunction TLESource = new MockTLESourceFunction();
     MockSensorSourceFunction sensorSourceFunction = new MockSensorSourceFunction();
 
+    //    MockTracksSourceFunction singleTracksSource =
+    //        new MockTracksSourceFunction(trackGenerator.getXMessages(1));
+    ArrayList trackList = trackGenerator.getXMessages(1);
+
+    // Testing incorrect track input
+    trackList.add("foobar");
+
     // Specific source function for testing
-    MockTracksSourceFunction finiteTracksSource =
-        new MockTracksSourceFunction(trackGenerator.getXMessages(1));
+    MockTracksSourceFunction finiteTracksSource = new MockTracksSourceFunction(trackList);
+
     MockConsumer testConsumer = new MockConsumer();
     finiteTracksSource.runTimeMS = 8000;
     OrbitStatefulFunction.deleteTimer = 4;
@@ -255,15 +262,29 @@ public class IntegrationTests {
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
-    Assert.assertTrue(testConsumer.messages.get(0).contains("Created trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(1).contains("Created track for id 0"));
-    Assert.assertTrue(testConsumer.messages.get(2).contains("Created orbitId 0"));
-    Assert.assertTrue(testConsumer.messages.get(3).contains("Created orbit for id 0"));
-    Assert.assertTrue(testConsumer.messages.get(4).contains("Added orbitId 0 to trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(5).contains("Saved orbitId 0"));
-    Assert.assertTrue(testConsumer.messages.get(6).contains("Cleared orbit for id 0"));
-    Assert.assertTrue(testConsumer.messages.get(7).contains("Cleared track for trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(8).contains("Removed orbitId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Created trackId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Created track for id 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Created orbitId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Created orbit for id 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Added orbitId 0 to trackId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Saved orbitId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Cleared orbit for id 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Cleared track for trackId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Removed orbitId 0"));
   }
 
   @Test
