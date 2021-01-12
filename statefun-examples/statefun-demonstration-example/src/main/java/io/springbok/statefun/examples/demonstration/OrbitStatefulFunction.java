@@ -31,6 +31,10 @@ public class OrbitStatefulFunction implements StatefulFunction {
   @Override
   public void invoke(Context context, Object input) {
 
+    // OrbitFactory.init() ensures Orekit data is loaded into the current context
+    // Not in try block since orekit must be loaded for project to work
+    OrbitFactory.init();
+
     // TrackIn is a message from the TrackStatefulFunction. This constructs a new KeyedOrbit from
     // incoming data
     if (input instanceof NewTrackMessage) {
@@ -150,7 +154,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
               String.format(
                   "Not correlated orbits with ids %s and %s",
                   recievedKeyedOrbit.orbitId, keyedOrbit.orbitId),
-              1);
+              3);
         }
       } catch (Exception e) {
         Utilities.log(context, String.format("Not correlated orbits: %s", e), 1);
@@ -219,7 +223,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
         // Send message out that orbit was created and saved
         Utilities.log(
-            context, String.format("Created refined orbit for id %s", newOrbit.orbitId), 1);
+            context, String.format("Created refined orbit for id %s", newOrbit.orbitId), 2);
 
         orbitState.set(newOrbit);
       } catch (NullPointerException e) {

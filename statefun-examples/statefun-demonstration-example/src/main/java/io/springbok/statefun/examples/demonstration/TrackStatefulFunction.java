@@ -27,15 +27,15 @@ public class TrackStatefulFunction implements StatefulFunction {
   @Override
   public void invoke(Context context, Object input) {
 
+    // OrbitFactory.init() ensures Orekit data is loaded into the current context
+    // Not in try block since orekit must be loaded for project to work
+    OrbitFactory.init();
+
     // TrackIn is a message from the TrackStateful Function. This constructs a new Track from
     // incoming data
     if (input instanceof TrackIn) {
 
       TrackIn trackIn = (TrackIn) input;
-
-      // OrbitFactory.init() ensures Orekit data is loaded into the current context
-      // Not in try block since orekit must be loaded for project to work
-      OrbitFactory.init();
 
       try {
         // Create track from input
@@ -64,8 +64,8 @@ public class TrackStatefulFunction implements StatefulFunction {
         Utilities.log(
             context,
             String.format(
-                "track given id %s not valid. Discarding message with id %s: %s",
-                context.self().id(), e),
+                "track given id %s not valid. Discarding message '%s' \n Error: %s",
+                context.self().id(), trackIn.getTrack(), e),
             1);
       }
     }
@@ -84,7 +84,7 @@ public class TrackStatefulFunction implements StatefulFunction {
             context,
             String.format(
                 "Added orbitId %s to trackId %s", newOrbitIdMessage.getId(), track.trackId),
-            1);
+            2);
 
         // Set persisted state
         trackState.set(track);
@@ -120,7 +120,7 @@ public class TrackStatefulFunction implements StatefulFunction {
           Utilities.log(
               context,
               String.format("Removed orbitId %s from trackId %s", orbitId, track.trackId),
-              1);
+              2);
         }
       } catch (Exception e) {
         Utilities.log(
@@ -166,7 +166,7 @@ public class TrackStatefulFunction implements StatefulFunction {
         Utilities.log(
             context,
             String.format("Added track with id %s to collectedTracksMessage", track.trackId),
-            1);
+            2);
 
       } catch (Exception e) {
         collectedTracks = collectedTracksMessage.getCollectedTracks();

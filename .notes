@@ -60,8 +60,13 @@ Access container
 
 Other notes:
 Ensure that the flink-conf.yaml file is configured properly.
+
 taskmanager.memory.process.size must be equal to the memory of the container
+
 parallelism.default must be equal or smaller than the number of worker containers
+
+jobmanager.memory.flink.size must be set sufficiently high (and close to the memory of the container)
+Setting memory of container: https://docs.docker.com/compose/compose-file/#resources
 
 ---
 

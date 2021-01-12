@@ -1,9 +1,8 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.utility.MockConsumer;
-import io.springbok.statefun.examples.utility.MockTracksSourceFunction;
-import io.springbok.statefun.examples.utility.SetTestPaths;
-import io.springbok.statefun.examples.utility.TrackGenerator;
+import io.springbok.statefun.examples.utilities.MockConsumer;
+import io.springbok.statefun.examples.utilities.MockTracksSourceFunction;
+import io.springbok.statefun.examples.utilities.TrackGenerator;
 import org.apache.flink.statefun.flink.harness.Harness;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -26,7 +25,7 @@ public class IntegrationTests {
 
   @BeforeClass
   public static void setUp() throws Exception {
-    SetTestPaths.init();
+    ApplicationEnvironment.setPathProperties();
 
     trackGenerator = new TrackGenerator();
     trackGenerator.init();
@@ -37,8 +36,11 @@ public class IntegrationTests {
   @Test
   public void testTrackCreation() throws Exception {
 
-    MockTracksSourceFunction singleTracksSource =
-        new MockTracksSourceFunction(trackGenerator.getXMessages(1));
+    //    MockTracksSourceFunction singleTracksSource =
+    //        new MockTracksSourceFunction(trackGenerator.getXMessages(1));
+    ArrayList arrayList = trackGenerator.getXMessages(1);
+    arrayList.add("1");
+    MockTracksSourceFunction singleTracksSource = new MockTracksSourceFunction(arrayList);
     MockConsumer testConsumer = new MockConsumer();
     singleTracksSource.runTimeMS = 5000;
     OrbitStatefulFunction.deleteTimer = 1;
@@ -50,15 +52,29 @@ public class IntegrationTests {
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
-    Assert.assertTrue(testConsumer.messages.get(0).contains("Created trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(1).contains("Created track for id 0"));
-    Assert.assertTrue(testConsumer.messages.get(2).contains("Created orbitId 0"));
-    Assert.assertTrue(testConsumer.messages.get(3).contains("Created orbit for id 0"));
-    Assert.assertTrue(testConsumer.messages.get(4).contains("Added orbitId 0 to trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(5).contains("Saved orbitId 0"));
-    Assert.assertTrue(testConsumer.messages.get(6).contains("Cleared orbit for id 0"));
-    Assert.assertTrue(testConsumer.messages.get(7).contains("Cleared track for trackId 0"));
-    Assert.assertTrue(testConsumer.messages.get(8).contains("Removed orbitId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Created trackId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Created track for id 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Created orbitId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Created orbit for id 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Added orbitId 0 to trackId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Saved orbitId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Cleared orbit for id 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Cleared track for trackId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Removed orbitId 0"));
   }
 
   @Test
