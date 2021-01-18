@@ -39,6 +39,7 @@ function plot_orbit_count(data_file_path)
     glh = [glh, ylabel('Total States per Object')];
     set(glh, 'FontName', 'Arial', 'FontSize', 14, 'FontWeight', 'demi');
     trim_plot(offset);
-    print('plot_orbit_count.pdf', '-dpdf');
+    plot_file_path = replace(data_file_path, '.dat', '.pdf');
+    print(plot_file_path, '-dpdf');
 
 end % plot_orbit_count()
