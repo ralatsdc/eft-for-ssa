@@ -4,16 +4,16 @@ from argparse import ArgumentParser
 import re
 # import time
 
-if __name__ == "__main__":
+
+def main():
 
     # Add and parse arguments
     parser = ArgumentParser()
-
     parser.add_argument(
         "-l",
-        "--log-file-name",
+        "--log-file-path",
         default="consumer.log",
-        help="consumer log file",
+        help="consumer log file path",
     )
     options = parser.parse_args()
 
@@ -25,9 +25,9 @@ if __name__ == "__main__":
     # Count number of orbits which exist after each event analyzed,
     # and print along with date and time components for analysis
     num_orb = 0
-    out_file_name = options.log_file_name.replace('.log', '.dat')
-    with open(out_file_name, 'w') as ofp:
-        with open(options.inp_file_name_, 'r') as ifp:
+    out_file_path = options.log_file_path.replace('.log', '.dat')
+    with open(out_file_path, 'w') as ofp:
+        with open(options.log_file_path, 'r') as ifp:
             while True:
                 line = ifp.readline()
                 # print(line)
@@ -46,3 +46,7 @@ if __name__ == "__main__":
                 print(msg)
                 ofp.write(msg + '\n')
                 # time.sleep(0.001)
+
+
+if __name__ == "__main__":
+    main()
