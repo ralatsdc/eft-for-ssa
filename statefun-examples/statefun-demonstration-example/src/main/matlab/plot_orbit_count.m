@@ -1,14 +1,21 @@
-function plot_orbit_count(data_file_name)
+function plot_orbit_count(data_file_path)
 % Plot number of orbits which exist after each event analyzed.
 %
 % Parameters:
-%   data_file_name - File produced by process_log.py
+%   data_file_path - Data lile produced by process_log.py
 %
 % Returns:
 %   none
   
+    % Process the log file to produce the data file, if needed
+    if ~exist(data_file_path)
+        log_file_path = replace(data_file_path, '.dat', '.log');
+        [status, result] = system(['../python/process_log.py -l ', log_file_path]);
+
+    end % if
+
     % Load the data file and assign date and orbit numbers
-    event_data = load(data_file_name);
+    event_data = load(data_file_path);
     date_number = datenum( ...
         event_data(:, 1), event_data(:, 2), event_data(:, 3), ...
         event_data(:, 4), event_data(:, 5), event_data(:, 6) ...
@@ -21,7 +28,7 @@ function plot_orbit_count(data_file_name)
     gph = [];
     gph = [gph, plot(86400 * (date_number - date_number(1)), orbit_number / 3)]; hold on;
     limits = axis;
-    legend({'1 s', '2 s', '4 s', '8 s'}, 'location', 'northwest');
+    % legend({'1 s', '2 s', '4 s', '8 s'}, 'location', 'northwest');
     axis([0, 120, limits(3), limits(4)]);
     set(gca, 'FontName', 'Arial', 'FontSize', 14, 'FontWeight', 'demi');
     set(gph, 'LineWidth', 1.5);
