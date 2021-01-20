@@ -27,11 +27,13 @@ public class ApplicationEnvironment {
           break;
 
         case "TLE_PATH":
-          path = rootPath + "eft-for-ssa/tle-data/globalstar_tles_05_18_2020.txt";
+          path = rootPath + "eft-for-ssa/tle-data/single_tle_05_18_2020.txt";
           break;
 
         case "PROPERTIES_PATH":
-          path = rootPath + "eft-for-ssa/statefun-examples/statefun-demonstration-example/src/resources/test.properties";
+          path =
+              rootPath
+                  + "eft-for-ssa/statefun-examples/statefun-demonstration-example/src/resources/test.properties";
           break;
 
         default:
