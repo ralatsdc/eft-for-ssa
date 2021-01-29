@@ -102,10 +102,11 @@ public class TrackGenerator {
     pvBuilder = new PVBuilder(null, sigmaP, sigmaV, baseWeight, satelliteIndex);
   }
 
-  public ArrayList<String> finitePropagation() {
+  // Time in weeks
+  public ArrayList<String> finitePropagation(double weeks) {
 
     // Overall duration in seconds for extrapolation - 1 week
-    final double duration = 60 * 60 * 24 * 7;
+    final double duration = 60 * 60 * 24 * 7 * weeks;
 
     tles.forEach(
         (tle) -> {
@@ -140,14 +141,16 @@ public class TrackGenerator {
         });
 
     // Sort messages by track start time
-    Collections.sort(messages, new Comparator<String>() {
-      public int compare(String msgOne, String msgTwo) {
-        String[] fldsOne = msgOne.split(",");
-        String[] fldsTwo = msgTwo.split(",");
-        // Sort lexicographically since times are in YYYY-MM-DDTHH:MM:SS.SSS format
-        return fldsOne[4].compareTo(fldsTwo[4]);
-      }
-    });
+    Collections.sort(
+        messages,
+        new Comparator<String>() {
+          public int compare(String msgOne, String msgTwo) {
+            String[] fldsOne = msgOne.split(",");
+            String[] fldsTwo = msgTwo.split(",");
+            // Sort lexicographically since times are in YYYY-MM-DDTHH:MM:SS.SSS format
+            return fldsOne[4].compareTo(fldsTwo[4]);
+          }
+        });
     return messages;
   }
 
@@ -291,11 +294,13 @@ public class TrackGenerator {
     }
 
     // Sort TLEs by TLE epoch
-    Collections.sort(tles, new Comparator<TLE>() {
-      public int compare(TLE tleOne, TLE tleTwo) {
-        return tleOne.getDate().compareTo(tleTwo.getDate());
-      }
-    });
+    Collections.sort(
+        tles,
+        new Comparator<TLE>() {
+          public int compare(TLE tleOne, TLE tleTwo) {
+            return tleOne.getDate().compareTo(tleTwo.getDate());
+          }
+        });
     return tles;
   }
 

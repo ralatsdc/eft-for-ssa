@@ -29,7 +29,7 @@ public class IntegrationTests {
 
     trackGenerator = new TrackGenerator();
     trackGenerator.init();
-    trackGenerator.finitePropagation();
+    trackGenerator.finitePropagation(1);
   }
 
   @Ignore("Only one Harness can be run at a time")
