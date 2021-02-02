@@ -90,7 +90,7 @@ public class KafkaTrackProducer {
 
       } else {
         // Produce a finite track message stream
-        ArrayList<String> trackMessages = trackGenerator.finitePropagation(4);
+        ArrayList<String> trackMessages = trackGenerator.finitePropagation(1);
         for (String message : trackMessages) {
           producer.send(new ProducerRecord<>("tracks", message));
           producer.flush();

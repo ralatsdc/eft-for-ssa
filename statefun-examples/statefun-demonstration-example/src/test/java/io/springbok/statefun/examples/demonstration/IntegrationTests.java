@@ -100,7 +100,7 @@ public class IntegrationTests {
   public void testOrbitCorrelation() throws Exception {
 
     MockTracksSourceFunction finiteTracksSource =
-        new MockTracksSourceFunction(trackGenerator.getXSingleObjectMessages(2));
+        new MockTracksSourceFunction(trackGenerator.getXSingleObjectMessages(3));
     MockConsumer testConsumer = new MockConsumer();
     finiteTracksSource.runTimeMS = 8000;
     OrbitStatefulFunction.deleteTimer = 4;

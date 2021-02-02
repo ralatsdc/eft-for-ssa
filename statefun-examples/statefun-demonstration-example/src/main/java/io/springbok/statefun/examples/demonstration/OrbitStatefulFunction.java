@@ -204,6 +204,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
                 .setOldOrbitId2(keyedOrbit2.orbitId)
                 .setOldOrbit1TracksNumber(keyedOrbit1.trackIds.size())
                 .setOldOrbit2TracksNumber(keyedOrbit2.trackIds.size())
+                .setNewOrbit(newOrbit.toString())
                 .build();
 
         // Send a message to the OrbitIdManager to save the new orbit id
