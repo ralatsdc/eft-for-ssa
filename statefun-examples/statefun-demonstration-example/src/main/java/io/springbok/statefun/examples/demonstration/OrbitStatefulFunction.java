@@ -240,12 +240,18 @@ public class OrbitStatefulFunction implements StatefulFunction {
               Track.fromString(stringTracks.remove(j), keyedOrbit2.trackIds.get(j)));
         }
 
-        ArrayList<String> trackIds = new ArrayList<>(keyedOrbit1.trackIds);
+        ArrayList<String> newOrbitTrackIds = new ArrayList<>(keyedOrbit1.trackIds);
+        keyedOrbit2.trackIds.forEach(
+            track -> {
+              if (!newOrbitTrackIds.contains(track)) {
+                newOrbitTrackIds.add(track);
+              }
+            });
 
         // Create new KeyedOrbit by refining with new tracks
         KeyedOrbit newOrbit =
             OrbitFactory.refineOrbit(
-                keyedOrbit1.orbit, trackIds, collectedTracks, context.self().id());
+                keyedOrbit1.orbit, newOrbitTrackIds, collectedTracks, context.self().id());
 
         // Send message out that orbit was refined
         Utilities.log(
@@ -275,8 +281,6 @@ public class OrbitStatefulFunction implements StatefulFunction {
         // one
         NewOrbitIdMessage newOrbitIdMessage =
             NewOrbitIdMessage.newBuilder().setId(newOrbit.orbitId).build();
-
-        System.out.println("new orbit track ids: " + newOrbit.trackIds);
 
         newOrbit.trackIds.forEach(
             id -> {
