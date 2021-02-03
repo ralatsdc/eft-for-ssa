@@ -49,8 +49,12 @@ public class KeyedOrbit {
     this.trackIds = trackIds;
     tracks.forEach(
         track -> {
-          trackIds.add(track.trackId);
-          objectIds.add(track.objectId);
+          if (!trackIds.contains(track.trackId)) {
+            trackIds.add(track.trackId);
+          }
+          if (!objectIds.contains(track.objectId)) {
+            objectIds.add(track.objectId);
+          }
         });
   }
 
