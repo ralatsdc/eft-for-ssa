@@ -121,6 +121,11 @@ public class TrackStatefulFunction implements StatefulFunction {
               context,
               String.format("Removed orbitId %s from trackId %s", orbitId, track.trackId),
               2);
+          Utilities.log(
+              context,
+              String.format(
+                  "Remaining orbit ids in trackId %s: %s", track.trackId, track.getOrbitIds()),
+              3);
         }
       } catch (Exception e) {
         Utilities.log(

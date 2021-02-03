@@ -58,7 +58,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
             CorrelateOrbitsMessage.newBuilder().setStringContent(keyedOrbit.toString()).build());
 
         // Send delete message to self after a certain amount of time
-        sendSelfDeleteMessage(context);
+        sendSelfDelayedDeleteMessage(context);
 
         // Send message out that orbit was created
         Utilities.log(
@@ -82,8 +82,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
       }
     }
 
-    // This message is sent from this instance of the OrbitStatefulFunction after a period of time
-    if (input instanceof DelayedDeleteMessage) {
+    // This message is sent to delete this state
+    if (input instanceof DeleteMessage) {
       try {
         KeyedOrbit keyedOrbit = orbitState.get();
 
@@ -119,42 +119,103 @@ public class OrbitStatefulFunction implements StatefulFunction {
             KeyedOrbit.fromString(correlateOrbitsMessage.getStringContent());
         KeyedOrbit keyedOrbit = orbitState.get();
 
-        // Attempt correlation
-        if (OrbitCorrelator.correlate(recievedKeyedOrbit, keyedOrbit)) {
+        // Check if correlation should be attempted. Correlation should not be attempted if either
+        // representation of an orbit is redundant, i.e., all of the tracks contained in one of the
+        // orbits are contained in another. If a redundant orbit is found, it will be deleted if it
+        // has a number of tracks greater than the track cutoff value found in the properties file
+        int redundancySwitch = KeyedOrbit.checkRedundancy(keyedOrbit, recievedKeyedOrbit);
 
-          // Send message out that correlation successful
-          Utilities.log(
-              context,
-              String.format(
-                  "Correlated orbits with ids %s and %s",
+        int trackCutoff = ApplicationProperties.getTrackCutoff();
+
+        switch (redundancySwitch) {
+          case 1:
+
+            // keep if smaller or equal to trackcutoff
+            if (keyedOrbit.trackIds.size() <= trackCutoff) {
+              Utilities.log(
+                  context,
+                  String.format(
+                      "Orbit with id %s is redundant with orbit with id %s. Orbit is smaller than track cutoff. Not deleting",
+                      context.self().id(), recievedKeyedOrbit.orbitId),
+                  2);
+            } else {
+              // delete this orbit
+              Utilities.log(
+                  context,
+                  String.format(
+                      "Orbit with id %s is redundant with orbit with id %s. Sending delete message",
+                      context.self().id(), recievedKeyedOrbit.orbitId),
+                  2);
+              context.send(context.self(), DeleteMessage.newBuilder().build());
+            }
+            break;
+
+          case 2:
+
+            // keep if smaller or equal to trackcutoff
+            if (recievedKeyedOrbit.trackIds.size() <= trackCutoff) {
+              Utilities.log(
+                  context,
+                  String.format(
+                      "Orbit with id %s is redundant with orbit with id %s. Orbit is smaller than track cutoff. Not deleting",
+                      recievedKeyedOrbit.orbitId, context.self().id()),
+                  2);
+            } else {
+              // delete recieved orbit
+              Utilities.log(
+                  context,
+                  String.format(
+                      "Orbit with id %s is redundant with orbit with id %s. Sending delete message",
+                      recievedKeyedOrbit.orbitId, context.self().id()),
+                  2);
+              context.send(
+                  OrbitStatefulFunction.TYPE,
                   recievedKeyedOrbit.orbitId,
-                  keyedOrbit.orbitId,
-                  recievedKeyedOrbit.objectIds.get(0),
-                  recievedKeyedOrbit.objectIds.get(0)),
-              1);
+                  DeleteMessage.newBuilder().build());
+            }
+            break;
 
-          // CollectedTracksMessage gathers all Tracks from one orbit, and keeps the orbit of the
-          // other to refine with a least squares
-          ArrayList<String> trackIds = new ArrayList<>(keyedOrbit.trackIds);
-          String nextTrack = trackIds.get(0);
+          default:
 
-          CollectedTracksMessage collectedTracksMessage =
-              CollectedTracksMessage.newBuilder()
-                  .setKeyedOrbit1(recievedKeyedOrbit.toString())
-                  .setKeyedOrbit2(keyedOrbit.toString())
-                  .setTracksToGather(Utilities.arrayListToString(trackIds))
-                  .setIterator(1)
-                  .build();
+            // Attempt correlation
+            if (OrbitCorrelator.correlate(recievedKeyedOrbit, keyedOrbit)) {
 
-          context.send(TrackStatefulFunction.TYPE, nextTrack, collectedTracksMessage);
-        } else {
-          // Send message out that correlation not successful
-          Utilities.log(
-              context,
-              String.format(
-                  "Not correlated orbits with ids %s and %s",
-                  recievedKeyedOrbit.orbitId, keyedOrbit.orbitId),
-              3);
+              // Send message out that correlation successful
+              Utilities.log(
+                  context,
+                  String.format(
+                      "Correlated orbits with ids %s and %s",
+                      recievedKeyedOrbit.orbitId,
+                      keyedOrbit.orbitId,
+                      recievedKeyedOrbit.objectIds.get(0),
+                      recievedKeyedOrbit.objectIds.get(0)),
+                  1);
+
+              // CollectedTracksMessage gathers all Tracks from one orbit, and keeps the orbit of
+              // the
+              // other to refine with a least squares
+              ArrayList<String> trackIds = new ArrayList<>(keyedOrbit.trackIds);
+
+              String nextTrack = trackIds.get(0);
+
+              CollectedTracksMessage collectedTracksMessage =
+                  CollectedTracksMessage.newBuilder()
+                      .setKeyedOrbit1(recievedKeyedOrbit.toString())
+                      .setKeyedOrbit2(keyedOrbit.toString())
+                      .setTracksToGather(Utilities.arrayListToString(trackIds))
+                      .setIterator(1)
+                      .build();
+
+              context.send(TrackStatefulFunction.TYPE, nextTrack, collectedTracksMessage);
+            } else {
+              // Send message out that correlation not successful
+              Utilities.log(
+                  context,
+                  String.format(
+                      "Not correlated orbits with ids %s and %s",
+                      recievedKeyedOrbit.orbitId, keyedOrbit.orbitId),
+                  3);
+            }
         }
       } catch (Exception e) {
         Utilities.log(context, String.format("Not correlated orbits: %s", e), 1);
@@ -214,13 +275,16 @@ public class OrbitStatefulFunction implements StatefulFunction {
         // one
         NewOrbitIdMessage newOrbitIdMessage =
             NewOrbitIdMessage.newBuilder().setId(newOrbit.orbitId).build();
+
+        System.out.println("new orbit track ids: " + newOrbit.trackIds);
+
         newOrbit.trackIds.forEach(
             id -> {
               context.send(TrackStatefulFunction.TYPE, id, newOrbitIdMessage);
             });
 
         // Send delete message to self after a certain amount of time
-        sendSelfDeleteMessage(context);
+        sendSelfDelayedDeleteMessage(context);
 
         // Send message out that orbit was created and saved
         Utilities.log(
@@ -246,11 +310,11 @@ public class OrbitStatefulFunction implements StatefulFunction {
   }
 
   // Sends a delete message after a certain amount of time
-  private void sendSelfDeleteMessage(Context context) throws Exception {
+  private void sendSelfDelayedDeleteMessage(Context context) throws Exception {
 
     long deleteTimer = ApplicationProperties.getDeleteTimer();
 
     context.sendAfter(
-        Duration.ofSeconds(deleteTimer), context.self(), DelayedDeleteMessage.newBuilder().build());
+        Duration.ofSeconds(deleteTimer), context.self(), DeleteMessage.newBuilder().build());
   }
 }

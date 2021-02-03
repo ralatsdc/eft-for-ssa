@@ -63,7 +63,7 @@ message CollectedTracksMessage {
   int32 iterator = 5;
 }
 
-message DelayedDeleteMessage {
+message DeleteMessage {
 }
 
 message DeleteTrackMessage {

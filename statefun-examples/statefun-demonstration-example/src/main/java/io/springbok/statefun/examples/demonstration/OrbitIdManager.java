@@ -232,7 +232,7 @@ public class OrbitIdManager implements StatefulFunction {
         ids.remove(orbitId);
 
         // Message out that orbit id was removed
-        Utilities.log(context, String.format("Removed orbitId %s", orbitId), 1);
+        Utilities.log(context, String.format("Removed orbitId %s from ID manager", orbitId), 1);
         minFormedOrbitIds.set(ids);
 
       } catch (Exception e) {

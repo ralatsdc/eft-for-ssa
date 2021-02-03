@@ -42,7 +42,7 @@ public class IntegrationTests {
     arrayList.add("1");
     MockTracksSourceFunction singleTracksSource = new MockTracksSourceFunction(arrayList);
     MockConsumer testConsumer = new MockConsumer();
-    singleTracksSource.runTimeMS = 5000;
+    singleTracksSource.runTimeMS = 8000;
     OrbitStatefulFunction.deleteTimer = 1;
 
     Harness harness =
@@ -136,26 +136,6 @@ public class IntegrationTests {
     Assert.assertTrue(
         IntegrationTests.arrayListContainsInclusive(
             testConsumer.messages, "Refined orbits with ids"));
-
-    Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Added orbitId 2 to trackId 0"));
-    Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Added orbitId 2 to trackId 1"));
-
-    Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Cleared orbit for id 2"));
-    Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Removed orbitId 2"));
-
-    Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Cleared track for trackId 0"));
-    Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Cleared track for trackId 1"));
   }
 
   @Test
