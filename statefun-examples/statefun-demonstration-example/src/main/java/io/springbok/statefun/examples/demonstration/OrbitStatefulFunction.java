@@ -106,7 +106,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
         Utilities.log(
             context,
             String.format("Orbit with id %s already deleted: %s", context.self().id(), e),
-            1);
+            2);
       }
     }
 
@@ -218,7 +218,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
             }
         }
       } catch (Exception e) {
-        Utilities.log(context, String.format("Not correlated orbits: %s", e), 1);
+        Utilities.log(context, String.format("Not correlated orbits: %s", e), 2);
       }
     }
 
