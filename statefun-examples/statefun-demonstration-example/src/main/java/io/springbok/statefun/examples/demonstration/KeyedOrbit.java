@@ -49,8 +49,12 @@ public class KeyedOrbit {
     this.trackIds = trackIds;
     tracks.forEach(
         track -> {
-          trackIds.add(track.trackId);
-          objectIds.add(track.objectId);
+          if (!trackIds.contains(track.trackId)) {
+            trackIds.add(track.trackId);
+          }
+          if (!objectIds.contains(track.objectId)) {
+            objectIds.add(track.objectId);
+          }
         });
   }
 
@@ -133,5 +137,29 @@ public class KeyedOrbit {
       return false;
     }
     return true;
+  }
+
+  // Redundancy is defined here as an orbit being comprised entirely with tracks contained in
+  // another orbit
+  // A return value of 0 - neither orbit is redundant
+  // A return value of 1 - orbit 1 is redundant OR both orbits are redundant (does not complete the
+  // check)
+  // A return value of 2 - orbit 2 is redundant
+  public static int checkRedundancy(KeyedOrbit keyedOrbit1, KeyedOrbit keyedOrbit2)
+      throws Exception {
+
+    ArrayList trackIds1 = new ArrayList(keyedOrbit1.trackIds);
+    ArrayList trackIds2 = new ArrayList(keyedOrbit2.trackIds);
+
+    trackIds1.removeAll(trackIds2);
+    trackIds2.removeAll(trackIds1);
+
+    if (trackIds1.size() == 0) {
+      return 1;
+    } else if (trackIds2.size() == 0) {
+      return 2;
+    } else {
+      return 0;
+    }
   }
 }

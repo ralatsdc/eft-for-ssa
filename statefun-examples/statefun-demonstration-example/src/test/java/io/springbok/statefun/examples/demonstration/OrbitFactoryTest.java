@@ -11,7 +11,7 @@ public class OrbitFactoryTest {
     ApplicationEnvironment.setPathProperties();
     TrackGenerator trackGenerator = new TrackGenerator();
     trackGenerator.init();
-    trackGenerator.finitePropagation();
+    trackGenerator.finitePropagation(1);
 
     ArrayList<String> singleIdMessages = trackGenerator.getMessagesById(25875);
 

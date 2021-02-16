@@ -11,6 +11,7 @@ public class ApplicationProperties {
   private static Long deleteTimer = null;
   private static Integer trackCutoff = null;
   private static Integer logLevel = null;
+  private static Boolean correlateByObject = null;
 
   public static Properties getProperties() throws Exception {
     if (properties == null) {
@@ -58,5 +59,12 @@ public class ApplicationProperties {
       logLevel = Integer.parseInt(getProperties().getProperty("logLevel"));
     }
     return logLevel;
+  }
+
+  public static Boolean getCorrelateByObject() throws Exception {
+    if (correlateByObject == null) {
+      correlateByObject = Boolean.parseBoolean(getProperties().getProperty("correlateByObject"));
+    }
+    return correlateByObject;
   }
 }
