@@ -191,6 +191,29 @@ public class OrbitStatefulFunction implements StatefulFunction {
                       recievedKeyedOrbit.objectIds.get(0)),
                   1);
 
+              // Delete Orbits larger than trackcutoff on successful correlation
+              if (keyedOrbit.trackIds.size() > trackCutoff) {
+                Utilities.log(
+                    context,
+                    String.format(
+                        "Orbit with id %s has more tracks than trackCutoff value %s. Deleting orbit.",
+                        context.self().id(), trackCutoff),
+                    2);
+                context.send(context.self(), DeleteMessage.newBuilder().build());
+              }
+              if (recievedKeyedOrbit.trackIds.size() > trackCutoff) {
+                Utilities.log(
+                    context,
+                    String.format(
+                        "Orbit with id %s has more tracks than trackCutoff value %s. Deleting orbit.",
+                        recievedKeyedOrbit.orbitId, trackCutoff),
+                    2);
+                context.send(
+                    OrbitStatefulFunction.TYPE,
+                    recievedKeyedOrbit.orbitId,
+                    DeleteMessage.newBuilder().build());
+              }
+
               // CollectedTracksMessage gathers all Tracks from one orbit, and keeps the orbit of
               // the
               // other to refine with a least squares
