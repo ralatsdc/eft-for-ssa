@@ -76,10 +76,13 @@ def run_time_processing(options):
     created_ptn = re.compile('Created orbit for id')
     refined_ptn = re.compile('Refined orbits with ids')
     correlated_ptn = re.compile('Correlated orbits with ids')
+    cleared_ptn = re.compile('Cleared orbit for id')
 
     # Count number of orbits which exist after each event analyzed,
     # and print along with date and time components for analysis
     num_orb = 0
+    num_orb_message_dict = {}
+    num_orb_list = []
     processing_time_list = []
     date_time_list = []
 
@@ -104,6 +107,7 @@ def run_time_processing(options):
                     track_messages_dict[track_id] = track_messages
 
                 if created_ptn.search(line) is not None:
+                    num_orb += 1
                     orbit_id = re.search("(?<=Created orbit for id )(\d+)", line).group(0)
                     track_id = re.search("(?<=from track with id )(\d+)", line).group(0)
 
@@ -130,6 +134,7 @@ def run_time_processing(options):
                     track_messages_dict[track_id] = track_messages
 
                 if refined_ptn.search(line) is not None:
+                    num_orb += 1
                     orbit_id = re.search("(?<=Refined orbits with ids )(\d+)", line).group(0)
                     new_orbit_id = re.search("(?<=create orbit with id )(\d+)", line).group(0)
 
@@ -144,11 +149,19 @@ def run_time_processing(options):
                     track_messages.append(line)
                     track_messages_dict[track_id] = track_messages
 
+                if cleared_ptn.search(line) is not None:
+                    num_orb -= 1
+
+                num_orb_message_dict[line] = num_orb
+
             for message_list in track_messages_dict.values():
                 # print(message_list)
 
+                print(message_list)
                 earliest_message = message_list[0]
                 latest_message = message_list[1]
+
+                num_orb_list.append(num_orb_message_dict[earliest_message])
 
                 flds = earliest_message.split()
                 date = flds[0].replace("[", "")
@@ -184,8 +197,9 @@ def run_time_processing(options):
     date_time = np.array(date_time_list, dtype='datetime64[ms]')
     seconds = (date_time - date_time[0]).astype('timedelta64[s]')
     processing_time = np.array(processing_time_list, dtype='timedelta64[s]')
+    number_of_orbits = np.array(num_orb_list)
 
-    return seconds, processing_time
+    return seconds, processing_time, number_of_orbits
 
 
 def plot_processing_time(options, seconds, processing_time):
@@ -196,6 +210,20 @@ def plot_processing_time(options, seconds, processing_time):
     head, file_dir = os.path.split(head)
     ax.set_title(os.path.join(file_dir, file_name))
     ax.set_xlabel("Run time [s]")
+    ax.set_ylabel("Processing time [s]")
+    plt_file_path = options.log_file_path.replace(".log", ".png")
+    plt.savefig(plt_file_path)
+    plt.show()
+
+
+def plot_processing_time_as_count(options, number_of_orbits, processing_time):
+    # Plot number of orbits as a function of run seconds
+    fig, ax = plt.subplots()
+    ax.scatter(number_of_orbits, processing_time)
+    head, file_name = os.path.split(options.log_file_path)
+    head, file_dir = os.path.split(head)
+    ax.set_title(os.path.join(file_dir, file_name))
+    ax.set_xlabel("Number of Orbits")
     ax.set_ylabel("Processing time [s]")
     plt_file_path = options.log_file_path.replace(".log", ".png")
     plt.savefig(plt_file_path)
@@ -223,6 +251,12 @@ def main():
         action="store_true",
         help="plot time to complete track processing as a function of run time",
     )
+    parser.add_argument(
+        "-tc",
+        "--run-time-processing-as-function-of-count",
+        action="store_true",
+        help="plot time to complete track processing as a function of run time",
+    )
     options = parser.parse_args()
 
     # Process arguments
@@ -231,8 +265,12 @@ def main():
         plot_number_of_orbits(options, seconds, number_of_orbits)
 
     if options.run_time_processing:
-        seconds, processing_time = run_time_processing(options)
+        seconds, processing_time, number_of_orbits = run_time_processing(options)
         plot_processing_time(options, seconds, processing_time)
+
+    if options.run_time_processing_as_function_of_count:
+        seconds, processing_time, number_of_orbits = run_time_processing(options)
+        plot_processing_time_as_count(options, number_of_orbits, processing_time)
 
 
 if __name__ == "__main__":
