@@ -56,20 +56,6 @@ def count_number_of_orbits(options):
     return seconds, number_of_orbits
 
 
-def plot_number_of_orbits(options, seconds, number_of_orbits):
-    # Plot number of orbits as a function of run seconds
-    fig, ax = plt.subplots()
-    ax.plot(seconds, number_of_orbits)
-    head, file_name = os.path.split(options.log_file_path)
-    head, file_dir = os.path.split(head)
-    ax.set_title(os.path.join(file_dir, file_name))
-    ax.set_xlabel("Run time [s]")
-    ax.set_ylabel("Number of Orbits")
-    plt_file_path = options.log_file_path.replace(".log", ".png")
-    plt.savefig(plt_file_path)
-    plt.show()
-
-
 def run_time_processing(options):
     # Define patterns to identify events required for analysis
     track_ptn = re.compile('Created track for id')
@@ -157,7 +143,6 @@ def run_time_processing(options):
             for message_list in track_messages_dict.values():
                 # print(message_list)
 
-                print(message_list)
                 earliest_message = message_list[0]
                 latest_message = message_list[1]
 
@@ -196,10 +181,24 @@ def run_time_processing(options):
     # Convert date and time to seconds in the run, and numpy arrays
     date_time = np.array(date_time_list, dtype='datetime64[ms]')
     seconds = (date_time - date_time[0]).astype('timedelta64[s]')
-    processing_time = np.array(processing_time_list, dtype='timedelta64[s]')
+    processing_time = np.array(processing_time_list, dtype='timedelta64[ms]')
     number_of_orbits = np.array(num_orb_list)
 
     return seconds, processing_time, number_of_orbits
+
+
+def plot_number_of_orbits(options, seconds, number_of_orbits):
+    # Plot number of orbits as a function of run seconds
+    fig, ax = plt.subplots()
+    ax.plot(seconds, number_of_orbits)
+    head, file_name = os.path.split(options.log_file_path)
+    head, file_dir = os.path.split(head)
+    ax.set_title(os.path.join(file_dir, file_name))
+    ax.set_xlabel("Run time [s]")
+    ax.set_ylabel("Number of Orbits")
+    plt_file_path = options.log_file_path.replace(".log", "_c.png")
+    plt.savefig(plt_file_path)
+    plt.show()
 
 
 def plot_processing_time(options, seconds, processing_time):
@@ -210,8 +209,8 @@ def plot_processing_time(options, seconds, processing_time):
     head, file_dir = os.path.split(head)
     ax.set_title(os.path.join(file_dir, file_name))
     ax.set_xlabel("Run time [s]")
-    ax.set_ylabel("Processing time [s]")
-    plt_file_path = options.log_file_path.replace(".log", ".png")
+    ax.set_ylabel("Processing time [ms]")
+    plt_file_path = options.log_file_path.replace(".log", "_t.png")
     plt.savefig(plt_file_path)
     plt.show()
 
@@ -224,8 +223,8 @@ def plot_processing_time_as_count(options, number_of_orbits, processing_time):
     head, file_dir = os.path.split(head)
     ax.set_title(os.path.join(file_dir, file_name))
     ax.set_xlabel("Number of Orbits")
-    ax.set_ylabel("Processing time [s]")
-    plt_file_path = options.log_file_path.replace(".log", ".png")
+    ax.set_ylabel("Processing time [ms]")
+    plt_file_path = options.log_file_path.replace(".log", "_tc.png")
     plt.savefig(plt_file_path)
     plt.show()
 
