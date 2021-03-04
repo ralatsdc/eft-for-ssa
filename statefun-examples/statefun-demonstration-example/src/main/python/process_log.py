@@ -7,6 +7,8 @@ import os
 import re
 import datetime
 
+from src.main.python import hhh
+
 
 # import time
 
@@ -187,15 +189,27 @@ def run_time_processing(options):
     return seconds, processing_time, number_of_orbits
 
 
-def plot_number_of_orbits(options, seconds, number_of_orbits):
+def plot_count(options, seconds, number_of_orbits):
     # Plot number of orbits as a function of run seconds
     fig, ax = plt.subplots()
-    ax.plot(seconds, number_of_orbits)
+    ax.plot_count(seconds, number_of_orbits, label='actual')
     head, file_name = os.path.split(options.log_file_path)
     head, file_dir = os.path.split(head)
     ax.set_title(os.path.join(file_dir, file_name))
     ax.set_xlabel("Run time [s]")
     ax.set_ylabel("Number of Orbits")
+
+    if options.plot_with_simulation:
+        track_number, intervals = options.plot_with_simulation.split(',')
+        t, s_n = hhh.run(int(track_number), int(intervals))
+        l = len(s_n) * int(options.track_interval_time)
+
+        plt.xlabel('Track Interval')
+        plt.ylabel('Total States per Object')
+
+        plt.plot_count(range(0, l, int(options.track_interval_time)), s_n, label="expected")
+        plt.legend(loc='best')
+
     plt_file_path = options.log_file_path.replace(".log", "_c.png")
     plt.savefig(plt_file_path)
     plt.show()
@@ -204,7 +218,7 @@ def plot_number_of_orbits(options, seconds, number_of_orbits):
 def plot_processing_time(options, seconds, processing_time):
     # Plot number of orbits as a function of run seconds
     fig, ax = plt.subplots()
-    ax.plot(seconds, processing_time)
+    ax.plot_count(seconds, processing_time)
     head, file_name = os.path.split(options.log_file_path)
     head, file_dir = os.path.split(head)
     ax.set_title(os.path.join(file_dir, file_name))
@@ -256,12 +270,25 @@ def main():
         action="store_true",
         help="plot time to complete track processing as a function of run time",
     )
+    parser.add_argument(
+        "-s",
+        "--plot-with-simulation",
+        default="4,2",
+        help="plot processed log next to simulated expected values",
+    )
+
+    parser.add_argument(
+        "-i",
+        "--track-interval-time",
+        default="10",
+        help="interval in which tracks are produced in the simulation, in seconds",
+    )
     options = parser.parse_args()
 
     # Process arguments
     if options.count_number_of_orbits:
         seconds, number_of_orbits = count_number_of_orbits(options)
-        plot_number_of_orbits(options, seconds, number_of_orbits)
+        plot_count(options, seconds, number_of_orbits)
 
     if options.run_time_processing:
         seconds, processing_time, number_of_orbits = run_time_processing(options)
