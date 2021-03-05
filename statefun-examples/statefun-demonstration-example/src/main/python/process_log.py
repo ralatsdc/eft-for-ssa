@@ -192,7 +192,7 @@ def run_time_processing(options):
 def plot_count(options, seconds, number_of_orbits):
     # Plot number of orbits as a function of run seconds
     fig, ax = plt.subplots()
-    ax.plot_count(seconds, number_of_orbits, label='actual')
+    ax.plot(seconds, number_of_orbits, label='actual')
     head, file_name = os.path.split(options.log_file_path)
     head, file_dir = os.path.split(head)
     ax.set_title(os.path.join(file_dir, file_name))
@@ -207,7 +207,7 @@ def plot_count(options, seconds, number_of_orbits):
         plt.xlabel('Track Interval')
         plt.ylabel('Total States per Object')
 
-        plt.plot_count(range(0, l, int(options.track_interval_time)), s_n, label="expected")
+        plt.plot(range(0, l, int(options.track_interval_time)), s_n, label="expected")
         plt.legend(loc='best')
 
     plt_file_path = options.log_file_path.replace(".log", "_c.png")
@@ -218,7 +218,7 @@ def plot_count(options, seconds, number_of_orbits):
 def plot_processing_time(options, seconds, processing_time):
     # Plot number of orbits as a function of run seconds
     fig, ax = plt.subplots()
-    ax.plot_count(seconds, processing_time)
+    ax.plot(seconds, processing_time)
     head, file_name = os.path.split(options.log_file_path)
     head, file_dir = os.path.split(head)
     ax.set_title(os.path.join(file_dir, file_name))
