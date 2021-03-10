@@ -226,13 +226,20 @@ def plot_count(options, seconds, number_of_orbits):
         plt.plot(
             times,
             s_n, label="expected")
-        plt.legend(loc='best')
+        plt.legend(loc='best', frameon=False)
+
+    if options.show_tracks:
+        interval = int(options.track_interval_time)
+        time = range(0, seconds[-1].astype(int), interval)
+        tracks = range(0, len(time), 1)
+        plt.plot(time, tracks, label="Data")
+        plt.legend(loc='best', frameon=False)
+        plt.legend().get_texts()[0].set_text("Stored States")
 
     plt_file_path = options.log_file_path.replace(".log", "_c.png")
     plt.savefig(plt_file_path)
     plt.xlim(xmin=0)
     plt.ylim(ymin=0)
-    plt.legend(frameon=False)
     plt.show()
 
 
@@ -310,6 +317,12 @@ def main():
         "--object-number",
         default="1",
         help="number of objects included in the simulation. Include this with the -s argument",
+    )
+
+    parser.add_argument(
+        "--show-tracks",
+        action="store_true",
+        help="show tracks going into simulation as a function of time",
     )
     options = parser.parse_args()
 
