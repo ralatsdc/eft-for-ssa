@@ -7,7 +7,7 @@ import os
 import re
 import datetime
 
-from src.main.python import hhh
+import hhh
 
 
 # import time
@@ -44,7 +44,7 @@ def count_number_of_orbits(options):
                 time = flds[1].replace("]", "")
                 H, M, S = time.split(":")
                 msg = "{0} {1} {2} {3} {4} {5:.3f} {6}".format(y, m, d, H, M, float(S), num_orb)
-                print(msg)
+                # print(msg)
                 ofp.write(msg + '\n')
                 # time.sleep(0.001)
                 num_orb_list.append(num_orb)
@@ -196,22 +196,43 @@ def plot_count(options, seconds, number_of_orbits):
     head, file_name = os.path.split(options.log_file_path)
     head, file_dir = os.path.split(head)
     ax.set_title(os.path.join(file_dir, file_name))
-    ax.set_xlabel("Run time [s]")
-    ax.set_ylabel("Number of Orbits")
+    ax.set_xlabel("Time (s)")
+    plt.ylabel('Total States')
 
     if options.plot_with_simulation:
-        track_number, intervals = options.plot_with_simulation.split(',')
-        t, s_n = hhh.run(int(track_number), int(intervals))
-        l = len(s_n) * int(options.track_interval_time)
+        interval, track_number = options.plot_with_simulation.split(',')
+        t, s_n = hhh.run(int(track_number), int(interval))
 
-        plt.xlabel('Track Interval')
-        plt.ylabel('Total States per Object')
+        # calculate time step for simulated values, based on the track interval and the number of objects used
+        step = int(options.track_interval_time) * int(options.object_number)
 
-        plt.plot(range(0, l, int(options.track_interval_time)), s_n, label="expected")
+        end_time = seconds[-1].astype(int)
+
+        times = range(0, end_time + step, step)
+
+        # modify s_n to match scale of docker simulation
+        s_n = [int(s) * int(options.object_number) for s in s_n]
+
+        # find the number of constant data points after stabilization
+        data_difference = times[-1] // step - len(s_n)
+
+        # ensure line starts at 0
+        s_n.insert(0, 0)
+
+        # add constant data points to end of simulated values
+        for i in range(0, data_difference):
+            s_n.append(s_n[-1])
+
+        plt.plot(
+            times,
+            s_n, label="expected")
         plt.legend(loc='best')
 
     plt_file_path = options.log_file_path.replace(".log", "_c.png")
     plt.savefig(plt_file_path)
+    plt.xlim(xmin=0)
+    plt.ylim(ymin=0)
+    plt.legend(frameon=False)
     plt.show()
 
 
@@ -222,8 +243,8 @@ def plot_processing_time(options, seconds, processing_time):
     head, file_name = os.path.split(options.log_file_path)
     head, file_dir = os.path.split(head)
     ax.set_title(os.path.join(file_dir, file_name))
-    ax.set_xlabel("Run time [s]")
-    ax.set_ylabel("Processing time [ms]")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Processing Time (ms)")
     plt_file_path = options.log_file_path.replace(".log", "_t.png")
     plt.savefig(plt_file_path)
     plt.show()
@@ -236,8 +257,8 @@ def plot_processing_time_as_count(options, number_of_orbits, processing_time):
     head, file_name = os.path.split(options.log_file_path)
     head, file_dir = os.path.split(head)
     ax.set_title(os.path.join(file_dir, file_name))
-    ax.set_xlabel("Number of Orbits")
-    ax.set_ylabel("Processing time [ms]")
+    ax.set_xlabel("Total States")
+    ax.set_ylabel("Processing Time (s)")
     plt_file_path = options.log_file_path.replace(".log", "_tc.png")
     plt.savefig(plt_file_path)
     plt.show()
@@ -273,15 +294,22 @@ def main():
     parser.add_argument(
         "-s",
         "--plot-with-simulation",
-        default="4,2",
-        help="plot processed log next to simulated expected values",
+        # default="4,2",
+        help="plot processed log next to simulated expected values. Values are expiration and delete interval, comma separated: i.e.: 4,2 represents 4 delete interval, 2 track number",
     )
 
     parser.add_argument(
         "-i",
         "--track-interval-time",
         default="10",
-        help="interval in which tracks are produced in the simulation, in seconds",
+        help="interval in which tracks are produced in the simulation, in seconds. Include this with the -s argument",
+    )
+
+    parser.add_argument(
+        "-n",
+        "--object-number",
+        default="1",
+        help="number of objects included in the simulation. Include this with the -s argument",
     )
     options = parser.parse_args()
 
