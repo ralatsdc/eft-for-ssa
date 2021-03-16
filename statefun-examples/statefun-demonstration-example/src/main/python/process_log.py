@@ -7,7 +7,7 @@ import os
 import re
 import datetime
 
-import hhh
+import utilities
 
 
 # import time
@@ -201,7 +201,7 @@ def plot_count(options, seconds, number_of_orbits):
 
     if options.plot_with_simulation:
         interval, track_number = options.plot_with_simulation.split(',')
-        t, s_n = hhh.run(int(track_number), int(interval))
+        t, s_n = utilities.run(int(track_number), int(interval))
 
         # calculate time step for simulated values, based on the track interval and the number of objects used
         step = int(options.track_interval_time) * int(options.object_number)
