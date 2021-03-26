@@ -62,10 +62,24 @@ public class OrbitIdManager implements StatefulFunction {
 
       Long id = createNewId();
 
-      // Send the incoming track to save and process at the OrbitStatefulFunction that corresponds
-      // to
-      // the just created id
-      context.send(OrbitStatefulFunction.TYPE, String.valueOf(id), collectedTracksMessage);
+      // Send the incoming track to collect all the tracks associated with the new ID
+      ArrayList<String> tracksToGather =
+          Utilities.stringToArrayList(collectedTracksMessage.getTracksToGather());
+
+      CollectedTracksMessage newCollectedTracksMessage =
+          CollectedTracksMessage.newBuilder()
+              .setKeyedOrbit1(collectedTracksMessage.getKeyedOrbit1())
+              .setKeyedOrbit2(collectedTracksMessage.getKeyedOrbit2())
+              .setTracksToGather(collectedTracksMessage.getTracksToGather())
+              .setIterator(1)
+              .setOrbitId(id.toString())
+              .setDeleteKeyedOrbit1(collectedTracksMessage.getDeleteKeyedOrbit1())
+              .setDeleteKeyedOrbit2(collectedTracksMessage.getDeleteKeyedOrbit2())
+              .build();
+
+      String nextTrack = tracksToGather.get(0);
+
+      context.send(TrackStatefulFunction.TYPE, nextTrack, newCollectedTracksMessage);
 
       // Message out that orbit id was created
       Utilities.log(context, String.format("Created orbitId %s", id), 2);

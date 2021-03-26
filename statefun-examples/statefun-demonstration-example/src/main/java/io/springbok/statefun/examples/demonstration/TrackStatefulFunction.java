@@ -76,18 +76,9 @@ public class TrackStatefulFunction implements StatefulFunction {
         NewOrbitIdMessage newOrbitIdMessage = (NewOrbitIdMessage) input;
 
         // Get the trackState and update it with the new id
-        Track track = trackState.get();
-        track.addOrbitId(newOrbitIdMessage.getId());
 
-        // Send message out that orbitId was added
-        Utilities.log(
-            context,
-            String.format(
-                "Added orbitId %s to trackId %s", newOrbitIdMessage.getId(), track.trackId),
-            2);
+        addOrbitId(context, newOrbitIdMessage.getId());
 
-        // Set persisted state
-        trackState.set(track);
       } catch (Exception e) {
         Utilities.log(
             context,
@@ -173,6 +164,9 @@ public class TrackStatefulFunction implements StatefulFunction {
             String.format("Added track with id %s to collectedTracksMessage", track.trackId),
             2);
 
+        // Add orbit to trackState
+        addOrbitId(context, collectedTracksMessage.getOrbitId());
+
       } catch (Exception e) {
         collectedTracks = collectedTracksMessage.getCollectedTracks();
         Utilities.log(
@@ -198,6 +192,9 @@ public class TrackStatefulFunction implements StatefulFunction {
                   .setTracksToGather(Utilities.arrayListToString(tracksToGather))
                   .setCollectedTracks(collectedTracks)
                   .setIterator(collectedTracksMessage.getIterator() + 1)
+                  .setOrbitId(collectedTracksMessage.getOrbitId())
+                  .setDeleteKeyedOrbit1(collectedTracksMessage.getDeleteKeyedOrbit1())
+                  .setDeleteKeyedOrbit2(collectedTracksMessage.getDeleteKeyedOrbit2())
                   .build();
 
           context.send(
@@ -211,11 +208,28 @@ public class TrackStatefulFunction implements StatefulFunction {
                   .setKeyedOrbit1(collectedTracksMessage.getKeyedOrbit1())
                   .setKeyedOrbit2(collectedTracksMessage.getKeyedOrbit2())
                   .setCollectedTracks(collectedTracks)
+                  .setDeleteKeyedOrbit1(collectedTracksMessage.getDeleteKeyedOrbit1())
+                  .setDeleteKeyedOrbit2(collectedTracksMessage.getDeleteKeyedOrbit2())
                   .build();
           // Route to orbitIdManager to get an ID for the new orbit
-          context.send(OrbitIdManager.TYPE, "orbit-id-manager", newCollectedTracksMessage);
+          context.send(
+              OrbitStatefulFunction.TYPE,
+              collectedTracksMessage.getOrbitId(),
+              newCollectedTracksMessage);
         }
       }
     }
+  }
+
+  private void addOrbitId(Context context, String orbitId) {
+    Track track = trackState.get();
+    track.addOrbitId(orbitId);
+
+    // Send message out that orbitId was added
+    Utilities.log(
+        context, String.format("Added orbitId %s to trackId %s", orbitId, track.trackId), 2);
+
+    // Set persisted state
+    trackState.set(track);
   }
 }
