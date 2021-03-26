@@ -136,6 +136,10 @@ public class IntegrationTests {
     Assert.assertTrue(
         IntegrationTests.arrayListContainsInclusive(
             testConsumer.messages, "Refined orbits with ids"));
+
+    // Test that Tracks aren't being deleted prematurely
+    Assert.assertFalse(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "cannot add orbitId"));
   }
 
   @Test
