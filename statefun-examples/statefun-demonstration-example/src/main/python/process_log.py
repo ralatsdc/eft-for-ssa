@@ -15,9 +15,9 @@ import hhh
 
 def count_number_of_orbits(options):
     # Define patterns to identify events required for analysis
-    created_ptn = re.compile('Created orbit for id')
-    refined_ptn = re.compile('Refined orbits with ids')
-    cleared_ptn = re.compile('Cleared orbit for id')
+    created_ptn = re.compile('Created orbitId')
+    refined_ptn = re.compile('Refined orbitIds')
+    cleared_ptn = re.compile('Cleared orbitId')
 
     # Count number of orbits which exist after each event analyzed,
     # and print along with date and time components for analysis

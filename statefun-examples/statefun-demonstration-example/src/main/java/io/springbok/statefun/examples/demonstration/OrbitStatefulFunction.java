@@ -9,6 +9,8 @@ import org.apache.flink.statefun.sdk.state.PersistedValue;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /*
  TrackStatefulFunction stores instances of the KeyedOrbit class built from the data it receives from the OrbitIdManager.
@@ -64,7 +66,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
         Utilities.log(
             context,
             String.format(
-                "Created orbit for id %s from track with id %s: %s",
+                "Created orbitId %s from trackId %s: %s",
                 keyedOrbit.orbitId, track.trackId, keyedOrbit.orbit.toString()),
             1);
 
@@ -74,7 +76,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
         Utilities.log(
             context,
             String.format(
-                "Orbit with id %s failed to create. Discarding track with id %s: %s",
+                "OrbitId %s failed to create. Discarding trackId %s: %s",
                 context.self().id(), track.trackId, e),
             1);
         context.send(
@@ -92,9 +94,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
         orbitState.clear();
       } catch (NullPointerException e) {
         Utilities.log(
-            context,
-            String.format("Orbit with id %s already deleted: %s", context.self().id(), e),
-            2);
+            context, String.format("OrbitId %s already deleted: %s", context.self().id(), e), 2);
       }
     }
 
@@ -123,7 +123,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
               Utilities.log(
                   context,
                   String.format(
-                      "Orbit with id %s is redundant with orbit with id %s. Orbit is smaller than track cutoff. Not deleting",
+                      "OrbitId %s is redundant with orbitId %s. Orbit is smaller than track cutoff. Not deleting",
                       context.self().id(), recievedKeyedOrbit.orbitId),
                   2);
             } else {
@@ -131,7 +131,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
               Utilities.log(
                   context,
                   String.format(
-                      "Orbit with id %s is redundant with orbit with id %s. Sending delete message",
+                      "OrbitId %s is redundant with orbitId %s. Sending delete message",
                       context.self().id(), recievedKeyedOrbit.orbitId),
                   2);
               context.send(context.self(), DeleteMessage.newBuilder().build());
@@ -145,7 +145,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
               Utilities.log(
                   context,
                   String.format(
-                      "Orbit with id %s is redundant with orbit with id %s. Orbit is smaller than track cutoff. Not deleting",
+                      "OrbitId %s is redundant with orbitId %s. Orbit is smaller than track cutoff. Not deleting",
                       recievedKeyedOrbit.orbitId, context.self().id()),
                   2);
             } else {
@@ -153,7 +153,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
               Utilities.log(
                   context,
                   String.format(
-                      "Orbit with id %s is redundant with orbit with id %s. Sending delete message",
+                      "OrbitId %s is redundant with orbitId %s. Sending delete message",
                       recievedKeyedOrbit.orbitId, context.self().id()),
                   2);
               context.send(
@@ -172,7 +172,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
               Utilities.log(
                   context,
                   String.format(
-                      "Correlated orbits with ids %s and %s",
+                      "Correlated orbitIds %s and %s",
                       recievedKeyedOrbit.orbitId,
                       keyedOrbit.orbitId,
                       recievedKeyedOrbit.objectIds.get(0),
@@ -188,7 +188,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
                 Utilities.log(
                     context,
                     String.format(
-                        "Orbit with id %s has more tracks than trackCutoff value %s. Scheduling orbit for deletion.",
+                        "OrbitId %s has more tracks than trackCutoff value %s. Scheduling orbit for deletion.",
                         context.self().id(), trackCutoff),
                     2);
                 deleteKeyedOrbit1 = true;
@@ -197,20 +197,18 @@ public class OrbitStatefulFunction implements StatefulFunction {
                 Utilities.log(
                     context,
                     String.format(
-                        "Orbit with id %s has more tracks than trackCutoff value %s. Scheduling orbit for deletion.",
+                        "OrbitId %s has more tracks than trackCutoff value %s. Scheduling orbit for deletion.",
                         recievedKeyedOrbit.orbitId, trackCutoff),
                     2);
                 deleteKeyedOrbit2 = true;
-                context.send(
-                    OrbitStatefulFunction.TYPE,
-                    recievedKeyedOrbit.orbitId,
-                    DeleteMessage.newBuilder().build());
               }
 
               // CollectedTracksMessage gathers all Tracks from one orbit, and keeps the orbit of
               // the
               // other to refine with a least squares
-              ArrayList<String> trackIds = new ArrayList<>(keyedOrbit.trackIds);
+              Set<String> trackIdsSet = new LinkedHashSet<>(keyedOrbit.trackIds);
+              trackIdsSet.addAll(recievedKeyedOrbit.trackIds);
+              ArrayList<String> trackIds = new ArrayList<>(trackIdsSet);
 
               // Build collected tracks message
               CollectedTracksMessage collectedTracksMessage =
@@ -229,7 +227,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
               Utilities.log(
                   context,
                   String.format(
-                      "Not correlated orbits with ids %s and %s",
+                      "Not correlated orbitIds %s and %s",
                       recievedKeyedOrbit.orbitId, keyedOrbit.orbitId),
                   3);
             }
@@ -273,7 +271,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
         Utilities.log(
             context,
             String.format(
-                "Refined orbits with ids %s and %s to create orbit with id %s: %s",
+                "Refined orbitIds %s and %s to create orbitId %s: %s",
                 keyedOrbit1.orbitId,
                 keyedOrbit2.orbitId,
                 newOrbit.orbitId,
@@ -307,15 +305,14 @@ public class OrbitStatefulFunction implements StatefulFunction {
         sendSelfDelayedDeleteMessage(context);
 
         // Send message out that orbit was created and saved
-        Utilities.log(
-            context, String.format("Created refined orbit for id %s", newOrbit.orbitId), 2);
+        Utilities.log(context, String.format("Created refined orbitId %s", newOrbit.orbitId), 2);
 
         orbitState.set(newOrbit);
       } catch (NullPointerException e) {
         Utilities.log(
             context,
             String.format(
-                "Orbit refine for orbit id %s failed with exception %s - did you forget to set properties?",
+                "Orbit refine for orbitId %s failed with exception %s - did you forget to set properties?",
                 context.self().id(), e),
             1);
 
@@ -328,7 +325,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
         // Send message out that orbit refine failed
         Utilities.log(
             context,
-            String.format("Orbit refine for orbit id %s failed: %s", context.self().id(), e),
+            String.format("Orbit refine for orbitId %s failed: %s", context.self().id(), e),
             1);
 
         // Delete this orbit from Tracks' and OrbitIdManager orbit list
@@ -365,6 +362,6 @@ public class OrbitStatefulFunction implements StatefulFunction {
         });
 
     // Send message out that this orbit was destroyed
-    Utilities.log(context, String.format("Cleared orbit for id %s", orbitId), 1);
+    Utilities.log(context, String.format("Cleared orbitId %s", orbitId), 1);
   }
 }

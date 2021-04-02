@@ -126,15 +126,14 @@ public class OrbitIdManager implements StatefulFunction {
               maxFormedOrbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId1());
               Utilities.log(
                   context,
-                  String.format(
-                      "Removed orbit with id: %s", newRefinedOrbitIdMessage.getOldOrbitId1()),
+                  String.format("Removed orbitId: %s", newRefinedOrbitIdMessage.getOldOrbitId1()),
                   3);
             }
           } catch (Exception e) {
             Utilities.log(
                 context,
                 String.format(
-                    "Orbit with id %s is not registered with OrbitIdManager - delete canceled: %s",
+                    "OrbitId %s is not registered with OrbitIdManager - delete canceled: %s",
                     newRefinedOrbitIdMessage.getOldOrbitId1(), e),
                 1);
           }
@@ -143,15 +142,14 @@ public class OrbitIdManager implements StatefulFunction {
               maxFormedOrbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId2());
               Utilities.log(
                   context,
-                  String.format(
-                      "Removed orbit with id: %s", newRefinedOrbitIdMessage.getOldOrbitId1()),
+                  String.format("Removed orbitId: %s", newRefinedOrbitIdMessage.getOldOrbitId1()),
                   3);
             }
           } catch (Exception e) {
             Utilities.log(
                 context,
                 String.format(
-                    "Orbit with id %s is not registered with OrbitIdManager - delete canceled: %s",
+                    "OrbitId %s is not registered with OrbitIdManager - delete canceled: %s",
                     newRefinedOrbitIdMessage.getOldOrbitId2(), e),
                 1);
           }
@@ -161,7 +159,7 @@ public class OrbitIdManager implements StatefulFunction {
             Utilities.log(
                 context,
                 String.format(
-                    "Orbit deletion with ids %s and %s failed: %s",
+                    "OrbitIds %s and %s deletion failed: %s",
                     newRefinedOrbitIdMessage.getOldOrbitId1(),
                     newRefinedOrbitIdMessage.getOldOrbitId2(),
                     e),
@@ -253,7 +251,7 @@ public class OrbitIdManager implements StatefulFunction {
         Utilities.log(
             context,
             String.format(
-                "Orbit with id %s is not registered with OrbitIdManager - delete canceled: %s",
+                "OrbitId %s is not registered with OrbitIdManager - delete canceled: %s",
                 removeOrbitIdMessage.getStringContent(), e),
             1);
       }

@@ -55,24 +55,20 @@ public class IntegrationTests {
     Assert.assertTrue(
         IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Created trackId 0"));
     Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Created track for id 0"));
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Created trackId 0"));
     Assert.assertTrue(
         IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Created orbitId 0"));
     Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Created orbit for id 0"));
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Created orbitId 0"));
     Assert.assertTrue(
         IntegrationTests.arrayListContainsInclusive(
             testConsumer.messages, "Added orbitId 0 to trackId 0"));
     Assert.assertTrue(
         IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Saved orbitId 0"));
     Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Cleared orbit for id 0"));
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Cleared orbitId 0"));
     Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Cleared track for trackId 0"));
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Cleared trackId 0"));
     Assert.assertTrue(
         IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Removed orbitId 0"));
   }
@@ -115,27 +111,32 @@ public class IntegrationTests {
     // Test correlation
     Assert.assertTrue(
         IntegrationTests.arrayListContainsInclusive(
-                testConsumer.messages, "Correlated orbits with ids 1 and 0")
+                testConsumer.messages, "Correlated orbitIds 1 and 0")
             || IntegrationTests.arrayListContainsInclusive(
-                testConsumer.messages, "Correlated orbits with ids 0 and 1"));
+                testConsumer.messages, "Correlated orbitIds 0 and 1"));
     Assert.assertFalse(
         IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Correlated orbits with ids 0 and 0"));
+            testConsumer.messages, "Correlated orbitIds 0 and 0"));
     Assert.assertFalse(
         IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Correlated orbits with ids 1 and 1"));
+            testConsumer.messages, "Correlated orbitIds 1 and 1"));
 
     // Test track collection
     Assert.assertTrue(
         IntegrationTests.arrayListContainsInclusive(
-                testConsumer.messages, "Added track with id 1 to collectedTracksMessage")
+                testConsumer.messages, "Added trackId 1 to collectedTracksMessage")
             || IntegrationTests.arrayListContainsInclusive(
-                testConsumer.messages, "Added track with id 0 to collectedTracksMessage"));
+                testConsumer.messages, "Added trackId 0 to collectedTracksMessage"));
 
     // Test new orbit creation flow
     Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Refined orbits with ids"));
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Refined orbitIds"));
+
+    // Ensure tracks are clearing properly
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Cleared trackId 0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Cleared trackId 1"));
 
     // Test that Tracks aren't being deleted prematurely
     Assert.assertFalse(
