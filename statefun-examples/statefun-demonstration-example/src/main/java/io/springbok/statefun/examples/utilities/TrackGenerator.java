@@ -61,7 +61,7 @@ public class TrackGenerator {
   public TrackGenerator(String tlePath) throws Exception {
 
     // TODO: verify the input is a TLE
-    this.tlePath = tlePath;
+    tlePath = tlePath;
     orekitPath = System.getProperty("OREKIT_PATH");
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
@@ -70,7 +70,7 @@ public class TrackGenerator {
   public TrackGenerator(String tlePath, String orekitPath) throws Exception {
 
     // TODO: verify the input is a TLE
-    this.tlePath = tlePath;
+    tlePath = tlePath;
     this.orekitPath = orekitPath;
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
@@ -85,7 +85,7 @@ public class TrackGenerator {
 
     // Add tles to list
     final File tleData = new File(tlePath);
-    tles = convertTLES(tleData);
+    tles = TLEReader.readTLEs(tleData);
 
     // Set up propagator
     final GillIntegrator gillIntegrator = new GillIntegrator(largeStep);
@@ -144,6 +144,7 @@ public class TrackGenerator {
     Collections.sort(
         messages,
         new Comparator<String>() {
+          @Override
           public int compare(String msgOne, String msgTwo) {
             String[] fldsOne = msgOne.split(",");
             String[] fldsTwo = msgTwo.split(",");
@@ -297,6 +298,7 @@ public class TrackGenerator {
     Collections.sort(
         tles,
         new Comparator<TLE>() {
+          @Override
           public int compare(TLE tleOne, TLE tleTwo) {
             return tleOne.getDate().compareTo(tleTwo.getDate());
           }

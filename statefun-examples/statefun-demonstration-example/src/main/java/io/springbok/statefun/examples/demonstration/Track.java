@@ -3,6 +3,7 @@ package io.springbok.statefun.examples.demonstration;
 import org.hipparchus.geometry.euclidean.threed.Vector3D;
 import org.orekit.estimation.measurements.ObservableSatellite;
 import org.orekit.estimation.measurements.Position;
+import org.orekit.orbits.Orbit;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
@@ -24,6 +25,40 @@ public class Track {
   private ArrayList<String> orbitIds;
 
   private static TimeScale utc = TimeScalesFactory.getUTC();
+
+  // TODO: add sensor id, object id
+  public Track(Orbit orbit, int satelliteId) {
+    msgTime = orbit.getDate();
+    sensorId = 0;
+    objectId = satelliteId;
+
+    // TODO: put sigma and baseweight in properties file
+
+    final double sigmaP = 1.;
+    final double baseWeight = 1.;
+    // This value is never used
+    final ObservableSatellite satelliteIndex = new ObservableSatellite(satelliteId);
+
+    Position position =
+        new Position(
+            orbit.getDate(),
+            orbit.getPVCoordinates().getPosition(),
+            sigmaP,
+            baseWeight,
+            satelliteIndex);
+
+    positions.add(position);
+
+    // TODO: generate RCS in a more specified way.
+    double rcs = 5;
+    rcsArr.add(rcs);
+
+    messageUUID = UUID.randomUUID();
+    trackId = null;
+    orbitIds = new ArrayList<>();
+  }
+
+  public Track() {}
 
   @Override
   public String toString() {

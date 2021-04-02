@@ -22,7 +22,8 @@ public class KafkaTrackProducer {
   private static Iterator<TLE> tleIterator = null;
   private static double stepSize = 0.0;
   private static double timePassed = 0.0;
-  private static long tracksPerSecond = 3;
+  private static long TracksPerTenSeconds = 1;
+  private static long durationWeeks = 1;
 
   public static void main(String[] args) {
 
@@ -39,7 +40,7 @@ public class KafkaTrackProducer {
       System.exit(1);
     }
     if (cmd.hasOption("t")) {
-      tracksPerSecond = Long.parseLong(cmd.getOptionValue("t"));
+      TracksPerTenSeconds = Long.parseLong(cmd.getOptionValue("t"));
     }
 
     // Set Orekit, TLE, and properties path
@@ -86,16 +87,17 @@ public class KafkaTrackProducer {
               }
             };
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-        executor.scheduleAtFixedRate(sendMessage, 0, 1000 / tracksPerSecond, TimeUnit.MILLISECONDS);
+        executor.scheduleAtFixedRate(
+            sendMessage, 0, 1000 / TracksPerTenSeconds, TimeUnit.MILLISECONDS);
 
       } else {
         // Produce a finite track message stream
-        ArrayList<String> trackMessages = trackGenerator.finitePropagation(1);
+        ArrayList<String> trackMessages = trackGenerator.finitePropagation(durationWeeks);
         for (String message : trackMessages) {
           producer.send(new ProducerRecord<>("tracks", message));
           producer.flush();
           System.out.println("Sent Message: " + message);
-          Thread.sleep(10000 / tracksPerSecond);
+          Thread.sleep(10000 / TracksPerTenSeconds);
         }
       }
     } catch (Exception e) {
