@@ -119,16 +119,23 @@ public class SatelliteStatefulFunction implements StatefulFunction {
               kepler.addEventDetector(sensorVisibility);
             });
 
+        // Propagate to trigger event only
+        // Duration in seconds - 24 hour periods. Propagation will automatically stop once
+        // visibility is determined, and will not continue for the entire duration
         SpacecraftState finalState =
-            kepler.propagate(new AbsoluteDate(orbitState.get().getDate(), 5000.));
+            kepler.propagate(new AbsoluteDate(orbitState.get().getDate(), 86400.));
 
-        Utilities.log(context, String.format("Satellite State: %s", orbitState.get()), 1);
-        Utilities.log(context, String.format("Time: %s", orbitState.get().getDate()), 1);
+        Utilities.log(
+            context,
+            String.format(
+                "Satellite State %s: %s\n\t\t\t\tTime: %s",
+                context.self().id(), orbitState.get(), orbitState.get().getDate()),
+            1);
       } catch (Exception e) {
         Utilities.log(
             context,
             String.format(
-                "Satellite with ID failed to wake up: %s. Exception: %s", context.self().id(), e),
+                "Satellite with ID %s failed to wake up: Exception: %s", context.self().id(), e),
             1);
       }
     }
@@ -155,8 +162,11 @@ public class SatelliteStatefulFunction implements StatefulFunction {
           new TopocentricFrame(earth, sensor, sensorInfoMessage.getSensorId());
 
       // TODO: determine use of these values
+      // Maximum checking interval (seconds)
       double maxcheck = 60.0;
+      // Maximum divergence threshold (seconds)
       double threshold = 0.001;
+      // Min elevation for detection (rad)
       double elevation = FastMath.toRadians(5.);
       // TODO: handle logic of sending out tracks in this lambda function
       EventDetector sensorVisibility =
@@ -169,6 +179,8 @@ public class SatelliteStatefulFunction implements StatefulFunction {
                             + detector.getTopocentricFrame().getName()
                             + (increasing ? " begins at " : " ends at ")
                             + s.getDate());
+                    System.out.println(detector.getTopocentricFrame().getZenith());
+                    System.out.println(s.getPVCoordinates().toString());
                     return increasing ? Action.CONTINUE : Action.STOP;
                   });
 

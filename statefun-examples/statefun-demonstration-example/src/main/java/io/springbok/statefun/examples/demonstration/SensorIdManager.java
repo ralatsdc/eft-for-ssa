@@ -50,7 +50,7 @@ public class SensorIdManager implements StatefulFunction {
 
       // TODO: add check (in SatelliteStatefulFunction) to ensure sensor is right type for that
       // satellite
-      sendToSatellites(context, satelliteIdsState.getOrDefault(ArrayList::new), sensorIn);
+      sendToSatellites(context, satelliteIdsState.getOrDefault(ArrayList::new), sensorInfoMessage);
 
       context.send(SensorStatefulFunction.TYPE, sensorInfoMessage.getSensorId(), sensorInfoMessage);
       Utilities.log(
@@ -99,12 +99,12 @@ public class SensorIdManager implements StatefulFunction {
   }
 
   private void sendToSatellites(
-      Context context, ArrayList<String> satelliteIds, SensorIn sensorIn) {
+      Context context, ArrayList<String> satelliteIds, SensorInfoMessage sensorInfoMessage) {
 
     // Send new satellite id to all existing sensors to save
     satelliteIds.forEach(
         id -> {
-          context.send(SatelliteStatefulFunction.TYPE, id, sensorIn);
+          context.send(SatelliteStatefulFunction.TYPE, id, sensorInfoMessage);
         });
   }
 }
