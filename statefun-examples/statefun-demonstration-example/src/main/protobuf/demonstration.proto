@@ -95,6 +95,23 @@ message CollectedTracksMessage {
 
 message DeleteMessage {
 }
+message NewEventSourceMessage {
+  string id = 1;
+}
+
+message NewEventMessage {
+  string objectId = 1;
+  string time = 2;
+}
+
+message FireEventMessage {
+  string objectId = 1;
+  string time = 2;
+}
+
+message GetNextEventMessage {
+  string time = 1;
+}
 
 message DelayedWakeUpMessage {
 }

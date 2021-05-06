@@ -50,5 +50,6 @@ public class DemonstrationModule implements StatefulFunctionModule {
     binder.bindFunctionProvider(
         SensorStatefulFunction.TYPE, unused -> new SensorStatefulFunction());
     binder.bindFunctionProvider(SensorIdManager.TYPE, unused -> new SensorIdManager());
+    binder.bindFunctionProvider(EventManager.TYPE, unused -> new EventManager());
   }
 }

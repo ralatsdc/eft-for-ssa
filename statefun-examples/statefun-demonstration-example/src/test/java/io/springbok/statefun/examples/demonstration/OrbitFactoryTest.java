@@ -9,7 +9,9 @@ public class OrbitFactoryTest {
   public static void main(String[] args) throws Exception {
 
     ApplicationEnvironment.setPathProperties();
-    TrackGenerator trackGenerator = new TrackGenerator();
+    String tlePath = System.getProperty("TLE_PATH");
+
+    TrackGenerator trackGenerator = new TrackGenerator(tlePath);
     trackGenerator.init();
     trackGenerator.finitePropagation(1);
 
