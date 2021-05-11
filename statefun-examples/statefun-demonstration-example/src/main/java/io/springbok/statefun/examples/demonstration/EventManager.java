@@ -1,9 +1,6 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.demonstration.generated.FireEventMessage;
-import io.springbok.statefun.examples.demonstration.generated.GetNextEventMessage;
-import io.springbok.statefun.examples.demonstration.generated.NewEventMessage;
-import io.springbok.statefun.examples.demonstration.generated.NewEventSourceMessage;
+import io.springbok.statefun.examples.demonstration.generated.*;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -15,7 +12,6 @@ import org.orekit.time.TimeScalesFactory;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 
 public class EventManager implements StatefulFunction {
 
@@ -44,46 +40,93 @@ public class EventManager implements StatefulFunction {
     if (input instanceof NewEventMessage) {
       NewEventMessage newEventMessage = (NewEventMessage) input;
 
-      ArrayList<NewEventMessage> events =
-          eventsState.getOrDefault(new ArrayList<NewEventMessage>());
+      try {
+        ArrayList<NewEventMessage> events =
+            eventsState.getOrDefault(new ArrayList<NewEventMessage>());
 
-      events.add(newEventMessage);
+        Utilities.log(
+            context,
+            String.format(
+                "Recieved Event: %s, id %s, date %s",
+                newEventMessage.getEventType(),
+                newEventMessage.getObjectId(),
+                newEventMessage.getTime()),
+            3);
 
-      // TODO: sort list by time
+        // Handle saving event by event type
+        if (newEventMessage.getEventType().equals("satellite-visible")) {
+          events.add(newEventMessage);
+        } else if (newEventMessage.getEventType().equals("delete-orbit")) {
 
-      Collections.sort(
-          events,
-          new Comparator<NewEventMessage>() {
-            @Override
-            public int compare(NewEventMessage message1, NewEventMessage message2) {
+          // Delete timer in days
+          long deleteTimer = ApplicationProperties.getDeleteTimer();
+          // Current orbit time shifted by seconds
+          AbsoluteDate deleteDate =
+              new AbsoluteDate(newEventMessage.getTime(), TimeScalesFactory.getUTC())
+                  .shiftedBy(deleteTimer * 86400);
+
+          NewEventMessage newEventMessage1 =
+              NewEventMessage.newBuilder()
+                  .setEventType(newEventMessage.getEventType())
+                  .setObjectId(newEventMessage.getObjectId())
+                  .setTime(deleteDate.toString())
+                  .build();
+
+          events.add(newEventMessage1);
+        }
+
+        // TODO: sort list by time
+
+        Collections.sort(
+            events,
+            (message1, message2) -> {
               AbsoluteDate time1 = new AbsoluteDate(message1.getTime(), TimeScalesFactory.getUTC());
               AbsoluteDate time2 = new AbsoluteDate(message2.getTime(), TimeScalesFactory.getUTC());
               return time1.compareTo(time2);
-            }
-          });
+            });
 
-      // if this is the first event received, fire it off
-      if (hasSentMessage.getOrDefault(false) == false) {
+        Utilities.log(context, String.format("All current events: %s", events), 3);
+        Utilities.log(
+            context,
+            String.format(
+                "Current Time: %s", lastEventTimeState.getOrDefault(AbsoluteDate.FUTURE_INFINITY)),
+            3);
 
-        // if lastEventTimeState has not been set, set it as equal to incoming event message
-        lastEventTimeState.set(
-            lastEventTimeState.getOrDefault(
-                new AbsoluteDate(newEventMessage.getTime(), TimeScalesFactory.getUTC())));
+        // if this is the first event received, fire it off
+        if (hasSentMessage.getOrDefault(false) == false) {
 
-        NewEventMessage nextEvent = events.get(0);
-        events.remove(0);
-        scheduleEvent(context, nextEvent);
+          // if lastEventTimeState has not been set, set it as equal to incoming event message
+          lastEventTimeState.set(
+              lastEventTimeState.getOrDefault(
+                  new AbsoluteDate(newEventMessage.getTime(), TimeScalesFactory.getUTC())));
 
-        hasSentMessage.set(true);
+          NewEventMessage nextEvent = events.get(0);
+          events.remove(0);
+          scheduleEvent(context, nextEvent);
+
+          hasSentMessage.set(true);
+        }
+        eventsState.set(events);
+
+      } catch (Exception e) {
+        e.printStackTrace();
       }
-      eventsState.set(events);
     }
 
-    // Update clock, fire off event, get next event (these will be the same message -
-    // satellitestatefulfunction will both fire event and send a new one, sort list, and schedule
-    // next event
+    // Update clock, fire off event, get next event
+    // these will be the same message - SatelliteStatefulFunction will both fire event and send a
+    // new one, sort list, and schedule next event
     if (input instanceof FireEventMessage) {
       FireEventMessage fireEventMessage = (FireEventMessage) input;
+
+      Utilities.log(
+          context,
+          String.format(
+              "Triggering Event: %s, id %s, date %s",
+              fireEventMessage.getEventType(),
+              fireEventMessage.getObjectId(),
+              fireEventMessage.getTime()),
+          3);
 
       AbsoluteDate eventTime =
           new AbsoluteDate(fireEventMessage.getTime(), TimeScalesFactory.getUTC());
@@ -96,8 +139,13 @@ public class EventManager implements StatefulFunction {
         lastEventTimeState.set(eventTime);
       }
 
-      context.send(
-          SatelliteStatefulFunction.TYPE, fireEventMessage.getObjectId(), fireEventMessage);
+      if (fireEventMessage.getEventType().equals("satellite-visible")) {
+        context.send(
+            SatelliteStatefulFunction.TYPE, fireEventMessage.getObjectId(), fireEventMessage);
+      } else if (fireEventMessage.getEventType().equals("delete-orbit")) {
+        DeleteMessage deleteMessage = DeleteMessage.newBuilder().build();
+        context.send(OrbitStatefulFunction.TYPE, fireEventMessage.getObjectId(), deleteMessage);
+      }
 
       ArrayList<NewEventMessage> events = eventsState.get();
 
@@ -142,6 +190,7 @@ public class EventManager implements StatefulFunction {
           // 0 can be set in properties to have default behavior during docker tests && infinite
           // events
         } else if (eventsHandled.equals(testEventNumber)) {
+          Utilities.log(context, String.format("All events handled. Exiting."), 1);
           return;
         }
         eventsHandledState.set(eventsHandled + 1);
@@ -155,6 +204,7 @@ public class EventManager implements StatefulFunction {
 
     FireEventMessage fireEventMessage =
         FireEventMessage.newBuilder()
+            .setEventType(nextEvent.getEventType())
             .setObjectId(nextEvent.getObjectId())
             .setTime(nextEvent.getTime())
             .build();

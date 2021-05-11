@@ -270,6 +270,7 @@ public class SatelliteStatefulFunction implements StatefulFunction {
       // Send next event back to event handler, and handle the event
       NewEventMessage newEventMessage =
           NewEventMessage.newBuilder()
+              .setEventType("satellite-visible")
               .setObjectId(context.self().id())
               .setTime(nextEvent.get().toString())
               .build();

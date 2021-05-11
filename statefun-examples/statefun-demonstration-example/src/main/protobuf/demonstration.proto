@@ -95,18 +95,21 @@ message CollectedTracksMessage {
 
 message DeleteMessage {
 }
+
 message NewEventSourceMessage {
   string id = 1;
 }
 
 message NewEventMessage {
-  string objectId = 1;
-  string time = 2;
+  string eventType = 1;
+  string objectId = 2;
+  string time = 3;
 }
 
 message FireEventMessage {
-  string objectId = 1;
-  string time = 2;
+  string eventType = 1;
+  string objectId = 2;
+  string time = 3;
 }
 
 message GetNextEventMessage {

@@ -24,7 +24,7 @@ public class KafkaFiniteTrackProducer {
 
     TrackGenerator trackGenerator = new TrackGenerator(tlePath);
     trackGenerator.init();
-    ArrayList<String> trackMessages = trackGenerator.finitePropagation();
+    ArrayList<String> trackMessages = trackGenerator.finitePropagation(1.);
 
     Producer producer = new KafkaProducer(props);
 

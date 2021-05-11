@@ -6,8 +6,8 @@ import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.orekit.time.AbsoluteDate;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -20,8 +20,6 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
   // This FunctionType binding is used in the Demonstration module
   public static final FunctionType TYPE = new FunctionType("springbok", "orbit-stateful-function");
-
-  public static int deleteTimer;
 
   // PersistedValues can be stored and recalled when this StatefulFunction is invoked
   @Persisted
@@ -60,7 +58,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
             CorrelateOrbitsMessage.newBuilder().setStringContent(keyedOrbit.toString()).build());
 
         // Send delete message to self after a certain amount of time
-        sendSelfDelayedDeleteMessage(context);
+        sendSelfDelayedDeleteMessage(context, keyedOrbit.orbit.getDate());
 
         // Send message out that orbit was created
         Utilities.log(
@@ -302,7 +300,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
         context.send(OrbitIdManager.TYPE, "orbit-id-manager", newRefinedOrbitIdMessage);
 
         // Send delete message to self after a certain amount of time
-        sendSelfDelayedDeleteMessage(context);
+        sendSelfDelayedDeleteMessage(context, newOrbit.orbit.getDate());
 
         // Send message out that orbit was created and saved
         Utilities.log(context, String.format("Created refined orbitId %s", newOrbit.orbitId), 2);
@@ -339,12 +337,18 @@ public class OrbitStatefulFunction implements StatefulFunction {
   }
 
   // Sends a delete message after a certain amount of time
-  private void sendSelfDelayedDeleteMessage(Context context) throws Exception {
+  private void sendSelfDelayedDeleteMessage(Context context, AbsoluteDate orbitDate)
+      throws Exception {
 
-    long deleteTimer = ApplicationProperties.getDeleteTimer();
+    NewEventMessage newEventMessage =
+        NewEventMessage.newBuilder()
+            .setEventType("delete-orbit")
+            .setObjectId(context.self().id())
+            .setTime(orbitDate.toString())
+            .build();
 
-    context.sendAfter(
-        Duration.ofSeconds(deleteTimer), context.self(), DeleteMessage.newBuilder().build());
+    // Send to event manager to schedule orbit delete
+    context.send(EventManager.TYPE, "event-manager", newEventMessage);
   }
 
   // Delete this orbit from Tracks' and OrbitIdManager orbit list

@@ -50,7 +50,6 @@ public class IntegrationTests {
     MockTLESourceFunction TLESource = new MockTLESourceFunction(testTLES);
     MockConsumer testConsumer = new MockConsumer();
     TLESource.runTimeMS = 5000;
-    OrbitStatefulFunction.deleteTimer = 1;
 
     Harness harness =
         new Harness()
@@ -83,7 +82,6 @@ public class IntegrationTests {
 
     MockConsumer testConsumer = new MockConsumer();
     TLESource.runTimeMS = 5000;
-    OrbitStatefulFunction.deleteTimer = 1;
 
     Harness harness =
         new Harness()
@@ -122,7 +120,6 @@ public class IntegrationTests {
 
     MockConsumer testConsumer = new MockConsumer();
     TLESource.runTimeMS = 8000;
-    OrbitStatefulFunction.deleteTimer = 1;
 
     Harness harness =
         new Harness()
@@ -164,7 +161,6 @@ public class IntegrationTests {
 
     MockConsumer testConsumer = new MockConsumer();
     TLESource.runTimeMS = 5000;
-    OrbitStatefulFunction.deleteTimer = 1;
 
     Harness harness =
         new Harness()
@@ -202,7 +198,6 @@ public class IntegrationTests {
 
     MockConsumer testConsumer = new MockConsumer();
     TLESource.runTimeMS = 5000;
-    OrbitStatefulFunction.deleteTimer = 1;
 
     Harness harness =
         new Harness()
@@ -249,7 +244,6 @@ public class IntegrationTests {
 
     MockConsumer testConsumer = new MockConsumer();
     finiteTracksSource.runTimeMS = 8000;
-    OrbitStatefulFunction.deleteTimer = 4;
 
     Harness harness =
         new Harness()
@@ -307,8 +301,7 @@ public class IntegrationTests {
     MockTracksSourceFunction finiteTracksSource =
         new MockTracksSourceFunction(trackGenerator.getXSingleObjectMessages(3));
     MockConsumer testConsumer = new MockConsumer();
-    finiteTracksSource.runTimeMS = 8000;
-    OrbitStatefulFunction.deleteTimer = 4;
+    finiteTracksSource.runTimeMS = 12000;
 
     Harness harness =
         new Harness()
