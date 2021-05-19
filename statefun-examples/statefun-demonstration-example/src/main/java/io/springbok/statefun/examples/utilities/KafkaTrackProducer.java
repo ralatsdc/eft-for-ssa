@@ -53,7 +53,9 @@ public class KafkaTrackProducer {
 
     // Initialize track generator
     try {
-      trackGenerator = new TrackGenerator();
+      ApplicationEnvironment.setPathProperties();
+      String tlePath = System.getProperty("TLE_PATH");
+      trackGenerator = new TrackGenerator(tlePath);
       trackGenerator.init();
     } catch (Exception e) {
       System.out.println("Cannot initialize track generator: " + e);
