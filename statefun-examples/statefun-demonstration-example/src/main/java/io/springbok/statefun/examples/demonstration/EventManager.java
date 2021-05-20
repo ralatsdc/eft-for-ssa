@@ -1,6 +1,9 @@
 package io.springbok.statefun.examples.demonstration;
 
-import io.springbok.statefun.examples.demonstration.generated.*;
+import io.springbok.statefun.examples.demonstration.generated.DeleteMessage;
+import io.springbok.statefun.examples.demonstration.generated.GetNextEventMessage;
+import io.springbok.statefun.examples.demonstration.generated.NewEventMessage;
+import io.springbok.statefun.examples.demonstration.generated.NewEventSourceMessage;
 import org.apache.flink.statefun.sdk.Context;
 import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
@@ -10,8 +13,6 @@ import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
 
 public class EventManager implements StatefulFunction {
 
@@ -19,30 +20,31 @@ public class EventManager implements StatefulFunction {
 
   // PersistedValues can be stored and recalled when this StatefulFunction is invoked
   @Persisted
-  private final PersistedValue<ArrayList> eventsState =
-      PersistedValue.of("events", ArrayList.class);
+  private PersistedValue<Long> lastAwakeTimeState =
+      PersistedValue.of("last-awake-time", Long.class);
 
   @Persisted
-  private PersistedValue<AbsoluteDate> lastEventTimeState =
-      PersistedValue.of("current-time", AbsoluteDate.class);
-
-  @Persisted
-  private PersistedValue<Boolean> hasSentMessage =
-      PersistedValue.of("has-sent-message", Boolean.class);
+  private PersistedValue<AbsoluteDate> eventTimeState =
+      PersistedValue.of("event-time", AbsoluteDate.class);
 
   @Persisted
   private PersistedValue<Integer> eventsHandledState =
       PersistedValue.of("events-handled", Integer.class);
 
+  @Persisted
+  private PersistedValue<Integer> speedUpFactorState = PersistedValue.of("speed-up", Integer.class);
+
   @Override
   public void invoke(Context context, Object input) {
 
+    // EventManager schedules event message and fires it off with a timer delay. The primary purpose
+    // of this class is clock synchronization across application
     if (input instanceof NewEventMessage) {
       NewEventMessage newEventMessage = (NewEventMessage) input;
 
+      updateClock(context, newEventMessage);
+
       try {
-        ArrayList<NewEventMessage> events =
-            eventsState.getOrDefault(new ArrayList<NewEventMessage>());
 
         Utilities.log(
             context,
@@ -53,112 +55,10 @@ public class EventManager implements StatefulFunction {
                 newEventMessage.getTime()),
             3);
 
-        // Handle saving event by event type
-        if (newEventMessage.getEventType().equals("satellite-visible")) {
-          events.add(newEventMessage);
-        } else if (newEventMessage.getEventType().equals("delete-orbit")) {
-
-          // Delete timer in days
-          long deleteTimer = ApplicationProperties.getDeleteTimer();
-          // Current orbit time shifted by seconds
-          AbsoluteDate deleteDate =
-              new AbsoluteDate(newEventMessage.getTime(), TimeScalesFactory.getUTC())
-                  .shiftedBy(deleteTimer * 86400);
-
-          NewEventMessage newEventMessage1 =
-              NewEventMessage.newBuilder()
-                  .setEventType(newEventMessage.getEventType())
-                  .setObjectId(newEventMessage.getObjectId())
-                  .setTime(deleteDate.toString())
-                  .build();
-
-          events.add(newEventMessage1);
-        }
-
-        // TODO: sort list by time
-
-        Collections.sort(
-            events,
-            (message1, message2) -> {
-              AbsoluteDate time1 = new AbsoluteDate(message1.getTime(), TimeScalesFactory.getUTC());
-              AbsoluteDate time2 = new AbsoluteDate(message2.getTime(), TimeScalesFactory.getUTC());
-              return time1.compareTo(time2);
-            });
-
-        Utilities.log(context, String.format("All current events: %s", events), 3);
-        Utilities.log(
-            context,
-            String.format(
-                "Current Time: %s", lastEventTimeState.getOrDefault(AbsoluteDate.FUTURE_INFINITY)),
-            3);
-
-        // if this is the first event received, fire it off
-        if (hasSentMessage.getOrDefault(false) == false) {
-
-          // if lastEventTimeState has not been set, set it as equal to incoming event message
-          lastEventTimeState.set(
-              lastEventTimeState.getOrDefault(
-                  new AbsoluteDate(newEventMessage.getTime(), TimeScalesFactory.getUTC())));
-
-          NewEventMessage nextEvent = events.get(0);
-          events.remove(0);
-          scheduleEvent(context, nextEvent);
-
-          hasSentMessage.set(true);
-        }
-        eventsState.set(events);
+        scheduleEvent(context, newEventMessage);
 
       } catch (Exception e) {
         e.printStackTrace();
-      }
-    }
-
-    // Update clock, fire off event, get next event
-    // these will be the same message - SatelliteStatefulFunction will both fire event and send a
-    // new one, sort list, and schedule next event
-    if (input instanceof FireEventMessage) {
-      FireEventMessage fireEventMessage = (FireEventMessage) input;
-
-      Utilities.log(
-          context,
-          String.format(
-              "Triggering Event: %s, id %s, date %s",
-              fireEventMessage.getEventType(),
-              fireEventMessage.getObjectId(),
-              fireEventMessage.getTime()),
-          3);
-
-      AbsoluteDate eventTime =
-          new AbsoluteDate(fireEventMessage.getTime(), TimeScalesFactory.getUTC());
-      AbsoluteDate lastEventTime = lastEventTimeState.get();
-
-      int timePassed = eventTime.compareTo(lastEventTime);
-
-      // event time is after the simulation time - update sim time to event time
-      if (timePassed > 0) {
-        lastEventTimeState.set(eventTime);
-      }
-
-      if (fireEventMessage.getEventType().equals("satellite-visible")) {
-        context.send(
-            SatelliteStatefulFunction.TYPE, fireEventMessage.getObjectId(), fireEventMessage);
-      } else if (fireEventMessage.getEventType().equals("delete-orbit")) {
-        DeleteMessage deleteMessage = DeleteMessage.newBuilder().build();
-        context.send(OrbitStatefulFunction.TYPE, fireEventMessage.getObjectId(), deleteMessage);
-      }
-
-      ArrayList<NewEventMessage> events = eventsState.get();
-
-      // if there are no more events, wait for next event to come in
-      if (events.size() < 1) {
-        hasSentMessage.set(false);
-      } else {
-        NewEventMessage nextEvent = events.get(0);
-        events.remove(0);
-
-        scheduleEvent(context, nextEvent);
-
-        eventsState.set(events);
       }
     }
 
@@ -167,12 +67,12 @@ public class EventManager implements StatefulFunction {
 
       GetNextEventMessage getNextEventMessage;
 
-      AbsoluteDate lastEventTime = lastEventTimeState.get();
-      if (lastEventTime == null) {
+      AbsoluteDate eventTime = eventTimeState.get();
+      if (eventTime == null) {
         getNextEventMessage = GetNextEventMessage.newBuilder().buildPartial();
       } else {
         getNextEventMessage =
-            GetNextEventMessage.newBuilder().setTime(lastEventTimeState.get().toString()).build();
+            GetNextEventMessage.newBuilder().setTime(eventTimeState.get().toString()).build();
       }
 
       context.send(
@@ -180,8 +80,9 @@ public class EventManager implements StatefulFunction {
     }
   }
 
-  private void scheduleEvent(Context context, NewEventMessage nextEvent) {
+  private void scheduleEvent(Context context, NewEventMessage newEventMessage) throws Exception {
 
+    // Limiter for # of events handled. Good for contained tests
     try {
       if (ApplicationProperties.getIsTest()) {
         Integer eventsHandled = eventsHandledState.getOrDefault(0);
@@ -189,6 +90,7 @@ public class EventManager implements StatefulFunction {
         if (eventsHandled == 0) {
           // 0 can be set in properties to have default behavior during docker tests && infinite
           // events
+          // TODO: Fix this logic
         } else if (eventsHandled.equals(testEventNumber)) {
           Utilities.log(context, String.format("All events handled. Exiting."), 1);
           return;
@@ -199,42 +101,75 @@ public class EventManager implements StatefulFunction {
       Utilities.log(context, e.toString(), 1);
     }
 
-    AbsoluteDate currentEventTime = lastEventTimeState.get();
-    AbsoluteDate nextEventTime = new AbsoluteDate(nextEvent.getTime(), TimeScalesFactory.getUTC());
+    AbsoluteDate nextEventTime = null;
+    long timeUntilEvent = 0;
+    double adjustedTime = 0;
+    int speedUpFactor = speedUpFactorState.getOrDefault(ApplicationProperties.getSpeedUpFactor());
+    AbsoluteDate eventTime = eventTimeState.get();
 
-    FireEventMessage fireEventMessage =
-        FireEventMessage.newBuilder()
-            .setEventType(nextEvent.getEventType())
-            .setObjectId(nextEvent.getObjectId())
-            .setTime(nextEvent.getTime())
-            .build();
+    try {
+      // Route events correctly
+      if (newEventMessage.getEventType().equals("satellite-visible")) {
 
-    double timeUntilEvent = nextEventTime.durationFrom(currentEventTime);
+        // TODO: implement
 
-    // next event time is before current event - event fires immediately
-    if (timeUntilEvent <= 0) {
-      context.send(context.self(), fireEventMessage);
-      Utilities.log(context, String.format("Next event sent immediately"), 1);
-    } else {
-      // TODO: make speedup settable
-      // a factor of 43200 makes 1 day pass every 2 seconds
-      try {
-        double speedUpFactor = ApplicationProperties.getSpeedUpFactor();
-        double adjustedTime = timeUntilEvent / speedUpFactor;
-        Utilities.log(context, String.format("Time until event: %s", timeUntilEvent), 3);
-        Utilities.log(context, String.format("Adjusted Time %s", adjustedTime), 3);
+      } else if (newEventMessage.getEventType().equals("delete-orbit")) {
 
+        // Get delete timer in days and convert to seconds
+        timeUntilEvent = ApplicationProperties.getDeleteTimer() * 86400;
+        // Current event time shifted by delete timer
+        nextEventTime = eventTime.shiftedBy(timeUntilEvent);
+        adjustedTime = timeUntilEvent / speedUpFactor;
+
+        DeleteMessage deleteMessage = DeleteMessage.newBuilder().build();
         context.sendAfter(
-            Duration.ofSeconds((long) adjustedTime), context.self(), fireEventMessage);
-        Utilities.log(
-            context, String.format("Next event scheduled for %s", nextEventTime.toString()), 1);
-      } catch (Exception e) {
-        Utilities.log(
-            context,
-            String.format(
-                "Event scheduler cannot schedule next event - check properties. \n %s", e),
-            1);
+            Duration.ofSeconds((long) adjustedTime),
+            OrbitStatefulFunction.TYPE,
+            newEventMessage.getObjectId(),
+            deleteMessage);
       }
+
+      Utilities.log(
+          context,
+          String.format(
+              "Next event scheduled for %s \n" + " Time until event: %s. Adjusted Time: %s",
+              nextEventTime.toString(), timeUntilEvent, adjustedTime),
+          3);
+
+    } catch (Exception e) {
+      Utilities.log(
+          context,
+          String.format("Event scheduler cannot schedule next event - check properties. \n %s", e),
+          1);
+    }
+  }
+
+  private void updateClock(Context context, NewEventMessage newEventMessage) {
+    try {
+      Long currentTime = System.nanoTime();
+      Long lastAwakeTime = lastAwakeTimeState.getOrDefault(currentTime);
+
+      // Time passed in system time in nanoseconds since last awake
+      Long timePassed = currentTime - lastAwakeTime;
+
+      // TODO: initialize eventTimeState
+      AbsoluteDate eventTime =
+          eventTimeState.getOrDefault(
+              new AbsoluteDate(newEventMessage.getTime(), TimeScalesFactory.getUTC()));
+
+      int speedUpFactor = speedUpFactorState.getOrDefault(ApplicationProperties.getSpeedUpFactor());
+      AbsoluteDate newEventTime =
+          eventTime.shiftedBy((double) (timePassed * speedUpFactor) / 1000000000.);
+
+      lastAwakeTimeState.set(currentTime);
+      eventTimeState.set(newEventTime);
+
+      Utilities.log(context, String.format("Current event time: %s", newEventTime), 1);
+    } catch (Exception e) {
+      Utilities.log(
+          context,
+          String.format("Event scheduler cannot update clock - check properties. \n %s", e),
+          1);
     }
   }
 }
