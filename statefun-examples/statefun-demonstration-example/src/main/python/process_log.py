@@ -16,7 +16,8 @@ import hhh
 def count_number_of_orbits(options):
     # Define patterns to identify events required for analysis
     created_ptn = re.compile('Created orbitId')
-    refined_ptn = re.compile('Refined orbitIds')
+    # refined_ptn = re.compile('Created refined orbitId')
+    # saved_ptn = re.compile('Saved orbitId')
     cleared_ptn = re.compile('Cleared orbitId')
 
     # Count number of orbits which exist after each event analyzed,
@@ -34,21 +35,22 @@ def count_number_of_orbits(options):
                     break
                 if created_ptn.search(line) is not None:
                     num_orb += 1
-                if refined_ptn.search(line) is not None:
-                    num_orb += 1
                 if cleared_ptn.search(line) is not None:
                     num_orb -= 1
-                flds = line.split()
-                date = flds[0].replace("[", "")
-                y, m, d = date.split("-")
-                time = flds[1].replace("]", "")
-                H, M, S = time.split(":")
-                msg = "{0} {1} {2} {3} {4} {5:.3f} {6}".format(y, m, d, H, M, float(S), num_orb)
-                # print(msg)
-                ofp.write(msg + '\n')
-                # time.sleep(0.001)
-                num_orb_list.append(num_orb)
-                date_time_list.append(date + "T" + time)
+                try:
+                    flds = line.split()
+                    date = flds[0].replace("[", "")
+                    y, m, d = date.split("-")
+                    time = flds[1].replace("]", "")
+                    H, M, S = time.split(":")
+                    msg = "{0} {1} {2} {3} {4} {5:.3f} {6}".format(y, m, d, H, M, float(S), num_orb)
+                    # print(msg)
+                    ofp.write(msg + '\n')
+                    # time.sleep(0.001)
+                    num_orb_list.append(num_orb)
+                    date_time_list.append(date + "T" + time)
+                except:
+                    continue
 
     # Convert date and time to seconds in the run, and numpy arrays
     date_time = np.array(date_time_list, dtype='datetime64[ms]')
@@ -60,11 +62,11 @@ def count_number_of_orbits(options):
 
 def run_time_processing(options):
     # Define patterns to identify events required for analysis
-    track_ptn = re.compile('Created track for id')
-    created_ptn = re.compile('Created orbit for id')
-    refined_ptn = re.compile('Refined orbits with ids')
-    correlated_ptn = re.compile('Correlated orbits with ids')
-    cleared_ptn = re.compile('Cleared orbit for id')
+    track_ptn = re.compile('Created trackId')
+    created_ptn = re.compile('Created orbitId')
+    refined_ptn = re.compile('Refined orbitIds')
+    correlated_ptn = re.compile('Correlated orbitIds')
+    cleared_ptn = re.compile('Cleared orbitId')
 
     # Count number of orbits which exist after each event analyzed,
     # and print along with date and time components for analysis

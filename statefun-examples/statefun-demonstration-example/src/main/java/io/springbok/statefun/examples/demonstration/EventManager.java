@@ -87,10 +87,9 @@ public class EventManager implements StatefulFunction {
       if (ApplicationProperties.getIsTest()) {
         Integer eventsHandled = eventsHandledState.getOrDefault(0);
         Integer testEventNumber = ApplicationProperties.getTestEventNumber();
-        if (eventsHandled == 0) {
+        if (testEventNumber == 0) {
           // 0 can be set in properties to have default behavior during docker tests && infinite
           // events
-          // TODO: Fix this logic
         } else if (eventsHandled.equals(testEventNumber)) {
           Utilities.log(context, String.format("All events handled. Exiting."), 1);
           return;

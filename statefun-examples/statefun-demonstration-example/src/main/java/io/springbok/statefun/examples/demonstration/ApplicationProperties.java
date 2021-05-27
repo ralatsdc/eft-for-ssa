@@ -9,7 +9,7 @@ public class ApplicationProperties {
   private static Double epsilon = null;
   private static Double axisEpsilon = null;
   private static Long deleteTimer = null;
-  private static Long speedUpFactor = null;
+  private static Integer speedUpFactor = null;
   private static Integer trackCutoff = null;
   private static Integer logLevel = null;
   private static Boolean correlateByObject = null;
@@ -57,9 +57,9 @@ public class ApplicationProperties {
     return deleteTimer;
   }
 
-  public static long getSpeedUpFactor() throws Exception {
+  public static int getSpeedUpFactor() throws Exception {
     if (speedUpFactor == null) {
-      speedUpFactor = Long.parseLong(getProperties().getProperty("speedUpFactor"));
+      speedUpFactor = Integer.parseInt(getProperties().getProperty("speedUpFactor"));
     }
     return speedUpFactor;
   }

@@ -111,6 +111,11 @@ public class OrbitIdManager implements StatefulFunction {
           minFormedOrbitIdList.add(newRefinedOrbitIdMessage.getNewOrbitId());
           minFormedOrbitIds.set(minFormedOrbitIdList);
 
+          Utilities.log(
+              context,
+              String.format("Saved orbitId %s", newRefinedOrbitIdMessage.getNewOrbitId()),
+              2);
+
         } else {
 
           ArrayList<String> maxFormedOrbitIdList =
@@ -168,7 +173,12 @@ public class OrbitIdManager implements StatefulFunction {
 
           // Send new refined orbit out to only existing refined orbits to see if they can further
           // combine
-          Utilities.log(context, String.format("Max Id List: ", maxFormedOrbitIdList), 3);
+          Utilities.log(
+              context,
+              String.format(
+                  "Sending Refined OrbitId %s to orbits on maxFormedIdList: %s",
+                  newRefinedOrbitIdMessage.getNewOrbitId(), maxFormedOrbitIdList),
+              3);
           maxFormedOrbitIdList.forEach(
               orbitId -> {
                 context.send(
@@ -179,8 +189,12 @@ public class OrbitIdManager implements StatefulFunction {
                         .build());
               });
 
-          maxFormedOrbitIdList.add(newRefinedOrbitIdMessage.getNewOrbitId());
-          maxFormedOrbitIds.set(maxFormedOrbitIdList);
+          // Only add maxed formed orbit if the list is empty; we retroactively add if there's no
+          // correlation, or if we find redundancy
+          if (maxFormedOrbitIdList.size() == 0) {
+            maxFormedOrbitIdList.add(newRefinedOrbitIdMessage.getNewOrbitId());
+            maxFormedOrbitIds.set(maxFormedOrbitIdList);
+          }
         }
       } catch (Exception e) {
         Utilities.log(context, String.format("OrbitIdManager cannot find properties file."), 1);
@@ -211,9 +225,6 @@ public class OrbitIdManager implements StatefulFunction {
 
       KeyedOrbit keyedOrbit = KeyedOrbit.fromString(correlateOrbitsMessage.getStringContent());
 
-      // Message out that orbit id was saved
-      Utilities.log(context, String.format("Saved orbitId %s", keyedOrbit.orbitId), 2);
-
       try {
         Integer trackCutoff = ApplicationProperties.getTrackCutoff();
 
@@ -222,12 +233,30 @@ public class OrbitIdManager implements StatefulFunction {
         if (keyedOrbit.trackIds.size() <= trackCutoff) {
           minFormedOrbitIdList.add(keyedOrbit.orbitId);
           minFormedOrbitIds.set(minFormedOrbitIdList);
+          // Message out that orbit id was saved
+          Utilities.log(context, String.format("Saved orbitId %s", keyedOrbit.orbitId), 2);
         } else {
-          maxFormedOrbitIdList.add(keyedOrbit.orbitId);
-          maxFormedOrbitIds.set(maxFormedOrbitIdList);
+          // Only add maxed formed orbit if the list is empty; we retroactively add if there's no
+          // correlation, or if we find redundancy
+          if (maxFormedOrbitIdList.size() == 0) {
+            maxFormedOrbitIdList.add(keyedOrbit.orbitId);
+            maxFormedOrbitIds.set(maxFormedOrbitIdList);
+            // Message out that orbit id was saved
+            Utilities.log(context, String.format("Saved orbitId %s", keyedOrbit.orbitId), 2);
+          }
         }
       } catch (Exception e) {
         Utilities.log(context, String.format("OrbitIdManager cannot find properties file."), 1);
+      }
+    }
+    if (input instanceof AddMaxFormedOrbit) {
+      AddMaxFormedOrbit addMaxFormedOrbit = (AddMaxFormedOrbit) input;
+
+      ArrayList maxFormedOrbitIdList = maxFormedOrbitIds.getOrDefault(new ArrayList<String>());
+      if (!maxFormedOrbitIdList.contains(addMaxFormedOrbit.getId())) {
+        maxFormedOrbitIdList.add(addMaxFormedOrbit.getId());
+        maxFormedOrbitIds.set(maxFormedOrbitIdList);
+        Utilities.log(context, String.format("Saved orbitId %s", addMaxFormedOrbit.getId()), 2);
       }
     }
 
@@ -239,21 +268,29 @@ public class OrbitIdManager implements StatefulFunction {
       try {
 
         String orbitId = removeOrbitIdMessage.getStringContent();
-        ArrayList ids = minFormedOrbitIds.get();
+        ArrayList minIds = minFormedOrbitIds.get();
+        ArrayList maxIds = maxFormedOrbitIds.get();
 
-        ids.remove(orbitId);
+        minIds.remove(orbitId);
+        maxIds.remove(orbitId);
 
+        // TODO: check if orbit already exists, and suppress message: currently log removes id
+        // several times if it's correlated in more than one place
         // Message out that orbit id was removed
         Utilities.log(context, String.format("Removed orbitId %s from ID manager", orbitId), 1);
-        minFormedOrbitIds.set(ids);
+        minFormedOrbitIds.set(minIds);
+        maxFormedOrbitIds.set(maxIds);
 
       } catch (Exception e) {
+
+        // This exception is expected behavior for orbits that were deleted because they were over
+        // the track limit
         Utilities.log(
             context,
             String.format(
                 "OrbitId %s is not registered with OrbitIdManager - delete canceled: %s",
                 removeOrbitIdMessage.getStringContent(), e),
-            1);
+            4);
       }
     }
   }

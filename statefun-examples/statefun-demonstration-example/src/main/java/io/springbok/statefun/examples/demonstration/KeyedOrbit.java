@@ -142,7 +142,7 @@ public class KeyedOrbit {
   // Redundancy is defined here as an orbit being comprised entirely with tracks contained in
   // another orbit
   // A return value of 0 - neither orbit is redundant
-  // A return value of 1 - orbit 1 is redundant OR both orbits are redundant (does not complete the
+  // A return value of 1 - orbit 1 is redundant OR both orbits are the same (does not complete the
   // check)
   // A return value of 2 - orbit 2 is redundant
   public static int checkRedundancy(KeyedOrbit keyedOrbit1, KeyedOrbit keyedOrbit2)

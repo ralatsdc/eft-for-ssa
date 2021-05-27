@@ -51,6 +51,10 @@ message CorrelateOrbitsMessage {
   string stringContent = 1;
 }
 
+message AddMaxFormedOrbit {
+  string id = 1;
+}
+
 message RemoveOrbitIdMessage {
   string stringContent = 1;
 }

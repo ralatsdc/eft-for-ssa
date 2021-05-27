@@ -81,7 +81,7 @@ public class IntegrationTests {
     MockSensorSourceFunction sensorSourceFunction = new MockSensorSourceFunction(testSensors);
 
     MockConsumer testConsumer = new MockConsumer();
-    TLESource.runTimeMS = 5000;
+    TLESource.runTimeMS = 20000;
 
     Harness harness =
         new Harness()
@@ -119,7 +119,7 @@ public class IntegrationTests {
     MockSensorSourceFunction sensorSourceFunction = new MockSensorSourceFunction(testSensors);
 
     MockConsumer testConsumer = new MockConsumer();
-    TLESource.runTimeMS = 8000;
+    TLESource.runTimeMS = 30000;
 
     Harness harness =
         new Harness()
@@ -197,7 +197,7 @@ public class IntegrationTests {
     MockSensorSourceFunction sensorSourceFunction = new MockSensorSourceFunction(testSensors);
 
     MockConsumer testConsumer = new MockConsumer();
-    TLESource.runTimeMS = 5000;
+    TLESource.runTimeMS = 4000;
 
     Harness harness =
         new Harness()
@@ -315,15 +315,12 @@ public class IntegrationTests {
     // Test correlation
     Assert.assertTrue(
         IntegrationTests.arrayListContainsInclusive(
-                testConsumer.messages, "Correlated orbitIds 1 and 0")
+                testConsumer.messages, "Correlated orbitId 1 and orbitId 0")
             || IntegrationTests.arrayListContainsInclusive(
-                testConsumer.messages, "Correlated orbitIds 0 and 1"));
+                testConsumer.messages, "Correlated orbitId 0 and orbitId 1"));
     Assert.assertFalse(
         IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Correlated orbitIds 0 and 0"));
-    Assert.assertFalse(
-        IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Correlated orbitIds 1 and 1"));
+            testConsumer.messages, "Correlated orbitId 0 and orbitId 0"));
 
     // Test track collection
     Assert.assertTrue(
@@ -334,7 +331,8 @@ public class IntegrationTests {
 
     // Test new orbit creation flow
     Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Refined orbitIds"));
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Created refined orbitId"));
 
     // Ensure tracks are clearing properly
     Assert.assertTrue(
