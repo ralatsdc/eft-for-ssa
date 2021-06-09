@@ -2,12 +2,11 @@
 
 from argparse import ArgumentParser
 import matplotlib.pyplot as plt
-import matplotlib.lines as mlines
-import matplotlib.transforms as mtransforms
 import numpy as np
 import os
 import re
 import datetime
+import json
 
 import hhh
 
@@ -68,7 +67,7 @@ def run_time_processing(options):
     created_ptn = re.compile('Created orbitId')
     propagated_ptn = re.compile('Propagated orbitId')
     from_tracks_ptn = re.compile('Created refined orbitId \d+ from tracks')
-    refined_ptn = re.compile('Refined orbitIds')
+    refined_ptn = re.compile('Refined orbitId')
     correlated_ptn = re.compile('Correlated orbitIds')
     cleared_ptn = re.compile('Cleared orbitId')
 
@@ -80,8 +79,8 @@ def run_time_processing(options):
     processing_time_list = []
     date_time_list = []
 
-    # Keep track of orbit delete timing
-    orbit_delete_timing = []
+    # Keep track of orbits
+    orbit_details = []
 
     # Key: orbit_id Value: track associated with that orbit
     orbit_track_dict = {}
@@ -107,14 +106,14 @@ def run_time_processing(options):
                     num_orb += 1
                     orbit_id = re.search("(?<=Created orbitId )(\d+)", line).group(0)
                     # add orbit creation time
-                    orbit_delete_timing.insert(int(orbit_id), [line])
+                    orbit_details.insert(int(orbit_id), {"created": line})
 
                 if propagated_ptn.search(line) is not None:
                     orbit_id = re.search("(?<=orbitId )(\d+)", line).group(0)
                     track_id = re.search("(?<=trackId )(\d+)", line).group(0)
 
-                    # add track number to orbit_delete_timer
-                    orbit_delete_timing[int(orbit_id)].append([track_id])
+                    # add track number to orbit_details
+                    orbit_details[int(orbit_id)]["track_ids"] = [track_id]
 
                     # add mapping between track and orbit
                     orbit_track_dict[orbit_id] = track_id
@@ -125,7 +124,6 @@ def run_time_processing(options):
                     track_messages_dict[track_id] = track_messages
 
                 if correlated_ptn.search(line) is not None:
-                    ## TODO: revisit this logic
                     orbit_id = re.search("(?<=Correlated orbits with ids )(\d+)", line).group(0)
 
                     # get track associated with orbit_id
@@ -146,72 +144,87 @@ def run_time_processing(options):
 
                     tracks = tracks_string.strip("[]").split(", ")
 
-                    # add track number to orbit_delete_timer
-                    orbit_delete_timing[int(orbit_id)].append(tracks)
+                    # add track number to orbit_details
+                    orbit_details[int(orbit_id)]["track_ids"] = tracks
 
                 if refined_ptn.search(line) is not None:
-                    num_orb += 1
-                    ## TODO: revisit this logic
-                    orbit_id = re.search("(?<=Refined orbitIds )(\d+)", line).group(0)
-                    new_orbit_id = re.search("(?<=Created orbitId )(\d+)", line).group(0)
+                    orbit_ids = re.findall("(?<=orbitId )(\d+)", line)
 
+                    # add info to orbit_details
+                    orbit0_refined_to = orbit_details[int(orbit_ids[0])].get("refined_to", [])
+                    orbit0_refined_to.append(orbit_ids[2])
+                    orbit_details[int(orbit_ids[0])]["refined_to"] = orbit0_refined_to
+
+                    orbit1_refined_to = orbit_details[int(orbit_ids[1])].get("refined_to", [])
+                    orbit1_refined_to.append(orbit_ids[2])
+                    orbit_details[int(orbit_ids[1])]["refined_to"] = orbit1_refined_to
+
+                    orbit_details[int(orbit_ids[2])]["refined_from"] = [orbit_ids[0], orbit_ids[1]]
+
+                    ## TODO: revisit this logic - with addition of orbit_details, this process can be made more streamlined
                     # get track associated with orbit_id
-                    track_id = orbit_track_dict[orbit_id]
+                    # track_id = orbit_track_dict[orbit_ids[2]]
 
                     # add new_orbit_id to track_orbit_ids_dict
-                    orbit_track_dict[new_orbit_id] = track_id
+                    # orbit_track_dict[orbit_ids[2]] = track_id
 
                     # add message to track_messages_dict
-                    track_messages = track_messages_dict.get(track_id, [])
-                    track_messages.append(line)
-                    track_messages_dict[track_id] = track_messages
+                    # track_messages = track_messages_dict.get(track_id, [])
+                    # track_messages.append(line)
+                    # track_messages_dict[track_id] = track_messages
 
                 if cleared_ptn.search(line) is not None:
                     num_orb -= 1
                     orbit_id = re.search("(?<=Cleared orbitId )(\d+)", line).group(0)
 
-                    # add orbit deletion time
-                    orbit_delete_timing[int(orbit_id)].append(line)
+                    creation_time = datetime.datetime.strptime(
+                        orbit_details[int(orbit_id)]["created"].split("]")[0].strip("[]"), "%Y-%m-%d %H:%M:%S.%f")
+                    deletion_time = datetime.datetime.strptime(line.split("]")[0].strip("[]"), "%Y-%m-%d %H:%M:%S.%f")
+                    orbit_lifespan = deletion_time - creation_time
 
-                num_orb_message_dict[line] = num_orb
+                    # add details
+                    orbit_details[int(orbit_id)]["cleared"] = line
+                    orbit_details[int(orbit_id)]["lifespan"] = orbit_lifespan
 
-            for message_list in track_messages_dict.values():
-                # print(message_list)
+    num_orb_message_dict[line] = num_orb
 
-                earliest_message = message_list[0]
-                latest_message = message_list[1]
+    for message_list in track_messages_dict.values():
+        # print(message_list)
 
-                num_orb_list.append(num_orb_message_dict[earliest_message])
+        earliest_message = message_list[0]
+        latest_message = message_list[1]
 
-                flds = earliest_message.split()
-                date = flds[0].replace("[", "")
-                y, m, d = date.split("-")
-                time = flds[1].replace("]", "")
-                H, M, float_S = time.split(":")
-                US = (float(float_S) * 1000000) % 1000000
-                S = int(float(float_S))
-                early_msg = "{0} {1} {2} {3} {4} {5:.3f} {6}".format(y, m, d, H, M, float(float_S), num_orb)
+        # num_orb_list.append(num_orb_message_dict[earliest_message])
 
-                dt_early = datetime.datetime(int(y), int(m), int(d), int(H), int(M), int(S), int(US))
+        flds = earliest_message.split()
+        date = flds[0].replace("[", "")
+        y, m, d = date.split("-")
+        time = flds[1].replace("]", "")
+        H, M, float_S = time.split(":")
+        US = (float(float_S) * 1000000) % 1000000
+        S = int(float(float_S))
+        early_msg = "{0} {1} {2} {3} {4} {5:.3f} {6}".format(y, m, d, H, M, float(float_S), num_orb)
 
-                date_time_list.append(date + "T" + time)
+        dt_early = datetime.datetime(int(y), int(m), int(d), int(H), int(M), int(S), int(US))
 
-                flds = latest_message.split()
-                date = flds[0].replace("[", "")
-                y, m, d = date.split("-")
-                time = flds[1].replace("]", "")
-                H, M, float_S = time.split(":")
-                US = (float(float_S) * 1000000) % 1000000
-                S = int(float(float_S))
-                late_msg = "{0} {1} {2} {3} {4} {5:.3f} {6}".format(y, m, d, H, M, float(float_S), num_orb)
+        date_time_list.append(date + "T" + time)
 
-                dt_late = datetime.datetime(int(y), int(m), int(d), int(H), int(M), int(S), int(US))
+        flds = latest_message.split()
+        date = flds[0].replace("[", "")
+        y, m, d = date.split("-")
+        time = flds[1].replace("]", "")
+        H, M, float_S = time.split(":")
+        US = (float(float_S) * 1000000) % 1000000
+        S = int(float(float_S))
+        late_msg = "{0} {1} {2} {3} {4} {5:.3f} {6}".format(y, m, d, H, M, float(float_S), num_orb)
 
-                processing_time = dt_late - dt_early
-                ofp.write(str(dt_early) + " " + str(processing_time) + '\n')
-                # print(processing_time)
-                # time.sleep(0.001)
-                processing_time_list.append(processing_time)
+        dt_late = datetime.datetime(int(y), int(m), int(d), int(H), int(M), int(S), int(US))
+
+        processing_time = dt_late - dt_early
+        # ofp.write(str(dt_early) + " " + str(processing_time) + '\n')
+        # print(processing_time)
+        # time.sleep(0.001)
+        processing_time_list.append(processing_time)
 
     # Convert date and time to seconds in the run, and numpy arrays
     date_time = np.array(date_time_list, dtype='datetime64[ms]')
@@ -219,7 +232,12 @@ def run_time_processing(options):
     processing_time = np.array(processing_time_list, dtype='timedelta64[ms]')
     number_of_orbits = np.array(num_orb_list)
 
-    return seconds, processing_time, number_of_orbits, orbit_delete_timing
+    # Dump orbit details into json
+    json_file_path = options.log_file_path.replace(".log", ".json")
+    with open(json_file_path, 'w') as fp:
+        json.dump(orbit_details, fp, sort_keys=True, default=str)
+
+    return seconds, processing_time, number_of_orbits, orbit_details
 
 
 def plot_count(options, seconds, number_of_orbits):
@@ -304,44 +322,28 @@ def plot_processing_time_as_count(options, number_of_orbits, processing_time):
     plt.show()
 
 
-def plot_slowdown(options, orbit_delete_timer):
-    delete_time = datetime.timedelta(seconds=int(options.delete_timer))
-
+def plot_slowdown(options, orbit_details):
     timedeltas = []
     start_time = None
     processing_time = []
 
-    for orbit in orbit_delete_timer:
-        creation_time = datetime.datetime.strptime(orbit[0].split("]")[0].strip("[]"), "%Y-%m-%d %H:%M:%S.%f")
-        track_list = orbit[1]
-        deletion_time = datetime.datetime.strptime(orbit[2].split("]")[0].strip("[]"), "%Y-%m-%d %H:%M:%S.%f")
-        orbit_time = deletion_time - creation_time
+    for orbit in orbit_details:
+        creation_time = datetime.datetime.strptime(orbit["created"].split("]")[0].strip("[]"), "%Y-%m-%d %H:%M:%S.%f")
+        deletion_time = datetime.datetime.strptime(orbit["cleared"].split("]")[0].strip("[]"), "%Y-%m-%d %H:%M:%S.%f")
+        orbit_lifespan = deletion_time - creation_time
 
         if start_time is None: start_time = creation_time
 
-        # Discard orbits that were deleted due to redundancy
-        if orbit_time > delete_time:
-            timedeltas.append(orbit_time.total_seconds())
-            processing_time.append((creation_time - start_time).total_seconds())
+        timedeltas.append(orbit["lifespan"].total_seconds())
+        processing_time.append((creation_time - start_time).total_seconds())
 
     fig, ax = plt.subplots()
     ax.scatter(processing_time, timedeltas)
     head, file_name = os.path.split(options.log_file_path)
     head, file_dir = os.path.split(head)
     ax.set_title(os.path.join(file_dir, file_name))
-    ax.set_ylabel("Time to Delete (s)")
+    ax.set_ylabel("Orbit Lifespan (s)")
     ax.set_xlabel("Processing Time (s)")
-
-    # Extend y axis below orbit delete for visibility
-    ylim = ax.get_ylim()
-    extension = (ylim[0] - ylim[1]) * .25
-    ax.set_ylim(ylim[0] + extension, ylim[1])
-
-    # Add target line
-    # line = mlines.Line2D([0, 40], [140, 40], color='red')
-    # transform = ax.transAxes
-    # line.set_transform(transform)
-    # ax.add_line(line)
 
     plt_file_path = options.log_file_path.replace(".log", "_slowdown.png")
     plt.savefig(plt_file_path)
@@ -376,19 +378,9 @@ def main():
         help="plot time to complete track processing as a function of run time",
     )
     parser.add_argument(
-        "--measure-slowdown",
+        "--plot-slowdown",
         action="store_true",
         help="measure timing of orbit deletions over course of simulation. Proxy for machine not keeping up with simulation",
-    )
-    parser.add_argument(
-        "--track-cutoff",
-        default="1",
-        help="track cutoff value as set in properties. This value is used with measure-slowdown to more accurately determine if the simulation is running at the right time",
-    )
-    parser.add_argument(
-        "--delete-timer",
-        default="40",
-        help="The amount of time, in seconds, that orbits are retained before deletion",
     )
     parser.add_argument(
         "-s",
@@ -431,9 +423,9 @@ def main():
         seconds, processing_time, number_of_orbits = run_time_processing(options)
         plot_processing_time_as_count(options, number_of_orbits, processing_time)
 
-    if options.measure_slowdown:
-        seconds, processing_time, number_of_orbits, orbit_delete_timing = run_time_processing(options)
-        plot_slowdown(options, orbit_delete_timing)
+    if options.plot_slowdown:
+        seconds, processing_time, number_of_orbits, orbit_details = run_time_processing(options)
+        plot_slowdown(options, orbit_details)
 
 
 if __name__ == "__main__":
