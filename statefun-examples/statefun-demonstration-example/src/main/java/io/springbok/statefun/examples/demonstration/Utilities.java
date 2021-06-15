@@ -1,11 +1,19 @@
 package io.springbok.statefun.examples.demonstration;
 
 import io.springbok.statefun.examples.demonstration.generated.DefaultOut;
+import io.springbok.statefun.examples.demonstration.generated.SensorInfoMessage;
 import org.apache.flink.statefun.sdk.Context;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.hipparchus.geometry.euclidean.threed.Vector3D;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Properties;
 
 // Containing Utilities used for convenience in the application
 public class Utilities {
@@ -54,5 +62,74 @@ public class Utilities {
 
       return arrayList;
     }
+  }
+
+  public static String SensorInfoMessageToString(SensorInfoMessage sensorInfoMessage) {
+
+    String sensorId = sensorInfoMessage.getSensorId();
+    String latitude = String.valueOf(sensorInfoMessage.getLatitude());
+    String longitude = String.valueOf(sensorInfoMessage.getLongitude());
+    String altitude = String.valueOf(sensorInfoMessage.getAltitude());
+
+    return sensorId + "," + latitude + "," + longitude + "," + altitude;
+  }
+
+  public static SensorInfoMessage StringToSensorInfoMessage(String string) {
+    String[] values = string.split(",");
+    String sensorId = values[0];
+    double latitude = Double.parseDouble(values[1]);
+    double longitude = Double.parseDouble(values[2]);
+    double altitude = Double.parseDouble(values[3]);
+
+    SensorInfoMessage sensorInfoMessage =
+        SensorInfoMessage.newBuilder()
+            .setSensorId(sensorId)
+            .setLatitude(latitude)
+            .setLongitude(longitude)
+            .setAltitude(altitude)
+            .build();
+
+    return sensorInfoMessage;
+  }
+
+  // Convert vector3D to x y z representation
+  public static String vector3DToString(Vector3D vector3D) {
+    String x = String.valueOf(vector3D.getX());
+    String y = String.valueOf(vector3D.getY());
+    String z = String.valueOf(vector3D.getZ());
+
+    String string = x + "," + y + "," + z;
+
+    return string;
+  }
+
+  // Converts string to vector 3d. Assumes csv with 3 doubles.
+  public static Vector3D stringToVector3D(String string) {
+    String[] values = string.split(",");
+    double x = Double.parseDouble(values[0]);
+    double y = Double.parseDouble(values[1]);
+    double z = Double.parseDouble(values[2]);
+
+    Vector3D vector3D = new Vector3D(x, y, z);
+
+    return vector3D;
+  }
+
+  public static void sendKafkaMessage(String topic, String message) throws Exception {
+    Properties props = new Properties();
+
+    // TODO: set these arguments from config/command line
+    props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+    props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+    props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+
+    ApplicationEnvironment.setPathProperties();
+
+    Producer producer = new KafkaProducer(props);
+
+    producer.send(new ProducerRecord<>(topic, message));
+
+    producer.flush();
+    producer.close();
   }
 }

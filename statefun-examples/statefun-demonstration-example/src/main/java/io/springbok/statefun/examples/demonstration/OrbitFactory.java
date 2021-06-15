@@ -13,6 +13,7 @@ import org.orekit.frames.FramesFactory;
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.Orbit;
 import org.orekit.orbits.PositionAngle;
+import org.orekit.propagation.analytical.tle.TLE;
 import org.orekit.propagation.conversion.DormandPrince54IntegratorBuilder;
 import org.orekit.propagation.conversion.NumericalPropagatorBuilder;
 import org.orekit.propagation.integration.AbstractIntegratedPropagator;
@@ -51,8 +52,26 @@ public class OrbitFactory {
     }
   }
 
+  public static Orbit createOrbit(TLE tle) {
+
+    final double a = Math.cbrt(mu / (Math.pow(tle.getMeanMotion(), 2)));
+    Orbit orbit =
+        new KeplerianOrbit(
+            a,
+            tle.getE(),
+            tle.getI(),
+            tle.getPerigeeArgument(),
+            tle.getRaan(),
+            tle.getMeanAnomaly(),
+            PositionAngle.MEAN,
+            inertialFrame,
+            tle.getDate(),
+            mu);
+    return orbit;
+  }
+
   // Create an orbit with a single Track of 2 or more positions
-  public static KeyedOrbit createOrbit(Track track, String orbitId) {
+  public static KeyedOrbit createKeyedOrbit(Track track, String orbitId) {
 
     // Ensure Orekit is configured
     init();

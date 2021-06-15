@@ -9,8 +9,12 @@ public class ApplicationProperties {
   private static Double epsilon = null;
   private static Double axisEpsilon = null;
   private static Long deleteTimer = null;
+  private static Integer speedUpFactor = null;
   private static Integer trackCutoff = null;
   private static Integer logLevel = null;
+  private static Boolean correlateByObject = null;
+  private static Boolean isTest = null;
+  private static Integer eventTestNumber = null;
 
   public static Properties getProperties() throws Exception {
     if (properties == null) {
@@ -53,10 +57,38 @@ public class ApplicationProperties {
     return deleteTimer;
   }
 
+  public static int getSpeedUpFactor() throws Exception {
+    if (speedUpFactor == null) {
+      speedUpFactor = Integer.parseInt(getProperties().getProperty("speedUpFactor"));
+    }
+    return speedUpFactor;
+  }
+
   public static Integer getLogLevel() throws Exception {
     if (logLevel == null) {
       logLevel = Integer.parseInt(getProperties().getProperty("logLevel"));
     }
     return logLevel;
+  }
+
+  public static Boolean getCorrelateByObject() throws Exception {
+    if (correlateByObject == null) {
+      correlateByObject = Boolean.parseBoolean(getProperties().getProperty("correlateByObject"));
+    }
+    return correlateByObject;
+  }
+
+  public static Boolean getIsTest() throws Exception {
+    if (isTest == null) {
+      isTest = Boolean.parseBoolean(getProperties().getProperty("isTest"));
+    }
+    return isTest;
+  }
+
+  public static Integer getTestEventNumber() throws Exception {
+    if (eventTestNumber == null) {
+      eventTestNumber = Integer.parseInt(getProperties().getProperty("eventTestNumber"));
+    }
+    return eventTestNumber;
   }
 }

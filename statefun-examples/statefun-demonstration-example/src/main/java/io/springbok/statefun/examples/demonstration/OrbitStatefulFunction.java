@@ -6,9 +6,11 @@ import org.apache.flink.statefun.sdk.FunctionType;
 import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
+import org.orekit.time.AbsoluteDate;
 
-import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /*
  TrackStatefulFunction stores instances of the KeyedOrbit class built from the data it receives from the OrbitIdManager.
@@ -18,8 +20,6 @@ public class OrbitStatefulFunction implements StatefulFunction {
 
   // This FunctionType binding is used in the Demonstration module
   public static final FunctionType TYPE = new FunctionType("springbok", "orbit-stateful-function");
-
-  public static int deleteTimer;
 
   // PersistedValues can be stored and recalled when this StatefulFunction is invoked
   @Persisted
@@ -43,7 +43,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
       Track track = Track.fromString(newTrackMessage.getStringTrack(), newTrackMessage.getId());
       try {
         // Create KeyedOrbit
-        KeyedOrbit keyedOrbit = OrbitFactory.createOrbit(track, context.self().id());
+        KeyedOrbit keyedOrbit = OrbitFactory.createKeyedOrbit(track, context.self().id());
 
         // Send new orbit id to TrackStatefulFunction
         context.send(
@@ -58,13 +58,13 @@ public class OrbitStatefulFunction implements StatefulFunction {
             CorrelateOrbitsMessage.newBuilder().setStringContent(keyedOrbit.toString()).build());
 
         // Send delete message to self after a certain amount of time
-        sendSelfDeleteMessage(context);
+        sendSelfDelayedDeleteMessage(context, keyedOrbit.orbit.getDate());
 
         // Send message out that orbit was created
         Utilities.log(
             context,
             String.format(
-                "Created orbit for id %s from track with id %s: %s",
+                "Propagated orbitId %s from trackId %s: %s",
                 keyedOrbit.orbitId, track.trackId, keyedOrbit.orbit.toString()),
             1);
 
@@ -74,7 +74,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
         Utilities.log(
             context,
             String.format(
-                "Orbit with id %s failed to create. Discarding track with id %s: %s",
+                "OrbitId %s failed to create. Discarding trackId %s: %s",
                 context.self().id(), track.trackId, e),
             1);
         context.send(
@@ -82,31 +82,20 @@ public class OrbitStatefulFunction implements StatefulFunction {
       }
     }
 
-    // This message is sent from this instance of the OrbitStatefulFunction after a period of time
-    if (input instanceof DelayedDeleteMessage) {
+    // This message is sent to delete this state
+    if (input instanceof DeleteMessage) {
       try {
         KeyedOrbit keyedOrbit = orbitState.get();
 
-        RemoveOrbitIdMessage removeOrbitIdMessage =
-            RemoveOrbitIdMessage.newBuilder().setStringContent(keyedOrbit.orbitId).build();
-
-        // Send message to manager to remove this orbit from list
-        context.send(OrbitIdManager.TYPE, "orbit-id-manager", removeOrbitIdMessage);
-
-        // Send message to track(s) to remove this orbit from their lists
-        keyedOrbit.trackIds.forEach(
-            id -> {
-              context.send(TrackStatefulFunction.TYPE, String.valueOf(id), removeOrbitIdMessage);
-            });
+        removeOrbitFromTrackStates(context, keyedOrbit.orbitId, keyedOrbit.trackIds);
+        removeOrbitFromIdManager(context, keyedOrbit.orbitId);
 
         // Send message out that this orbit was destroyed
-        Utilities.log(context, String.format("Cleared orbit for id %s", keyedOrbit.orbitId), 1);
+        Utilities.log(context, String.format("Cleared orbitId %s", keyedOrbit.orbitId), 1);
         orbitState.clear();
       } catch (NullPointerException e) {
         Utilities.log(
-            context,
-            String.format("Orbit with id %s already deleted: %s", context.self().id(), e),
-            1);
+            context, String.format("OrbitId %s already deleted: %s", context.self().id(), e), 2);
       }
     }
 
@@ -119,83 +108,210 @@ public class OrbitStatefulFunction implements StatefulFunction {
             KeyedOrbit.fromString(correlateOrbitsMessage.getStringContent());
         KeyedOrbit keyedOrbit = orbitState.get();
 
-        // Attempt correlation
-        if (OrbitCorrelator.correlate(recievedKeyedOrbit, keyedOrbit)) {
+        // Check if correlation should be attempted. Correlation should not be attempted if either
+        // representation of an orbit is redundant, i.e., all of the tracks contained in one of the
+        // orbits are contained in another. If a redundant orbit is found, it will be deleted if it
+        // has a number of tracks greater than the track cutoff value found in the properties file
+        int redundancySwitch = KeyedOrbit.checkRedundancy(recievedKeyedOrbit, keyedOrbit);
 
-          // Send message out that correlation successful
-          Utilities.log(
-              context,
-              String.format(
-                  "Correlated orbits with ids %s and %s",
+        int trackCutoff = ApplicationProperties.getTrackCutoff();
+
+        switch (redundancySwitch) {
+          case 1:
+
+            // keep if smaller or equal to trackcutoff
+            if (recievedKeyedOrbit.trackIds.size() <= trackCutoff) {
+              Utilities.log(
+                  context,
+                  String.format(
+                      "OrbitId %s is redundant with orbitId %s. Orbit is smaller than track cutoff. Not deleting",
+                      recievedKeyedOrbit.orbitId, context.self().id()),
+                  2);
+            } else {
+              // delete recieved orbit
+              Utilities.log(
+                  context,
+                  String.format(
+                      "OrbitId %s is redundant with orbitId %s. Sending delete message",
+                      recievedKeyedOrbit.orbitId, context.self().id()),
+                  2);
+              context.send(
+                  OrbitStatefulFunction.TYPE,
                   recievedKeyedOrbit.orbitId,
-                  keyedOrbit.orbitId,
-                  recievedKeyedOrbit.objectIds.get(0),
-                  recievedKeyedOrbit.objectIds.get(0)),
-              1);
+                  DeleteMessage.newBuilder().build());
+            }
+            break;
 
-          // CollectedTracksMessage gathers all Tracks from one orbit, and keeps the orbit of the
-          // other to refine with a least squares
-          ArrayList<String> trackIds = new ArrayList<>(keyedOrbit.trackIds);
-          String nextTrack = trackIds.get(0);
+          case 2:
 
-          CollectedTracksMessage collectedTracksMessage =
-              CollectedTracksMessage.newBuilder()
-                  .setKeyedOrbit1(recievedKeyedOrbit.toString())
-                  .setKeyedOrbit2(keyedOrbit.toString())
-                  .setTracksToGather(Utilities.arrayListToString(trackIds))
-                  .setIterator(1)
-                  .build();
+            // keep if smaller or equal to trackcutoff
+            if (keyedOrbit.trackIds.size() <= trackCutoff) {
+              Utilities.log(
+                  context,
+                  String.format(
+                      "OrbitId %s is redundant with orbitId %s. Orbit is smaller than track cutoff. Not deleting",
+                      context.self().id(), recievedKeyedOrbit.orbitId),
+                  2);
+            } else {
+              // delete this orbit
+              Utilities.log(
+                  context,
+                  String.format(
+                      "OrbitId %s is redundant with orbitId %s. Sending delete message",
+                      context.self().id(), recievedKeyedOrbit.orbitId),
+                  2);
+              context.send(context.self(), DeleteMessage.newBuilder().build());
 
-          context.send(TrackStatefulFunction.TYPE, nextTrack, collectedTracksMessage);
-        } else {
-          // Send message out that correlation not successful
-          Utilities.log(
-              context,
-              String.format(
-                  "Not correlated orbits with ids %s and %s",
-                  recievedKeyedOrbit.orbitId, keyedOrbit.orbitId),
-              3);
+              // Ensure new orbit is saved in manager
+              context.send(
+                  OrbitIdManager.TYPE,
+                  "orbit-id-manager",
+                  AddMaxFormedOrbit.newBuilder().setId(recievedKeyedOrbit.orbitId).build());
+            }
+            break;
+
+          default:
+
+            // Attempt correlation
+            if (OrbitCorrelator.correlate(recievedKeyedOrbit, keyedOrbit)) {
+
+              // Send message out that correlation successful
+              Utilities.log(
+                  context,
+                  String.format(
+                      "Correlated orbitId %s and orbitId %s",
+                      recievedKeyedOrbit.orbitId,
+                      keyedOrbit.orbitId,
+                      recievedKeyedOrbit.objectIds.get(0),
+                      recievedKeyedOrbit.objectIds.get(0)),
+                  1);
+
+              Boolean deleteKeyedOrbit1 = false;
+              Boolean deleteKeyedOrbit2 = false;
+
+              // Add Orbits larger than trackcutoff to list of tracks to be deleted on successful
+              // correlation
+              if (keyedOrbit.trackIds.size() > trackCutoff) {
+                Utilities.log(
+                    context,
+                    String.format(
+                        "OrbitId %s has more tracks than track cutoff value %s. Scheduling orbit for deletion.",
+                        context.self().id(), trackCutoff),
+                    2);
+
+                // Send message to manager to remove this orbit from list
+                //                removeOrbitFromIdManager(context, context.self().id());
+                deleteKeyedOrbit1 = true;
+              }
+              if (recievedKeyedOrbit.trackIds.size() > trackCutoff) {
+                Utilities.log(
+                    context,
+                    String.format(
+                        "OrbitId %s has more tracks than track cutoff value %s. Scheduling orbit for deletion.",
+                        recievedKeyedOrbit.orbitId, trackCutoff),
+                    2);
+
+                // Send message to manager to remove this orbit from list
+                //                removeOrbitFromIdManager(context, recievedKeyedOrbit.orbitId);
+                deleteKeyedOrbit2 = true;
+              }
+
+              // CollectedTracksMessage gathers all Tracks from one orbit, and keeps the orbit of
+              // the
+              // other to refine with a least squares
+              Set<String> trackIdsSet = new LinkedHashSet<>(keyedOrbit.trackIds);
+              trackIdsSet.addAll(recievedKeyedOrbit.trackIds);
+              ArrayList<String> trackIds = new ArrayList<>(trackIdsSet);
+
+              // Build collected tracks message
+              CollectedTracksMessage collectedTracksMessage =
+                  CollectedTracksMessage.newBuilder()
+                      .setKeyedOrbit1(keyedOrbit.toString())
+                      .setKeyedOrbit2(recievedKeyedOrbit.toString())
+                      .setTracksToGather(Utilities.arrayListToString(trackIds))
+                      .setIterator(1)
+                      .setDeleteKeyedOrbit1(deleteKeyedOrbit1)
+                      .setDeleteKeyedOrbit2(deleteKeyedOrbit2)
+                      .build();
+
+              context.send(OrbitIdManager.TYPE, "orbit-id-manager", collectedTracksMessage);
+            } else {
+              // Send message out that correlation not successful
+              Utilities.log(
+                  context,
+                  String.format(
+                      "Not correlated orbitIds %s and %s",
+                      recievedKeyedOrbit.orbitId, keyedOrbit.orbitId),
+                  4);
+
+              // Ensure new orbit is saved in manager
+              context.send(
+                  OrbitIdManager.TYPE,
+                  "orbit-id-manager",
+                  AddMaxFormedOrbit.newBuilder().setId(recievedKeyedOrbit.orbitId).build());
+            }
         }
       } catch (Exception e) {
-        Utilities.log(context, String.format("Not correlated orbits: %s", e), 1);
+        Utilities.log(context, String.format("Not correlated orbits: %s", e), 3);
       }
     }
 
-    // CollectedTracksMessage is received in a new OrbitStatefulFunction created by the
-    // OrbitIdManager once all tracks are collected
+    // CollectedTracksMessage is received in a new OrbitStatefulFunction created
+    // once all tracks are collected
     if (input instanceof CollectedTracksMessage) {
+      CollectedTracksMessage collectedTracksMessage = (CollectedTracksMessage) input;
+
+      KeyedOrbit keyedOrbit1 = KeyedOrbit.fromString(collectedTracksMessage.getKeyedOrbit1());
+      KeyedOrbit keyedOrbit2 = KeyedOrbit.fromString(collectedTracksMessage.getKeyedOrbit2());
+      ArrayList<String> stringTracks =
+          Utilities.stringToArrayList(collectedTracksMessage.getCollectedTracks());
+      ArrayList<String> newOrbitTrackIds = new ArrayList<>(keyedOrbit1.trackIds);
+      keyedOrbit2.trackIds.forEach(
+          track -> {
+            if (!newOrbitTrackIds.contains(track)) {
+              newOrbitTrackIds.add(track);
+            }
+          });
+
       try {
-        CollectedTracksMessage collectedTracksMessage = (CollectedTracksMessage) input;
+        //        KeyedOrbit keyedOrbit1 =
+        // KeyedOrbit.fromString(collectedTracksMessage.getKeyedOrbit1());
+        //        KeyedOrbit keyedOrbit2 =
+        // KeyedOrbit.fromString(collectedTracksMessage.getKeyedOrbit2());
 
-        KeyedOrbit keyedOrbit1 = KeyedOrbit.fromString(collectedTracksMessage.getKeyedOrbit1());
-        KeyedOrbit keyedOrbit2 = KeyedOrbit.fromString(collectedTracksMessage.getKeyedOrbit2());
-
-        ArrayList<String> stringTracks =
-            Utilities.stringToArrayList(collectedTracksMessage.getCollectedTracks());
+        //        ArrayList<String> stringTracks =
+        //            Utilities.stringToArrayList(collectedTracksMessage.getCollectedTracks());
         ArrayList<Track> collectedTracks = new ArrayList<>();
 
         for (int j = 0; j < stringTracks.size(); j++) {
-          collectedTracks.add(
-              Track.fromString(stringTracks.remove(j), keyedOrbit2.trackIds.get(j)));
+          collectedTracks.add(Track.fromString(stringTracks.get(j), newOrbitTrackIds.get(j)));
         }
-
-        ArrayList<String> trackIds = new ArrayList<>(keyedOrbit1.trackIds);
 
         // Create new KeyedOrbit by refining with new tracks
         KeyedOrbit newOrbit =
             OrbitFactory.refineOrbit(
-                keyedOrbit1.orbit, trackIds, collectedTracks, context.self().id());
+                keyedOrbit1.orbit, newOrbitTrackIds, collectedTracks, context.self().id());
 
         // Send message out that orbit was refined
         Utilities.log(
             context,
             String.format(
-                "Refined orbits with ids %s and %s to create orbit with id %s: %s",
+                "Refined orbitId %s and orbitId %s to create orbitId %s: %s",
                 keyedOrbit1.orbitId,
                 keyedOrbit2.orbitId,
                 newOrbit.orbitId,
                 newOrbit.orbit.toString()),
             1);
+
+        // Delete old orbits that were flagged
+        if (collectedTracksMessage.getDeleteKeyedOrbit1()) {
+          context.send(
+              OrbitStatefulFunction.TYPE, keyedOrbit1.orbitId, DeleteMessage.newBuilder().build());
+        }
+        if (collectedTracksMessage.getDeleteKeyedOrbit2()) {
+          context.send(
+              OrbitStatefulFunction.TYPE, keyedOrbit2.orbitId, DeleteMessage.newBuilder().build());
+        }
 
         NewRefinedOrbitIdMessage newRefinedOrbitIdMessage =
             NewRefinedOrbitIdMessage.newBuilder()
@@ -204,52 +320,85 @@ public class OrbitStatefulFunction implements StatefulFunction {
                 .setOldOrbitId2(keyedOrbit2.orbitId)
                 .setOldOrbit1TracksNumber(keyedOrbit1.trackIds.size())
                 .setOldOrbit2TracksNumber(keyedOrbit2.trackIds.size())
+                .setNewOrbit(newOrbit.toString())
                 .build();
 
         // Send a message to the OrbitIdManager to save the new orbit id
         context.send(OrbitIdManager.TYPE, "orbit-id-manager", newRefinedOrbitIdMessage);
 
-        // Send orbitId to each TrackStatefulFunction associated with this orbit to save it in each
-        // one
-        NewOrbitIdMessage newOrbitIdMessage =
-            NewOrbitIdMessage.newBuilder().setId(newOrbit.orbitId).build();
-        newOrbit.trackIds.forEach(
-            id -> {
-              context.send(TrackStatefulFunction.TYPE, id, newOrbitIdMessage);
-            });
-
         // Send delete message to self after a certain amount of time
-        sendSelfDeleteMessage(context);
+        sendSelfDelayedDeleteMessage(context, newOrbit.orbit.getDate());
 
         // Send message out that orbit was created and saved
         Utilities.log(
-            context, String.format("Created refined orbit for id %s", newOrbit.orbitId), 2);
+            context,
+            String.format(
+                "Created refined orbitId %s from tracks: %s",
+                newOrbit.orbitId, newOrbit.trackIds.toString()),
+            2);
 
         orbitState.set(newOrbit);
       } catch (NullPointerException e) {
         Utilities.log(
             context,
             String.format(
-                "Orbit refine for orbit id %s failed with exception %s - did you forget to set properties?",
+                "Orbit refine for orbitId %s failed with exception %s - did you forget to set properties?",
                 context.self().id(), e),
             1);
+
+        // Delete this orbit from Tracks' and OrbitIdManager orbit list
+        ArrayList<String> trackIds =
+            Utilities.stringToArrayList(collectedTracksMessage.getTracksToGather());
+        removeOrbitFromTrackStates(context, context.self().id(), trackIds);
 
       } catch (Exception e) {
         // Send message out that orbit refine failed
         Utilities.log(
             context,
-            String.format("Orbit refine for orbit id %s failed: %s", context.self().id(), e),
+            String.format("Orbit refine for orbitId %s failed: %s", context.self().id(), e),
             1);
+
+        // Delete this orbit from Tracks' and OrbitIdManager orbit list
+        removeOrbitFromTrackStates(context, context.self().id(), newOrbitTrackIds);
       }
+
+      // Delete this orbit from Tracks' orbit list
     }
   }
 
   // Sends a delete message after a certain amount of time
-  private void sendSelfDeleteMessage(Context context) throws Exception {
+  private void sendSelfDelayedDeleteMessage(Context context, AbsoluteDate orbitDate)
+      throws Exception {
 
-    long deleteTimer = ApplicationProperties.getDeleteTimer();
+    NewEventMessage newEventMessage =
+        NewEventMessage.newBuilder()
+            .setEventType("delete-orbit")
+            .setObjectId(context.self().id())
+            .setTime(orbitDate.toString())
+            .build();
 
-    context.sendAfter(
-        Duration.ofSeconds(deleteTimer), context.self(), DelayedDeleteMessage.newBuilder().build());
+    // Send to event manager to schedule orbit delete
+    context.send(EventManager.TYPE, "event-manager", newEventMessage);
+  }
+
+  // Delete this orbit from Track states
+  private void removeOrbitFromTrackStates(Context context, String orbitId, ArrayList trackIds) {
+    RemoveOrbitIdMessage removeOrbitIdMessage =
+        RemoveOrbitIdMessage.newBuilder().setStringContent(orbitId).build();
+
+    // Send message to track(s) to remove this orbit from their lists
+    trackIds.forEach(
+        id -> {
+          context.send(TrackStatefulFunction.TYPE, String.valueOf(id), removeOrbitIdMessage);
+        });
+  }
+
+  // Delete orbit from id manager state
+  private void removeOrbitFromIdManager(Context context, String orbitId) {
+    RemoveOrbitIdMessage removeOrbitIdMessage =
+        RemoveOrbitIdMessage.newBuilder().setStringContent(orbitId).build();
+
+    // Send message to manager to remove this orbit from list
+    context.send(OrbitIdManager.TYPE, "orbit-id-manager", removeOrbitIdMessage);
   }
 }

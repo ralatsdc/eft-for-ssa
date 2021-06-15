@@ -53,24 +53,23 @@ public class TrackGenerator {
 
     // TODO: verify the input is a TLE
     orekitPath = System.getProperty("OREKIT_PATH");
-    tlePath = System.getProperty("TLE_PATH");
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
   }
 
-  public TrackGenerator(String tlePath) throws Exception {
+  public TrackGenerator(String tleLocation) throws Exception {
 
     // TODO: verify the input is a TLE
-    this.tlePath = tlePath;
+    tlePath = tleLocation;
     orekitPath = System.getProperty("OREKIT_PATH");
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
   }
 
-  public TrackGenerator(String tlePath, String orekitPath) throws Exception {
+  public TrackGenerator(String tleLocation, String orekitPath) throws Exception {
 
     // TODO: verify the input is a TLE
-    this.tlePath = tlePath;
+    tlePath = tleLocation;
     this.orekitPath = orekitPath;
     messages = new ArrayList<>();
     mappedMessages = new HashMap<>();
@@ -83,9 +82,11 @@ public class TrackGenerator {
     final DataProvidersManager manager = DataContext.getDefault().getDataProvidersManager();
     manager.addProvider(new DirectoryCrawler(orekitData));
 
-    // Add tles to list
-    final File tleData = new File(tlePath);
-    tles = convertTLES(tleData);
+    if (tlePath != null) {
+      // Add tles to list
+      final File tleData = new File(tlePath);
+      tles = TLEReader.readTLEs(tleData);
+    }
 
     // Set up propagator
     final GillIntegrator gillIntegrator = new GillIntegrator(largeStep);
@@ -102,10 +103,11 @@ public class TrackGenerator {
     pvBuilder = new PVBuilder(null, sigmaP, sigmaV, baseWeight, satelliteIndex);
   }
 
-  public ArrayList<String> finitePropagation() {
+  // Time in weeks
+  public ArrayList<String> finitePropagation(double weeks) {
 
     // Overall duration in seconds for extrapolation - 1 week
-    final double duration = 60 * 60 * 24 * 7;
+    final double duration = 60 * 60 * 24 * 7 * weeks;
 
     tles.forEach(
         (tle) -> {
@@ -140,14 +142,17 @@ public class TrackGenerator {
         });
 
     // Sort messages by track start time
-    Collections.sort(messages, new Comparator<String>() {
-      public int compare(String msgOne, String msgTwo) {
-        String[] fldsOne = msgOne.split(",");
-        String[] fldsTwo = msgTwo.split(",");
-        // Sort lexicographically since times are in YYYY-MM-DDTHH:MM:SS.SSS format
-        return fldsOne[4].compareTo(fldsTwo[4]);
-      }
-    });
+    Collections.sort(
+        messages,
+        new Comparator<String>() {
+          @Override
+          public int compare(String msgOne, String msgTwo) {
+            String[] fldsOne = msgOne.split(",");
+            String[] fldsTwo = msgTwo.split(",");
+            // Sort lexicographically since times are in YYYY-MM-DDTHH:MM:SS.SSS format
+            return fldsOne[4].compareTo(fldsTwo[4]);
+          }
+        });
     return messages;
   }
 
@@ -164,6 +169,21 @@ public class TrackGenerator {
     AbsoluteDate extrapDate = tle.getDate().shiftedBy(timePassed);
 
     String message = createMessage(extrapDate, smallStep, numericalPropagator, pvBuilder, tle);
+
+    return message;
+  }
+
+  public String produceTrackAtTime(TLE tle, AbsoluteDate endDate, String sensorId) {
+
+    // Get orbit from TLE
+    Orbit initialOrbit = createOrbit(tle);
+
+    // Set initial state
+    final SpacecraftState initialState = new SpacecraftState(initialOrbit);
+    numericalPropagator.setInitialState(initialState);
+
+    String message =
+        createMessage(endDate, smallStep, numericalPropagator, pvBuilder, tle, sensorId);
 
     return message;
   }
@@ -291,12 +311,70 @@ public class TrackGenerator {
     }
 
     // Sort TLEs by TLE epoch
-    Collections.sort(tles, new Comparator<TLE>() {
-      public int compare(TLE tleOne, TLE tleTwo) {
-        return tleOne.getDate().compareTo(tleTwo.getDate());
-      }
-    });
+    Collections.sort(
+        tles,
+        new Comparator<TLE>() {
+          @Override
+          public int compare(TLE tleOne, TLE tleTwo) {
+            return tleOne.getDate().compareTo(tleTwo.getDate());
+          }
+        });
     return tles;
+  }
+
+  // Overloaded method adds sensorId specification
+  public static String createMessage(
+      AbsoluteDate extrapDate,
+      double smallStep,
+      NumericalPropagator nPropagator,
+      PVBuilder pvBuilder,
+      TLE tle,
+      String sensorId) {
+
+    // Message format:
+    // msgTime, sensorId, objectId, obsTime1, x1, y1, z1, rcs1, obsTime2, x2, y2, z2, rcs2,
+    // obsTime3, x3, y3, z3, rcs3
+    String message;
+
+    UUID uuid = UUID.randomUUID();
+
+    // Message set to always come in ten minutes after first observation
+    AbsoluteDate msgTime = extrapDate.shiftedBy(600);
+    // Set object ID
+    int objectId = tle.getSatelliteNumber();
+
+    message = uuid.toString() + "," + msgTime.toString() + "," + sensorId + "," + objectId;
+
+    // TODO: future random number of readings option
+    //    int positionReadingNum = (int) (Math.random() * 10);
+    int positionReadingNum = 3;
+
+    // 3 readings separated by smallStep
+    for (int i = 0; i <= positionReadingNum; i++) {
+      AbsoluteDate currentDate = extrapDate.shiftedBy(smallStep * i);
+      final SpacecraftState currentState = nPropagator.propagate(currentDate);
+      // Add Az/El measurement to container
+      SpacecraftState[] states = new SpacecraftState[] {currentState};
+      PV pv = pvBuilder.build(states);
+      Vector3D position = pv.getPosition();
+
+      // TODO: generate RCS in a more specified way.
+      double rcs = 5;
+
+      String obs =
+          currentDate.toString()
+              + ","
+              + position.getX()
+              + ","
+              + position.getY()
+              + ","
+              + position.getZ()
+              + ","
+              + rcs;
+
+      message = message + "," + obs;
+    }
+    return message;
   }
 
   public ArrayList<String> getMessages() {

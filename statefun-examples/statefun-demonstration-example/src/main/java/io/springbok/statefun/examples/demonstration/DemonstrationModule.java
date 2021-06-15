@@ -25,9 +25,17 @@ public class DemonstrationModule implements StatefulFunctionModule {
         (String) globalConfiguration.getOrDefault(KAFKA_KEY, DEFAULT_KAFKA_ADDRESS);
     DemonstrationIO ioModule = new DemonstrationIO(kafkaAddress);
 
-    // Bind the application ingress and router
+    // Bind the track ingress and router
     binder.bindIngress(ioModule.getIngressSpec());
     binder.bindIngressRouter(DemonstrationIO.TRACKS_INGRESS_ID, new TrackRouter());
+
+    // Bind the tle ingress
+    binder.bindIngress(ioModule.getTLEIngressSpec());
+    binder.bindIngressRouter(DemonstrationIO.TLE_INGRESS_ID, new TLERouter());
+
+    // Bind the sensor ingress
+    binder.bindIngress(ioModule.getSensorIngressSpec());
+    binder.bindIngressRouter(DemonstrationIO.SENSOR_INGRESS_ID, new SensorRouter());
 
     // Bind application egress
     binder.bindEgress(ioModule.getEgressSpec());
@@ -37,5 +45,11 @@ public class DemonstrationModule implements StatefulFunctionModule {
     binder.bindFunctionProvider(OrbitStatefulFunction.TYPE, unused -> new OrbitStatefulFunction());
     binder.bindFunctionProvider(TrackStatefulFunction.TYPE, unused -> new TrackStatefulFunction());
     binder.bindFunctionProvider(OrbitIdManager.TYPE, unused -> new OrbitIdManager());
+    binder.bindFunctionProvider(
+        SatelliteStatefulFunction.TYPE, unused -> new SatelliteStatefulFunction());
+    binder.bindFunctionProvider(
+        SensorStatefulFunction.TYPE, unused -> new SensorStatefulFunction());
+    binder.bindFunctionProvider(SensorIdManager.TYPE, unused -> new SensorIdManager());
+    binder.bindFunctionProvider(EventManager.TYPE, unused -> new EventManager());
   }
 }

@@ -67,6 +67,7 @@ parallelism.default must be equal or smaller than the number of worker container
 
 jobmanager.memory.flink.size must be set sufficiently high (and close to the memory of the container)
 Setting memory of container: https://docs.docker.com/compose/compose-file/#resources
+https://docs.docker.com/compose/compose-file/compose-file-v2/
 
 ---
 

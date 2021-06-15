@@ -53,9 +53,7 @@ public class TrackStatefulFunction implements StatefulFunction {
         // Send message out that track was created
         Utilities.log(
             context,
-            String.format(
-                "Created track for id %s from message with id %s",
-                track.trackId, track.messageUUID),
+            String.format("Created trackId %s from messageId %s", track.trackId, track.messageUUID),
             1);
 
         // Set persisted state
@@ -76,23 +74,12 @@ public class TrackStatefulFunction implements StatefulFunction {
         NewOrbitIdMessage newOrbitIdMessage = (NewOrbitIdMessage) input;
 
         // Get the trackState and update it with the new id
-        Track track = trackState.get();
-        track.addOrbitId(newOrbitIdMessage.getId());
 
-        // Send message out that orbitId was added
-        Utilities.log(
-            context,
-            String.format(
-                "Added orbitId %s to trackId %s", newOrbitIdMessage.getId(), track.trackId),
-            2);
+        addOrbitId(context, newOrbitIdMessage.getId());
 
-        // Set persisted state
-        trackState.set(track);
       } catch (Exception e) {
         Utilities.log(
-            context,
-            String.format("track with id %s cannot add orbitId: %s", context.self().id(), e),
-            1);
+            context, String.format("trackId %s cannot add orbitId: %s", context.self().id(), e), 1);
       }
     }
 
@@ -114,18 +101,23 @@ public class TrackStatefulFunction implements StatefulFunction {
         // If the track still has orbits associated with it, save it otherwise delete this value
         if (track.getOrbitIds().size() == 0) {
           trackState.clear();
-          Utilities.log(context, String.format("Cleared track for trackId %s", track.trackId), 1);
+          Utilities.log(context, String.format("Cleared trackId %s", track.trackId), 1);
         } else {
           trackState.set(track);
           Utilities.log(
               context,
               String.format("Removed orbitId %s from trackId %s", orbitId, track.trackId),
               2);
+          Utilities.log(
+              context,
+              String.format(
+                  "Remaining orbit ids in trackId %s: %s", track.trackId, track.getOrbitIds()),
+              3);
         }
       } catch (Exception e) {
         Utilities.log(
             context,
-            String.format("track with id %s cannot remove orbit id: %s", context.self().id(), e),
+            String.format("trackId %s cannot remove orbit id: %s", context.self().id(), e),
             1);
       }
     }
@@ -134,13 +126,10 @@ public class TrackStatefulFunction implements StatefulFunction {
     if (input instanceof DeleteTrackMessage) {
       try {
         trackState.clear();
-        Utilities.log(
-            context, String.format("Cleared track for trackId %s", context.self().id()), 1);
+        Utilities.log(context, String.format("Cleared trackId %s", context.self().id()), 1);
       } catch (Exception e) {
         Utilities.log(
-            context,
-            String.format("track with id %s cannot be deleted: %s", context.self().id(), e),
-            1);
+            context, String.format("trackId %s cannot be deleted: %s", context.self().id(), e), 1);
       }
     }
 
@@ -165,15 +154,20 @@ public class TrackStatefulFunction implements StatefulFunction {
         // Send message out
         Utilities.log(
             context,
-            String.format("Added track with id %s to collectedTracksMessage", track.trackId),
-            2);
+            String.format(
+                "Added trackId %s to collectedTracksMessage for orbitId %s",
+                track.trackId, collectedTracksMessage.getOrbitId()),
+            3);
+
+        // Add orbit to trackState
+        addOrbitId(context, collectedTracksMessage.getOrbitId());
 
       } catch (Exception e) {
         collectedTracks = collectedTracksMessage.getCollectedTracks();
         Utilities.log(
             context,
             String.format(
-                "track with id %s cannot be added to CollectedTracksMessage, forwarding CollectedTracksMessage: %s",
+                "trackId %s cannot be added to CollectedTracksMessage, forwarding CollectedTracksMessage: %s",
                 context.self().id(), e),
             1);
       } finally {
@@ -193,6 +187,9 @@ public class TrackStatefulFunction implements StatefulFunction {
                   .setTracksToGather(Utilities.arrayListToString(tracksToGather))
                   .setCollectedTracks(collectedTracks)
                   .setIterator(collectedTracksMessage.getIterator() + 1)
+                  .setOrbitId(collectedTracksMessage.getOrbitId())
+                  .setDeleteKeyedOrbit1(collectedTracksMessage.getDeleteKeyedOrbit1())
+                  .setDeleteKeyedOrbit2(collectedTracksMessage.getDeleteKeyedOrbit2())
                   .build();
 
           context.send(
@@ -206,11 +203,27 @@ public class TrackStatefulFunction implements StatefulFunction {
                   .setKeyedOrbit1(collectedTracksMessage.getKeyedOrbit1())
                   .setKeyedOrbit2(collectedTracksMessage.getKeyedOrbit2())
                   .setCollectedTracks(collectedTracks)
+                  .setDeleteKeyedOrbit1(collectedTracksMessage.getDeleteKeyedOrbit1())
+                  .setDeleteKeyedOrbit2(collectedTracksMessage.getDeleteKeyedOrbit2())
                   .build();
           // Route to orbitIdManager to get an ID for the new orbit
-          context.send(OrbitIdManager.TYPE, "orbit-id-manager", newCollectedTracksMessage);
+          context.send(
+              OrbitStatefulFunction.TYPE,
+              collectedTracksMessage.getOrbitId(),
+              newCollectedTracksMessage);
         }
       }
     }
+  }
+
+  private void addOrbitId(Context context, String orbitId) {
+    Track track = trackState.get();
+    track.addOrbitId(orbitId);
+
+    // Send message out that orbitId was added
+    Utilities.log(context, String.format("trackId %s added orbitId %s", track.trackId, orbitId), 2);
+
+    // Set persisted state
+    trackState.set(track);
   }
 }

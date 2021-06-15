@@ -25,6 +25,19 @@ message TrackIn {
   string track = 1;
 }
 
+message TLEIn {
+  string tle = 1;
+}
+
+message SensorIn {
+  string sensor = 1;
+}
+
+message SingleLineTLE {
+  string satelliteNumber = 1;
+  string lines = 2;
+}
+
 message DefaultOut {
   string content = 1;
 }
@@ -38,6 +51,10 @@ message CorrelateOrbitsMessage {
   string stringContent = 1;
 }
 
+message AddMaxFormedOrbit {
+  string id = 1;
+}
+
 message RemoveOrbitIdMessage {
   string stringContent = 1;
 }
@@ -46,12 +63,27 @@ message NewOrbitIdMessage {
   string id = 1;
 }
 
+message NewSatelliteMessage {
+  string id = 1;
+  bool leo = 2;
+  bool meo = 3;
+  bool geo = 4;
+}
+
+message SensorInfoMessage {
+  string sensorId = 1;
+  double latitude = 2;
+  double longitude = 3;
+  double altitude = 4;
+}
+
 message NewRefinedOrbitIdMessage {
   string newOrbitId = 1;
   string oldOrbitId1 = 2;
   string oldOrbitId2 = 3;
   int32 oldOrbit1TracksNumber = 4;
   int32 oldOrbit2TracksNumber = 5;
+  string newOrbit = 6;
 }
 
 message CollectedTracksMessage {
@@ -60,9 +92,35 @@ message CollectedTracksMessage {
   string tracksToGather = 3;
   string collectedTracks = 4;
   int32 iterator = 5;
+  string orbitId = 6;
+  bool deleteKeyedOrbit1 = 7;
+  bool deleteKeyedOrbit2 = 8;
 }
 
-message DelayedDeleteMessage {
+message DeleteMessage {
+}
+
+message NewEventSourceMessage {
+  string id = 1;
+}
+
+message NewEventMessage {
+  string eventType = 1;
+  string objectId = 2;
+  string time = 3;
+}
+
+message FireEventMessage {
+  string eventType = 1;
+  string objectId = 2;
+  string time = 3;
+}
+
+message GetNextEventMessage {
+  string time = 1;
+}
+
+message DelayedWakeUpMessage {
 }
 
 message DeleteTrackMessage {
