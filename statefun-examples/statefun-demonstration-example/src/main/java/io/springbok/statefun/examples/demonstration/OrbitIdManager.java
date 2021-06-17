@@ -8,6 +8,7 @@ import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /*
  The OrbitIdManager is responsible for creating new ids for orbits, as well as keeping track of those ids to check for possible correlations between orbits
@@ -52,6 +53,8 @@ public class OrbitIdManager implements StatefulFunction {
 
       // Set persisted state
       lastOrbitId.set(id);
+
+      bootstrapState(context);
     }
 
     // This is the final stop for the CollectedTracksMessage before it gets forwarded to its new
@@ -299,5 +302,22 @@ public class OrbitIdManager implements StatefulFunction {
     Long id = lastOrbitId.getOrDefault(-1L);
     id++;
     return id;
+  }
+
+  private void bootstrapState(Context context) {
+
+    List lastOrbitIdState = new ArrayList();
+    lastOrbitIdState.add(lastOrbitId.getOrDefault(0L));
+
+    List managerState = new ArrayList();
+
+    managerState.add(minFormedOrbitIds.getOrDefault(new ArrayList()));
+    managerState.add(maxFormedOrbitIds.getOrDefault(new ArrayList()));
+    managerState.add((lastOrbitIdState));
+
+    OrbitIdManagerBootstrap orbitIdManagerBootstrap = new OrbitIdManagerBootstrap();
+
+    orbitIdManagerBootstrap.bootstrap(
+        (org.apache.flink.statefun.flink.state.processor.Context) context, managerState);
   }
 }

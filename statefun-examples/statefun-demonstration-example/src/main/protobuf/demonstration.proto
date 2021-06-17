@@ -126,3 +126,9 @@ message DelayedWakeUpMessage {
 message DeleteTrackMessage {
 }
 
+message BootstrapOrbitIdManager {
+  string minFormedOrbitIds = 1;
+  string maxFormedOrbitIds = 2;
+  string lastOrbitId = 3;
+}
+
