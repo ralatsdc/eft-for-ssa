@@ -63,7 +63,7 @@ def count_number_of_orbits(options):
 
 def run_time_processing(options):
     # Define patterns to identify events required for analysis
-    track_ptn = re.compile('Created trackId')
+    track_ptn = re.compile('Created trackId [\d]+ from')
     created_ptn = re.compile('Created orbitId')
     propagated_ptn = re.compile('Propagated orbitId')
     from_tracks_ptn = re.compile('Created refined orbitId \d+ from tracks')
@@ -82,6 +82,9 @@ def run_time_processing(options):
     # Keep track of orbits
     orbit_details = []
 
+    # Keep track of tracks
+    track_details = []
+
     # Key: orbit_id Value: track associated with that orbit
     orbit_track_dict = {}
     track_messages_dict = {}
@@ -97,6 +100,10 @@ def run_time_processing(options):
                 if track_ptn.search(line) is not None:
                     track_id = re.search("(?<=Created trackId )(\d+)", line).group(0)
 
+                    # Add message to track_details
+                    track_details.insert(int(track_id), {"orbit_ids": [], "messages": [line]})
+
+                    # TODO: reimplement and delete old processing formatting
                     # add message to track_messages_dict
                     track_messages = track_messages_dict.get(track_id, [])
                     track_messages.append(line)
@@ -118,6 +125,16 @@ def run_time_processing(options):
                     # add mapping between track and orbit
                     orbit_track_dict[orbit_id] = track_id
 
+                    # Add orbit id and message to track_details
+                    orbit_ids = track_details[int(track_id)].get("orbit_ids", [])
+                    orbit_ids.append(orbit_id)
+                    track_details[int(track_id)]["orbit_ids"] = orbit_ids
+
+                    messages = track_details[int(track_id)].get("messages", [])
+                    messages.append(line)
+                    track_details[int(track_id)]["messages"] = messages
+
+                    # TODO: change this older logic to use new details dictionaries
                     # add message to track_messages_dict
                     track_messages = track_messages_dict.get(track_id, [])
                     track_messages.append(line)
@@ -133,6 +150,9 @@ def run_time_processing(options):
                         print(
                             "Cannot add track_id " + track_id + " to orbit_id " + orbit_id + " because orbit_id " + orbit_id + " has not been set. Ensure log file is ordered.")
 
+                    # Add message to track_details
+                    append_message_to_track_details(track_details, orbit_details, line, orbit_id)
+
                     # add message to track_messages_dict
                     track_messages = track_messages_dict.get(track_id, [])
                     track_messages.append(line)
@@ -147,6 +167,16 @@ def run_time_processing(options):
                     # add track number to orbit_details
                     orbit_details[int(orbit_id)]["track_ids"] = tracks
 
+                    # add orbit number and message to track_details
+                    for track_id in tracks:
+                        orbit_ids = track_details[int(track_id)].get("orbit_ids", [])
+                        orbit_ids.append(orbit_id)
+                        track_details[int(track_id)]["orbit_ids"] = orbit_ids
+
+                        messages = track_details[int(track_id)].get("messages", [])
+                        messages.append(line)
+                        track_details[int(track_id)]["messages"] = messages
+
                 if refined_ptn.search(line) is not None:
                     orbit_ids = re.findall("(?<=orbitId )(\d+)", line)
 
@@ -160,6 +190,10 @@ def run_time_processing(options):
                     orbit_details[int(orbit_ids[1])]["refined_to"] = orbit1_refined_to
 
                     orbit_details[int(orbit_ids[2])]["refined_from"] = [orbit_ids[0], orbit_ids[1]]
+
+                    # Add message to track_details, using refined_from ids
+                    append_message_to_track_details(track_details, orbit_details, line, orbit_ids[0])
+                    append_message_to_track_details(track_details, orbit_details, line, orbit_ids[1])
 
                     ## TODO: revisit this logic - with addition of orbit_details, this process can be made more streamlined
                     # get track associated with orbit_id
@@ -185,6 +219,9 @@ def run_time_processing(options):
                     # add details
                     orbit_details[int(orbit_id)]["cleared"] = line
                     orbit_details[int(orbit_id)]["lifespan"] = orbit_lifespan
+
+                    # Add message to track_details
+                    append_message_to_track_details(track_details, orbit_details, line, orbit_id)
 
     num_orb_message_dict[line] = num_orb
 
@@ -233,11 +270,23 @@ def run_time_processing(options):
     number_of_orbits = np.array(num_orb_list)
 
     # Dump orbit details into json
-    json_file_path = options.log_file_path.replace(".log", ".json")
-    with open(json_file_path, 'w') as fp:
+    json_orbit_file_path = options.log_file_path.replace(".log", "_orbit_details.json")
+    with open(json_orbit_file_path, 'w') as fp:
         json.dump(orbit_details, fp, sort_keys=True, default=str)
 
+    json_track_file_path = options.log_file_path.replace(".log", "_track_details.json")
+    with open(json_track_file_path, 'w') as fp:
+        json.dump(track_details, fp, sort_keys=True, default=str)
+
     return seconds, processing_time, number_of_orbits, orbit_details
+
+
+def append_message_to_track_details(track_details, orbit_details, message, orbit_id):
+    track_ids = orbit_details[int(orbit_id)]["track_ids"]
+    for track_id in track_ids:
+        messages = track_details[int(track_id)].get("messages", [])
+        messages.append(message)
+        track_details[int(track_id)]["messages"] = messages
 
 
 def plot_count(options, seconds, number_of_orbits):
@@ -416,11 +465,11 @@ def main():
         plot_count(options, seconds, number_of_orbits)
 
     if options.run_time_processing:
-        seconds, processing_time, number_of_orbits = run_time_processing(options)
+        seconds, processing_time, number_of_orbits, orbit_details = run_time_processing(options)
         plot_processing_time(options, seconds, processing_time)
 
     if options.run_time_processing_as_function_of_count:
-        seconds, processing_time, number_of_orbits = run_time_processing(options)
+        seconds, processing_time, number_of_orbits, orbit_details = run_time_processing(options)
         plot_processing_time_as_count(options, number_of_orbits, processing_time)
 
     if options.plot_slowdown:
