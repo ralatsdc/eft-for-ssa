@@ -23,6 +23,7 @@ public class Track {
   public UUID messageUUID;
   public String trackId;
   private ArrayList<String> orbitIds;
+  public String universe;
 
   private static TimeScale utc = TimeScalesFactory.getUTC();
 
@@ -63,7 +64,7 @@ public class Track {
   @Override
   public String toString() {
 
-    String msg = messageUUID + "," + msgTime + "," + sensorId + "," + objectId;
+    String msg = messageUUID + "," + msgTime + "," + sensorId + "," + objectId + "," + universe;
 
     for (int i = 0; i < positions.size(); i++) {
       Position position = positions.get(i);
@@ -90,7 +91,7 @@ public class Track {
 
     String[] tokens = line.split(",");
 
-    if (tokens.length % 5 != 4) {
+    if (tokens.length % 5 != 0) {
       throw new RuntimeException("Invalid string to form Track: " + line);
     }
 
@@ -101,13 +102,14 @@ public class Track {
     track.msgTime = new AbsoluteDate(tokens[1], utc);
     track.sensorId = Integer.parseInt(tokens[2]);
     track.objectId = Integer.parseInt(tokens[3]);
+    track.universe = tokens[4];
 
     ArrayList<Position> positions = new ArrayList<Position>();
     ArrayList<Double> rcsArr = new ArrayList<Double>();
 
     ObservableSatellite satelliteIndex = new ObservableSatellite(0);
 
-    for (int i = 4; i < tokens.length; i = i + 5) {
+    for (int i = 5; i < tokens.length; i = i + 5) {
 
       AbsoluteDate date = new AbsoluteDate(tokens[i], utc);
       double x = Double.parseDouble(tokens[(i + 1)]);

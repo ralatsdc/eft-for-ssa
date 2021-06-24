@@ -109,6 +109,9 @@ public class TrackGenerator {
     // Overall duration in seconds for extrapolation - 1 week
     final double duration = 60 * 60 * 24 * 7 * weeks;
 
+    // Default universe value given no parameters
+    final String universe = "0";
+
     tles.forEach(
         (tle) -> {
 
@@ -131,7 +134,60 @@ public class TrackGenerator {
               extrapDate = extrapDate.shiftedBy(largeStep)) {
 
             String message =
-                createMessage(extrapDate, smallStep, numericalPropagator, pvBuilder, tle);
+                createMessage(universe, extrapDate, smallStep, numericalPropagator, pvBuilder, tle);
+            messages.add(message);
+
+            ArrayList<String> sortedMessages =
+                mappedMessages.getOrDefault(tle.getSatelliteNumber(), new ArrayList<>());
+            sortedMessages.add(message);
+            mappedMessages.put(tle.getSatelliteNumber(), sortedMessages);
+          }
+        });
+
+    // Sort messages by track start time
+    Collections.sort(
+        messages,
+        new Comparator<String>() {
+          @Override
+          public int compare(String msgOne, String msgTwo) {
+            String[] fldsOne = msgOne.split(",");
+            String[] fldsTwo = msgTwo.split(",");
+            // Sort lexicographically since times are in YYYY-MM-DDTHH:MM:SS.SSS format
+            return fldsOne[4].compareTo(fldsTwo[4]);
+          }
+        });
+    return messages;
+  }
+
+  // Time in weeks
+  public ArrayList<String> finitePropagation(double weeks, String universe) {
+
+    // Overall duration in seconds for extrapolation - 1 week
+    final double duration = 60 * 60 * 24 * 7 * weeks;
+
+    tles.forEach(
+        (tle) -> {
+
+          // Initial date in UTC time scale
+          final AbsoluteDate initialDate = tle.getDate();
+
+          // Get orbit from TLE
+          Orbit initialOrbit = createOrbit(tle);
+
+          // Set initial state
+          final SpacecraftState initialState = new SpacecraftState(initialOrbit);
+          numericalPropagator.setInitialState(initialState);
+
+          // Stop date
+          final AbsoluteDate finalDate = initialDate.shiftedBy(duration);
+
+          // Extrapolation loop - 12 hour increments
+          for (AbsoluteDate extrapDate = initialDate;
+              extrapDate.compareTo(finalDate) <= 0;
+              extrapDate = extrapDate.shiftedBy(largeStep)) {
+
+            String message =
+                createMessage(universe, extrapDate, smallStep, numericalPropagator, pvBuilder, tle);
             messages.add(message);
 
             ArrayList<String> sortedMessages =
@@ -168,7 +224,29 @@ public class TrackGenerator {
     // Get working date
     AbsoluteDate extrapDate = tle.getDate().shiftedBy(timePassed);
 
-    String message = createMessage(extrapDate, smallStep, numericalPropagator, pvBuilder, tle);
+    // Give default universe value
+    String universe = "0";
+
+    String message =
+        createMessage(universe, extrapDate, smallStep, numericalPropagator, pvBuilder, tle);
+
+    return message;
+  }
+
+  public String propagate(TLE tle, Double timePassed, String universe) {
+
+    // Get orbit from TLE
+    Orbit initialOrbit = createOrbit(tle);
+
+    // Set initial state
+    final SpacecraftState initialState = new SpacecraftState(initialOrbit);
+    numericalPropagator.setInitialState(initialState);
+
+    // Get working date
+    AbsoluteDate extrapDate = tle.getDate().shiftedBy(timePassed);
+
+    String message =
+        createMessage(universe, extrapDate, smallStep, numericalPropagator, pvBuilder, tle);
 
     return message;
   }
@@ -182,8 +260,26 @@ public class TrackGenerator {
     final SpacecraftState initialState = new SpacecraftState(initialOrbit);
     numericalPropagator.setInitialState(initialState);
 
+    String universe = "0";
+
     String message =
-        createMessage(endDate, smallStep, numericalPropagator, pvBuilder, tle, sensorId);
+        createMessage(universe, endDate, smallStep, numericalPropagator, pvBuilder, tle, sensorId);
+
+    return message;
+  }
+
+  public String produceTrackAtTime(
+      TLE tle, AbsoluteDate endDate, String sensorId, String universe) {
+
+    // Get orbit from TLE
+    Orbit initialOrbit = createOrbit(tle);
+
+    // Set initial state
+    final SpacecraftState initialState = new SpacecraftState(initialOrbit);
+    numericalPropagator.setInitialState(initialState);
+
+    String message =
+        createMessage(universe, endDate, smallStep, numericalPropagator, pvBuilder, tle, sensorId);
 
     return message;
   }
@@ -234,6 +330,7 @@ public class TrackGenerator {
   }
 
   String createMessage(
+      String universe,
       AbsoluteDate extrapDate,
       double smallStep,
       NumericalPropagator nPropagator,
@@ -241,7 +338,8 @@ public class TrackGenerator {
       TLE tle) {
 
     // Message format:
-    // msgTime, sensorId, objectId, obsTime1, x1, y1, z1, rcs1, obsTime2, x2, y2, z2, rcs2,
+    // msgTime, sensorId, objectId, universes, obsTime1, x1, y1, z1, rcs1, obsTime2, x2, y2, z2,
+    // rcs2,
     // obsTime3, x3, y3, z3, rcs3
     String message;
 
@@ -254,7 +352,16 @@ public class TrackGenerator {
     // Set object ID
     int objectId = tle.getSatelliteNumber();
 
-    message = uuid.toString() + "," + msgTime.toString() + "," + sensorId + "," + objectId;
+    message =
+        uuid.toString()
+            + ","
+            + msgTime.toString()
+            + ","
+            + sensorId
+            + ","
+            + objectId
+            + ","
+            + universe;
 
     // TODO: future random number of readings option
     //    int positionReadingNum = (int) (Math.random() * 10);
@@ -324,6 +431,7 @@ public class TrackGenerator {
 
   // Overloaded method adds sensorId specification
   public static String createMessage(
+      String universe,
       AbsoluteDate extrapDate,
       double smallStep,
       NumericalPropagator nPropagator,
@@ -343,7 +451,16 @@ public class TrackGenerator {
     // Set object ID
     int objectId = tle.getSatelliteNumber();
 
-    message = uuid.toString() + "," + msgTime.toString() + "," + sensorId + "," + objectId;
+    message =
+        uuid.toString()
+            + ","
+            + msgTime.toString()
+            + ","
+            + sensorId
+            + ","
+            + objectId
+            + ","
+            + universe;
 
     // TODO: future random number of readings option
     //    int positionReadingNum = (int) (Math.random() * 10);

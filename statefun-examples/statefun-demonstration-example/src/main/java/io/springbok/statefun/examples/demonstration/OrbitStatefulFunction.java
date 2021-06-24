@@ -54,18 +54,21 @@ public class OrbitStatefulFunction implements StatefulFunction {
         // Send orbit to id manager for correlation and save
         context.send(
             OrbitIdManager.TYPE,
-            "orbit-id-manager",
+            keyedOrbit.universe,
             CorrelateOrbitsMessage.newBuilder().setStringContent(keyedOrbit.toString()).build());
 
         // Send delete message to self after a certain amount of time
-        sendSelfDelayedDeleteMessage(context, keyedOrbit.orbit.getDate());
+        sendSelfDelayedDeleteMessage(context, keyedOrbit.orbit.getDate(), keyedOrbit.universe);
 
         // Send message out that orbit was created
         Utilities.log(
             context,
             String.format(
-                "Propagated orbitId %s from trackId %s: %s",
-                keyedOrbit.orbitId, track.trackId, keyedOrbit.orbit.toString()),
+                "[UNIVERSE %s] Propagated orbitId %s from trackId %s: %s",
+                keyedOrbit.universe,
+                keyedOrbit.orbitId,
+                track.trackId,
+                keyedOrbit.orbit.toString()),
             1);
 
         orbitState.set(keyedOrbit);
@@ -88,10 +91,14 @@ public class OrbitStatefulFunction implements StatefulFunction {
         KeyedOrbit keyedOrbit = orbitState.get();
 
         removeOrbitFromTrackStates(context, keyedOrbit.orbitId, keyedOrbit.trackIds);
-        removeOrbitFromIdManager(context, keyedOrbit.orbitId);
+        removeOrbitFromIdManager(context, keyedOrbit);
 
         // Send message out that this orbit was destroyed
-        Utilities.log(context, String.format("Cleared orbitId %s", keyedOrbit.orbitId), 1);
+        Utilities.log(
+            context,
+            String.format(
+                "[UNIVERSE %s] Cleared orbitId %s", keyedOrbit.universe, keyedOrbit.orbitId),
+            1);
         orbitState.clear();
       } catch (NullPointerException e) {
         Utilities.log(
@@ -124,16 +131,16 @@ public class OrbitStatefulFunction implements StatefulFunction {
               Utilities.log(
                   context,
                   String.format(
-                      "OrbitId %s is redundant with orbitId %s. Orbit is smaller than track cutoff. Not deleting",
-                      recievedKeyedOrbit.orbitId, context.self().id()),
+                      "[UNIVERSE %s] OrbitId %s is redundant with orbitId %s. Orbit is smaller than track cutoff. Not deleting",
+                      keyedOrbit.universe, recievedKeyedOrbit.orbitId, context.self().id()),
                   2);
             } else {
               // delete recieved orbit
               Utilities.log(
                   context,
                   String.format(
-                      "OrbitId %s is redundant with orbitId %s. Sending delete message",
-                      recievedKeyedOrbit.orbitId, context.self().id()),
+                      "[UNIVERSE %s] OrbitId %s is redundant with orbitId %s. Sending delete message",
+                      keyedOrbit.universe, recievedKeyedOrbit.orbitId, context.self().id()),
                   2);
               context.send(
                   OrbitStatefulFunction.TYPE,
@@ -149,23 +156,23 @@ public class OrbitStatefulFunction implements StatefulFunction {
               Utilities.log(
                   context,
                   String.format(
-                      "OrbitId %s is redundant with orbitId %s. Orbit is smaller than track cutoff. Not deleting",
-                      context.self().id(), recievedKeyedOrbit.orbitId),
+                      "[UNIVERSE %s] OrbitId %s is redundant with orbitId %s. Orbit is smaller than track cutoff. Not deleting",
+                      keyedOrbit.universe, context.self().id(), recievedKeyedOrbit.orbitId),
                   2);
             } else {
               // delete this orbit
               Utilities.log(
                   context,
                   String.format(
-                      "OrbitId %s is redundant with orbitId %s. Sending delete message",
-                      context.self().id(), recievedKeyedOrbit.orbitId),
+                      "[UNIVERSE %s] OrbitId %s is redundant with orbitId %s. Sending delete message",
+                      keyedOrbit.universe, context.self().id(), recievedKeyedOrbit.orbitId),
                   2);
               context.send(context.self(), DeleteMessage.newBuilder().build());
 
               // Ensure new orbit is saved in manager
               context.send(
                   OrbitIdManager.TYPE,
-                  "orbit-id-manager",
+                  keyedOrbit.universe,
                   AddMaxFormedOrbit.newBuilder().setId(recievedKeyedOrbit.orbitId).build());
             }
             break;
@@ -179,7 +186,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
               Utilities.log(
                   context,
                   String.format(
-                      "Correlated orbitId %s and orbitId %s",
+                      "[UNIVERSE %s] Correlated orbitId %s and orbitId %s",
+                      keyedOrbit.universe,
                       recievedKeyedOrbit.orbitId,
                       keyedOrbit.orbitId,
                       recievedKeyedOrbit.objectIds.get(0),
@@ -195,8 +203,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
                 Utilities.log(
                     context,
                     String.format(
-                        "OrbitId %s has more tracks than track cutoff value %s. Scheduling orbit for deletion.",
-                        context.self().id(), trackCutoff),
+                        "[UNIVERSE %s] OrbitId %s has more tracks than track cutoff value %s. Scheduling orbit for deletion.",
+                        keyedOrbit.universe, context.self().id(), trackCutoff),
                     2);
 
                 // Send message to manager to remove this orbit from list
@@ -207,8 +215,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
                 Utilities.log(
                     context,
                     String.format(
-                        "OrbitId %s has more tracks than track cutoff value %s. Scheduling orbit for deletion.",
-                        recievedKeyedOrbit.orbitId, trackCutoff),
+                        "[UNIVERSE %s] OrbitId %s has more tracks than track cutoff value %s. Scheduling orbit for deletion.",
+                        keyedOrbit.universe, recievedKeyedOrbit.orbitId, trackCutoff),
                     2);
 
                 // Send message to manager to remove this orbit from list
@@ -234,20 +242,20 @@ public class OrbitStatefulFunction implements StatefulFunction {
                       .setDeleteKeyedOrbit2(deleteKeyedOrbit2)
                       .build();
 
-              context.send(OrbitIdManager.TYPE, "orbit-id-manager", collectedTracksMessage);
+              context.send(OrbitIdManager.TYPE, keyedOrbit.universe, collectedTracksMessage);
             } else {
               // Send message out that correlation not successful
               Utilities.log(
                   context,
                   String.format(
-                      "Not correlated orbitIds %s and %s",
-                      recievedKeyedOrbit.orbitId, keyedOrbit.orbitId),
+                      "[UNIVERSE %s] Not correlated orbitIds %s and %s",
+                      keyedOrbit.universe, recievedKeyedOrbit.orbitId, keyedOrbit.orbitId),
                   4);
 
               // Ensure new orbit is saved in manager
               context.send(
                   OrbitIdManager.TYPE,
-                  "orbit-id-manager",
+                  keyedOrbit.universe,
                   AddMaxFormedOrbit.newBuilder().setId(recievedKeyedOrbit.orbitId).build());
             }
         }
@@ -296,7 +304,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
         Utilities.log(
             context,
             String.format(
-                "Refined orbitId %s and orbitId %s to create orbitId %s: %s",
+                "[UNIVERSE %s] Refined orbitId %s and orbitId %s to create orbitId %s: %s",
+                keyedOrbit1.universe,
                 keyedOrbit1.orbitId,
                 keyedOrbit2.orbitId,
                 newOrbit.orbitId,
@@ -324,17 +333,17 @@ public class OrbitStatefulFunction implements StatefulFunction {
                 .build();
 
         // Send a message to the OrbitIdManager to save the new orbit id
-        context.send(OrbitIdManager.TYPE, "orbit-id-manager", newRefinedOrbitIdMessage);
+        context.send(OrbitIdManager.TYPE, newOrbit.universe, newRefinedOrbitIdMessage);
 
         // Send delete message to self after a certain amount of time
-        sendSelfDelayedDeleteMessage(context, newOrbit.orbit.getDate());
+        sendSelfDelayedDeleteMessage(context, newOrbit.orbit.getDate(), newOrbit.universe);
 
         // Send message out that orbit was created and saved
         Utilities.log(
             context,
             String.format(
-                "Created refined orbitId %s from tracks: %s",
-                newOrbit.orbitId, newOrbit.trackIds.toString()),
+                "[UNIVERSE %s] Created refined orbitId %s from tracks: %s",
+                newOrbit.universe, newOrbit.orbitId, newOrbit.trackIds.toString()),
             2);
 
         orbitState.set(newOrbit);
@@ -367,8 +376,8 @@ public class OrbitStatefulFunction implements StatefulFunction {
   }
 
   // Sends a delete message after a certain amount of time
-  private void sendSelfDelayedDeleteMessage(Context context, AbsoluteDate orbitDate)
-      throws Exception {
+  private void sendSelfDelayedDeleteMessage(
+      Context context, AbsoluteDate orbitDate, String universe) throws Exception {
 
     NewEventMessage newEventMessage =
         NewEventMessage.newBuilder()
@@ -378,7 +387,7 @@ public class OrbitStatefulFunction implements StatefulFunction {
             .build();
 
     // Send to event manager to schedule orbit delete
-    context.send(EventManager.TYPE, "event-manager", newEventMessage);
+    context.send(EventManager.TYPE, universe, newEventMessage);
   }
 
   // Delete this orbit from Track states
@@ -394,11 +403,11 @@ public class OrbitStatefulFunction implements StatefulFunction {
   }
 
   // Delete orbit from id manager state
-  private void removeOrbitFromIdManager(Context context, String orbitId) {
+  private void removeOrbitFromIdManager(Context context, KeyedOrbit keyedOrbit) {
     RemoveOrbitIdMessage removeOrbitIdMessage =
-        RemoveOrbitIdMessage.newBuilder().setStringContent(orbitId).build();
+        RemoveOrbitIdMessage.newBuilder().setStringContent(keyedOrbit.orbitId).build();
 
     // Send message to manager to remove this orbit from list
-    context.send(OrbitIdManager.TYPE, "orbit-id-manager", removeOrbitIdMessage);
+    context.send(OrbitIdManager.TYPE, keyedOrbit.universe, removeOrbitIdMessage);
   }
 }

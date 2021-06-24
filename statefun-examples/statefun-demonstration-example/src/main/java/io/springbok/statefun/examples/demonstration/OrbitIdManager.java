@@ -40,18 +40,16 @@ public class OrbitIdManager implements StatefulFunction {
     if (input instanceof NewTrackMessage) {
       NewTrackMessage newTrackMessage = (NewTrackMessage) input;
 
-      Long id = createNewId();
+      String id = createNewId(context);
 
       // Send the incoming track to save and process at the OrbitStatefulFunction that corresponds
       // to
       // the just created id
-      context.send(OrbitStatefulFunction.TYPE, String.valueOf(id), newTrackMessage);
+      context.send(OrbitStatefulFunction.TYPE, id, newTrackMessage);
 
       // Message out that orbit id was created
-      Utilities.log(context, String.format("Created orbitId %s", id), 2);
-
-      // Set persisted state
-      lastOrbitId.set(id);
+      Utilities.log(
+          context, String.format("[UNIVERSE %s] Created orbitId %s", context.self().id(), id), 2);
     }
 
     // This is the final stop for the CollectedTracksMessage before it gets forwarded to its new
@@ -60,7 +58,7 @@ public class OrbitIdManager implements StatefulFunction {
     if (input instanceof CollectedTracksMessage) {
       CollectedTracksMessage collectedTracksMessage = (CollectedTracksMessage) input;
 
-      Long id = createNewId();
+      String id = createNewId(context);
 
       // Send the incoming track to collect all the tracks associated with the new ID
       ArrayList<String> tracksToGather =
@@ -72,7 +70,7 @@ public class OrbitIdManager implements StatefulFunction {
               .setKeyedOrbit2(collectedTracksMessage.getKeyedOrbit2())
               .setTracksToGather(collectedTracksMessage.getTracksToGather())
               .setIterator(1)
-              .setOrbitId(id.toString())
+              .setOrbitId(id)
               .setDeleteKeyedOrbit1(collectedTracksMessage.getDeleteKeyedOrbit1())
               .setDeleteKeyedOrbit2(collectedTracksMessage.getDeleteKeyedOrbit2())
               .build();
@@ -82,10 +80,8 @@ public class OrbitIdManager implements StatefulFunction {
       context.send(TrackStatefulFunction.TYPE, nextTrack, newCollectedTracksMessage);
 
       // Message out that orbit id was created
-      Utilities.log(context, String.format("Created orbitId %s", id), 2);
-
-      // Set persisted state
-      lastOrbitId.set(id);
+      Utilities.log(
+          context, String.format("[UNIVERSE %s] Created orbitId %s", context.self().id(), id), 2);
     }
 
     // This message is received from an OrbitStatefulFunction when a new refined orbit (multiple
@@ -113,7 +109,9 @@ public class OrbitIdManager implements StatefulFunction {
 
           Utilities.log(
               context,
-              String.format("Saved orbitId %s", newRefinedOrbitIdMessage.getNewOrbitId()),
+              String.format(
+                  "[UNIVERSE %s] Saved orbitId %s",
+                  context.self().id(), newRefinedOrbitIdMessage.getNewOrbitId()),
               2);
 
         } else {
@@ -123,7 +121,9 @@ public class OrbitIdManager implements StatefulFunction {
 
           Utilities.log(
               context,
-              String.format("Saved orbitId %s", newRefinedOrbitIdMessage.getNewOrbitId()),
+              String.format(
+                  "[UNIVERSE %s] Saved orbitId %s",
+                  context.self().id(), newRefinedOrbitIdMessage.getNewOrbitId()),
               2);
 
           try {
@@ -131,15 +131,17 @@ public class OrbitIdManager implements StatefulFunction {
               maxFormedOrbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId1());
               Utilities.log(
                   context,
-                  String.format("Removed orbitId: %s", newRefinedOrbitIdMessage.getOldOrbitId1()),
+                  String.format(
+                      "[UNIVERSE %s] Removed orbitId: %s",
+                      context.self().id(), newRefinedOrbitIdMessage.getOldOrbitId1()),
                   3);
             }
           } catch (Exception e) {
             Utilities.log(
                 context,
                 String.format(
-                    "OrbitId %s is not registered with OrbitIdManager - delete canceled: %s",
-                    newRefinedOrbitIdMessage.getOldOrbitId1(), e),
+                    "[UNIVERSE %s] OrbitId %s is not registered with OrbitIdManager - delete canceled: %s",
+                    context.self().id(), newRefinedOrbitIdMessage.getOldOrbitId1(), e),
                 1);
           }
           try {
@@ -147,24 +149,32 @@ public class OrbitIdManager implements StatefulFunction {
               maxFormedOrbitIdList.remove(newRefinedOrbitIdMessage.getOldOrbitId2());
               Utilities.log(
                   context,
-                  String.format("Removed orbitId: %s", newRefinedOrbitIdMessage.getOldOrbitId1()),
+                  String.format(
+                      "[UNIVERSE %s] Removed orbitId: %s",
+                      context.self().id(), newRefinedOrbitIdMessage.getOldOrbitId1()),
                   3);
             }
           } catch (Exception e) {
             Utilities.log(
                 context,
                 String.format(
-                    "OrbitId %s is not registered with OrbitIdManager - delete canceled: %s",
-                    newRefinedOrbitIdMessage.getOldOrbitId2(), e),
+                    "[UNIVERSE %s] OrbitId %s is not registered with OrbitIdManager - delete canceled: %s",
+                    context.self().id(), newRefinedOrbitIdMessage.getOldOrbitId2(), e),
                 1);
           }
           try {
-            Utilities.log(context, "maxFormedOrbitIdList: " + maxFormedOrbitIdList.toString(), 3);
+            Utilities.log(
+                context,
+                String.format(
+                    "[UNIVERSE %s] maxFormedOrbitIdList: ",
+                    context.self().id(), maxFormedOrbitIdList.toString()),
+                3);
           } catch (Exception e) {
             Utilities.log(
                 context,
                 String.format(
-                    "OrbitIds %s and %s deletion failed: %s",
+                    "[UNIVERSE %s] OrbitIds %s and %s deletion failed: %s",
+                    context.self().id(),
                     newRefinedOrbitIdMessage.getOldOrbitId1(),
                     newRefinedOrbitIdMessage.getOldOrbitId2(),
                     e),
@@ -176,8 +186,10 @@ public class OrbitIdManager implements StatefulFunction {
           Utilities.log(
               context,
               String.format(
-                  "Sending Refined OrbitId %s to orbits on maxFormedIdList: %s",
-                  newRefinedOrbitIdMessage.getNewOrbitId(), maxFormedOrbitIdList),
+                  "[UNIVERSE %s] Sending Refined OrbitId %s to orbits on maxFormedIdList: %s",
+                  context.self().id(),
+                  newRefinedOrbitIdMessage.getNewOrbitId(),
+                  maxFormedOrbitIdList),
               3);
           maxFormedOrbitIdList.forEach(
               orbitId -> {
@@ -234,7 +246,11 @@ public class OrbitIdManager implements StatefulFunction {
           minFormedOrbitIdList.add(keyedOrbit.orbitId);
           minFormedOrbitIds.set(minFormedOrbitIdList);
           // Message out that orbit id was saved
-          Utilities.log(context, String.format("Saved orbitId %s", keyedOrbit.orbitId), 2);
+          Utilities.log(
+              context,
+              String.format(
+                  "[UNIVERSE %s] Saved orbitId %s", context.self().id(), keyedOrbit.orbitId),
+              2);
         } else {
           // Only add maxed formed orbit if the list is empty; we retroactively add if there's no
           // correlation, or if we find redundancy
@@ -242,7 +258,11 @@ public class OrbitIdManager implements StatefulFunction {
             maxFormedOrbitIdList.add(keyedOrbit.orbitId);
             maxFormedOrbitIds.set(maxFormedOrbitIdList);
             // Message out that orbit id was saved
-            Utilities.log(context, String.format("Saved orbitId %s", keyedOrbit.orbitId), 2);
+            Utilities.log(
+                context,
+                String.format(
+                    "[UNIVERSE %s] Saved orbitId %s", context.self().id(), keyedOrbit.orbitId),
+                2);
           }
         }
       } catch (Exception e) {
@@ -256,7 +276,11 @@ public class OrbitIdManager implements StatefulFunction {
       if (!maxFormedOrbitIdList.contains(addMaxFormedOrbit.getId())) {
         maxFormedOrbitIdList.add(addMaxFormedOrbit.getId());
         maxFormedOrbitIds.set(maxFormedOrbitIdList);
-        Utilities.log(context, String.format("Saved orbitId %s", addMaxFormedOrbit.getId()), 2);
+        Utilities.log(
+            context,
+            String.format(
+                "[UNIVERSE %s] Saved orbitId %s", context.self().id(), addMaxFormedOrbit.getId()),
+            2);
       }
     }
 
@@ -277,7 +301,11 @@ public class OrbitIdManager implements StatefulFunction {
         // TODO: check if orbit already exists, and suppress message: currently log removes id
         // several times if it's correlated in more than one place
         // Message out that orbit id was removed
-        Utilities.log(context, String.format("Removed orbitId %s from ID manager", orbitId), 1);
+        Utilities.log(
+            context,
+            String.format(
+                "[UNIVERSE %s] Removed orbitId %s from ID manager", context.self().id(), orbitId),
+            1);
         minFormedOrbitIds.set(minIds);
         maxFormedOrbitIds.set(maxIds);
 
@@ -295,9 +323,11 @@ public class OrbitIdManager implements StatefulFunction {
     }
   }
 
-  private Long createNewId() {
+  private String createNewId(Context context) {
     Long id = lastOrbitId.getOrDefault(-1L);
     id++;
-    return id;
+    // Set persisted state
+    lastOrbitId.set(id);
+    return context.self().id() + id.toString();
   }
 }

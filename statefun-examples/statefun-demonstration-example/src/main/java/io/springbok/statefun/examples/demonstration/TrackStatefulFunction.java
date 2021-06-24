@@ -48,12 +48,14 @@ public class TrackStatefulFunction implements StatefulFunction {
                 .build();
 
         // Send message to the OrbitIdManager that a new track was created
-        context.send(OrbitIdManager.TYPE, "orbit-id-manager", newTrackMessage);
+        context.send(OrbitIdManager.TYPE, track.universe, newTrackMessage);
 
         // Send message out that track was created
         Utilities.log(
             context,
-            String.format("Created trackId %s from messageId %s", track.trackId, track.messageUUID),
+            String.format(
+                "[UNIVERSE %s] Created trackId %s from messageId %s",
+                track.universe, track.trackId, track.messageUUID),
             1);
 
         // Set persisted state
@@ -101,17 +103,23 @@ public class TrackStatefulFunction implements StatefulFunction {
         // If the track still has orbits associated with it, save it otherwise delete this value
         if (track.getOrbitIds().size() == 0) {
           trackState.clear();
-          Utilities.log(context, String.format("Cleared trackId %s", track.trackId), 1);
+          Utilities.log(
+              context,
+              String.format("[UNIVERSE %s] Cleared trackId %s", track.universe, track.trackId),
+              1);
         } else {
           trackState.set(track);
           Utilities.log(
               context,
-              String.format("Removed orbitId %s from trackId %s", orbitId, track.trackId),
+              String.format(
+                  "[UNIVERSE %s] Removed orbitId %s from trackId %s",
+                  track.universe, orbitId, track.trackId),
               2);
           Utilities.log(
               context,
               String.format(
-                  "Remaining orbit ids in trackId %s: %s", track.trackId, track.getOrbitIds()),
+                  "[UNIVERSE %s] Remaining orbit ids in trackId %s: %s",
+                  track.universe, track.trackId, track.getOrbitIds()),
               3);
         }
       } catch (Exception e) {
@@ -125,8 +133,12 @@ public class TrackStatefulFunction implements StatefulFunction {
     // DeleteTrackMessage is sent if the track fails to form an initial orbit
     if (input instanceof DeleteTrackMessage) {
       try {
+        Track track = trackState.get();
         trackState.clear();
-        Utilities.log(context, String.format("Cleared trackId %s", context.self().id()), 1);
+        Utilities.log(
+            context,
+            String.format("[UNIVERSE %s] Cleared trackId %s", track.universe, context.self().id()),
+            1);
       } catch (Exception e) {
         Utilities.log(
             context, String.format("trackId %s cannot be deleted: %s", context.self().id(), e), 1);
@@ -155,8 +167,8 @@ public class TrackStatefulFunction implements StatefulFunction {
         Utilities.log(
             context,
             String.format(
-                "Added trackId %s to collectedTracksMessage for orbitId %s",
-                track.trackId, collectedTracksMessage.getOrbitId()),
+                "[UNIVERSE %s] Added trackId %s to collectedTracksMessage for orbitId %s",
+                track.universe, track.trackId, collectedTracksMessage.getOrbitId()),
             3);
 
         // Add orbit to trackState
@@ -221,7 +233,11 @@ public class TrackStatefulFunction implements StatefulFunction {
     track.addOrbitId(orbitId);
 
     // Send message out that orbitId was added
-    Utilities.log(context, String.format("trackId %s added orbitId %s", track.trackId, orbitId), 2);
+    Utilities.log(
+        context,
+        String.format(
+            "[UNIVERSE %s] trackId %s added orbitId %s", track.universe, track.trackId, orbitId),
+        2);
 
     // Set persisted state
     trackState.set(track);

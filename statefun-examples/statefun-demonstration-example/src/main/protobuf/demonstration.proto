@@ -57,10 +57,12 @@ message AddMaxFormedOrbit {
 
 message RemoveOrbitIdMessage {
   string stringContent = 1;
+  string universes = 2;
 }
 
 message NewOrbitIdMessage {
   string id = 1;
+  string universe = 2;
 }
 
 message NewSatelliteMessage {
@@ -95,6 +97,7 @@ message CollectedTracksMessage {
   string orbitId = 6;
   bool deleteKeyedOrbit1 = 7;
   bool deleteKeyedOrbit2 = 8;
+  string universe = 9;
 }
 
 message DeleteMessage {
@@ -124,5 +127,6 @@ message DelayedWakeUpMessage {
 }
 
 message DeleteTrackMessage {
+  string universes = 1;
 }
 

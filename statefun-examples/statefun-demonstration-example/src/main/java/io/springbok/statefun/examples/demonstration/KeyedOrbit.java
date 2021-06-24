@@ -14,6 +14,7 @@ public class KeyedOrbit {
   public Orbit orbit;
   public String orbitId;
   public ArrayList<String> trackIds;
+  public String universe;
   public ArrayList<Integer> objectIds;
 
   // Construct a KeyedOrbit from a single track
@@ -24,6 +25,7 @@ public class KeyedOrbit {
     trackIds.add(track.trackId);
     this.objectIds = new ArrayList<>();
     objectIds.add(track.objectId);
+    this.universe = track.universe;
   }
 
   // Construct a KeyedOrbit from a list of tracks
@@ -32,6 +34,8 @@ public class KeyedOrbit {
     this.orbitId = orbitId;
     this.trackIds = new ArrayList<>();
     this.objectIds = new ArrayList<>();
+    // All track universes should be the same
+    this.universe = tracks.get(0).universe;
     tracks.forEach(
         track -> {
           trackIds.add(track.trackId);
@@ -47,6 +51,8 @@ public class KeyedOrbit {
     this.orbitId = orbitId;
     this.objectIds = new ArrayList<>();
     this.trackIds = trackIds;
+    // All track universes should be the same
+    this.universe = tracks.get(0).universe;
     tracks.forEach(
         track -> {
           if (!trackIds.contains(track.trackId)) {
@@ -81,13 +87,15 @@ public class KeyedOrbit {
         + ";"
         + trackIds
         + ";"
-        + objectIds;
+        + objectIds
+        + ";"
+        + universe;
   }
 
   public static KeyedOrbit fromString(String line) {
 
     String[] tokens = line.split(";");
-    if (tokens.length != 10) {
+    if (tokens.length != 11) {
       throw new RuntimeException("Invalid string to form KeyedOrbit: " + line);
     }
 
@@ -111,6 +119,8 @@ public class KeyedOrbit {
         objectIds.add(Integer.parseInt(objectIdStrings[i]));
       }
       keyedOrbit.objectIds = objectIds;
+
+      keyedOrbit.universe = tokens[10];
 
     } catch (NumberFormatException nfe) {
       throw new RuntimeException("Invalid record: " + line, nfe);
