@@ -13,6 +13,6 @@ public class TrackRouter implements Router<TrackIn> {
   // to the same function
   @Override
   public void route(TrackIn message, Downstream<TrackIn> downstream) {
-    downstream.forward(TrackIdManager.TYPE, "track-id-manager", message);
+    downstream.forward(UniverseIdManager.TYPE, "universe-id-manager", message);
   }
 }

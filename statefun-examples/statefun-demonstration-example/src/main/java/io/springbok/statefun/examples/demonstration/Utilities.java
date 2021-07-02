@@ -1,5 +1,6 @@
 package io.springbok.statefun.examples.demonstration;
 
+import io.springbok.statefun.examples.demonstration.generated.Command;
 import io.springbok.statefun.examples.demonstration.generated.DefaultOut;
 import io.springbok.statefun.examples.demonstration.generated.SensorInfoMessage;
 import org.apache.flink.statefun.sdk.Context;
@@ -37,6 +38,14 @@ public class Utilities {
       context.send(
           DemonstrationIO.DEFAULT_EGRESS_ID, DefaultOut.newBuilder().setContent(content).build());
     }
+  }
+
+  // Sending string messages to the command egress
+  public static void respond(Context context, String content) {
+    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+    content = "[" + timestamp + "] " + content;
+    context.send(
+        DemonstrationIO.COMMAND_EGRESS_ID, Command.newBuilder().setCommand(content).build());
   }
 
   public static String arrayListToString(ArrayList<String> arrayList) {

@@ -37,19 +37,31 @@ public class DemonstrationModule implements StatefulFunctionModule {
     binder.bindIngress(ioModule.getSensorIngressSpec());
     binder.bindIngressRouter(DemonstrationIO.SENSOR_INGRESS_ID, new SensorRouter());
 
+    // Bind the command ingress
+    binder.bindIngress(ioModule.getCommandIngressSpec());
+    binder.bindIngressRouter(DemonstrationIO.COMMAND_INGRESS_ID, new CommandRouter());
+
     // Bind application egress
     binder.bindEgress(ioModule.getEgressSpec());
 
+    // Bind command egress
+    binder.bindEgress(ioModule.getCommandEgressSpec());
+
     // Bind functions to the application
+    binder.bindFunctionProvider(UniverseIdManager.TYPE, unused -> new UniverseIdManager());
+    binder.bindFunctionProvider(EventManager.TYPE, unused -> new EventManager());
+
     binder.bindFunctionProvider(TrackIdManager.TYPE, unused -> new TrackIdManager());
-    binder.bindFunctionProvider(OrbitStatefulFunction.TYPE, unused -> new OrbitStatefulFunction());
     binder.bindFunctionProvider(TrackStatefulFunction.TYPE, unused -> new TrackStatefulFunction());
+
     binder.bindFunctionProvider(OrbitIdManager.TYPE, unused -> new OrbitIdManager());
+    binder.bindFunctionProvider(OrbitStatefulFunction.TYPE, unused -> new OrbitStatefulFunction());
+
+    binder.bindFunctionProvider(SensorIdManager.TYPE, unused -> new SensorIdManager());
     binder.bindFunctionProvider(
         SatelliteStatefulFunction.TYPE, unused -> new SatelliteStatefulFunction());
+
     binder.bindFunctionProvider(
         SensorStatefulFunction.TYPE, unused -> new SensorStatefulFunction());
-    binder.bindFunctionProvider(SensorIdManager.TYPE, unused -> new SensorIdManager());
-    binder.bindFunctionProvider(EventManager.TYPE, unused -> new EventManager());
   }
 }

@@ -7,8 +7,6 @@ import org.apache.flink.statefun.sdk.StatefulFunction;
 import org.apache.flink.statefun.sdk.annotations.Persisted;
 import org.apache.flink.statefun.sdk.state.PersistedValue;
 
-import java.util.ArrayList;
-
 /*
  The TrackIdManager is responsible for giving incoming data new id numbers that are saved for reference within the application
 */
@@ -21,10 +19,6 @@ public class TrackIdManager implements StatefulFunction {
   @Persisted
   private final PersistedValue<Long> lastTrackId = PersistedValue.of("last-track-id", Long.class);
 
-  @Persisted
-  private final PersistedValue<ArrayList> universes =
-      PersistedValue.of("universes", ArrayList.class);
-
   @Override
   public void invoke(Context context, Object input) {
 
@@ -33,13 +27,11 @@ public class TrackIdManager implements StatefulFunction {
 
     // Check validity of track
     try {
-      // Create track from input
-      Track track = Track.fromString(trackIn.getTrack(), context.self().id());
-
       // Give the incoming track a new ID
       Long id = lastTrackId.getOrDefault(-1L);
       id++;
-      String trackId = track.universe + id.toString();
+      // Add universe tag to ID
+      String trackId = context.self().id() + id.toString();
 
       // Send the incoming track to save and process at the TrackStatefulFunction that correspond to
       // the just created id

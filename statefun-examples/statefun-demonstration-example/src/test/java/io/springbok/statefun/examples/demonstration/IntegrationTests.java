@@ -19,7 +19,8 @@ import java.util.regex.Pattern;
 */
 public class IntegrationTests {
 
-  static TrackGenerator trackGenerator;
+  static TrackGenerator trackGeneratorA;
+  static TrackGenerator trackGeneratorB;
   static ArrayList<TLE> tles;
   static ArrayList<String> sensors;
 
@@ -28,9 +29,14 @@ public class IntegrationTests {
     ApplicationEnvironment.setPathProperties();
     String tlePath = System.getProperty("TLE_PATH");
 
-    trackGenerator = new TrackGenerator(tlePath);
-    trackGenerator.init();
-    trackGenerator.finitePropagation(1);
+    trackGeneratorA = new TrackGenerator(tlePath);
+    trackGeneratorA.init();
+    trackGeneratorA.finitePropagation(1, "A");
+
+    trackGeneratorB = new TrackGenerator(tlePath);
+    trackGeneratorB.init();
+    trackGeneratorB.finitePropagation(1, "B");
+
     final File tleData = new File(tlePath);
     tles = TLEReader.readTLEs(tleData);
     sensors = SensorReader.getTestSensorInfo();
@@ -42,6 +48,7 @@ public class IntegrationTests {
 
     // All ingress must be bound for harness to work; creating empty source
     MockTracksSourceFunction singleTracksSource = new MockTracksSourceFunction();
+    MockCommandSourceFunction commandSourceFunction = new MockCommandSourceFunction();
     MockSensorSourceFunction sensorSourceFunction = new MockSensorSourceFunction();
 
     // Specific source function for testing
@@ -57,6 +64,7 @@ public class IntegrationTests {
             .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
             .withFlinkSourceFunction(DemonstrationIO.SENSOR_INGRESS_ID, sensorSourceFunction)
             .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
+            .withFlinkSourceFunction(DemonstrationIO.COMMAND_INGRESS_ID, commandSourceFunction)
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
@@ -70,6 +78,7 @@ public class IntegrationTests {
 
     // All ingress must be bound for harness to work; creating empty source
     MockTracksSourceFunction singleTracksSource = new MockTracksSourceFunction();
+    MockCommandSourceFunction commandSourceFunction = new MockCommandSourceFunction();
 
     // Specific source function for testing
     ArrayList<TLE> testTLES = new ArrayList<>();
@@ -89,6 +98,7 @@ public class IntegrationTests {
             .withFlinkSourceFunction(DemonstrationIO.SENSOR_INGRESS_ID, sensorSourceFunction)
             .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
             .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
+            .withFlinkSourceFunction(DemonstrationIO.COMMAND_INGRESS_ID, commandSourceFunction)
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
@@ -107,6 +117,7 @@ public class IntegrationTests {
 
     // All ingress must be bound for harness to work; creating empty source
     MockTracksSourceFunction singleTracksSource = new MockTracksSourceFunction();
+    MockCommandSourceFunction commandSourceFunction = new MockCommandSourceFunction();
 
     // Specific source function for testing
     ArrayList<TLE> testTLES = new ArrayList<>();
@@ -126,6 +137,7 @@ public class IntegrationTests {
             .withKryoMessageSerializer()
             .withFlinkSourceFunction(DemonstrationIO.SENSOR_INGRESS_ID, sensorSourceFunction)
             .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
+            .withFlinkSourceFunction(DemonstrationIO.COMMAND_INGRESS_ID, commandSourceFunction)
             .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
@@ -148,6 +160,7 @@ public class IntegrationTests {
 
     // All ingress must be bound for harness to work; creating empty source
     MockTracksSourceFunction singleTracksSource = new MockTracksSourceFunction();
+    MockCommandSourceFunction commandSourceFunction = new MockCommandSourceFunction();
 
     // Specific source function for testing
     ArrayList<TLE> testTLES = new ArrayList<>();
@@ -168,6 +181,7 @@ public class IntegrationTests {
             .withFlinkSourceFunction(DemonstrationIO.SENSOR_INGRESS_ID, sensorSourceFunction)
             .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
             .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
+            .withFlinkSourceFunction(DemonstrationIO.COMMAND_INGRESS_ID, commandSourceFunction)
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
@@ -186,6 +200,7 @@ public class IntegrationTests {
 
     // All ingress must be bound for harness to work; creating empty source
     MockTracksSourceFunction singleTracksSource = new MockTracksSourceFunction();
+    MockCommandSourceFunction commandSourceFunction = new MockCommandSourceFunction();
 
     // Specific source function for testing
     ArrayList<TLE> testTLES = new ArrayList<>();
@@ -205,6 +220,7 @@ public class IntegrationTests {
             .withFlinkSourceFunction(DemonstrationIO.SENSOR_INGRESS_ID, sensorSourceFunction)
             .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
             .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, singleTracksSource)
+            .withFlinkSourceFunction(DemonstrationIO.COMMAND_INGRESS_ID, commandSourceFunction)
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
@@ -233,8 +249,9 @@ public class IntegrationTests {
     // All ingress must be bound for harness to work; creating empty source
     MockTLESourceFunction TLESource = new MockTLESourceFunction();
     MockSensorSourceFunction sensorSourceFunction = new MockSensorSourceFunction();
+    MockCommandSourceFunction commandSourceFunction = new MockCommandSourceFunction();
 
-    ArrayList trackList = trackGenerator.getXMessages(1);
+    ArrayList trackList = trackGeneratorA.getXMessages(1);
 
     // Testing incorrect track input
     trackList.add("foobar");
@@ -250,30 +267,29 @@ public class IntegrationTests {
             .withKryoMessageSerializer()
             .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, finiteTracksSource)
             .withFlinkSourceFunction(DemonstrationIO.SENSOR_INGRESS_ID, sensorSourceFunction)
+            .withFlinkSourceFunction(DemonstrationIO.COMMAND_INGRESS_ID, commandSourceFunction)
             .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
             .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer);
     harness.start();
 
     Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Created trackId 0"));
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Created trackId A0"));
     Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Created orbitId 0"));
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Created orbitId A0"));
     Assert.assertTrue(
         IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "trackId 0 added orbitId 0"));
+            testConsumer.messages, "trackId A0 added orbitId A0"));
     Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Saved orbitId 0"));
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Saved orbitId A0"));
     Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Cleared orbitId 0"));
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Cleared orbitId A0"));
     Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Cleared trackId 0"));
-    Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Removed orbitId 0"));
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Cleared trackId A0"));
   }
 
   @Test
   public void testTracksGeneratorProvidesSingleObject() {
-    ArrayList<String> singleObjectMessages = trackGenerator.getSingleObjectMessages();
+    ArrayList<String> singleObjectMessages = trackGeneratorA.getSingleObjectMessages();
     ArrayList<Track> tracks = new ArrayList<>();
 
     singleObjectMessages.forEach(
@@ -296,10 +312,71 @@ public class IntegrationTests {
     // All ingress must be bound for harness to work; creating empty source
     MockTLESourceFunction TLESource = new MockTLESourceFunction();
     MockSensorSourceFunction sensorSourceFunction = new MockSensorSourceFunction();
+    MockCommandSourceFunction commandSourceFunction = new MockCommandSourceFunction();
 
     // Specific source function for testing
     MockTracksSourceFunction finiteTracksSource =
-        new MockTracksSourceFunction(trackGenerator.getXSingleObjectMessages(3));
+        new MockTracksSourceFunction(trackGeneratorA.getXSingleObjectMessages(3));
+    MockConsumer testConsumer = new MockConsumer();
+    MockResponseConsumer testResponseConsumer = new MockResponseConsumer();
+    finiteTracksSource.runTimeMS = 12000;
+
+    Harness harness =
+        new Harness()
+            .withKryoMessageSerializer()
+            .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, finiteTracksSource)
+            .withFlinkSourceFunction(DemonstrationIO.SENSOR_INGRESS_ID, sensorSourceFunction)
+            .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
+            .withFlinkSourceFunction(DemonstrationIO.COMMAND_INGRESS_ID, commandSourceFunction)
+            .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer)
+            .withConsumingEgress(DemonstrationIO.COMMAND_EGRESS_ID, testResponseConsumer);
+    harness.start();
+
+    // Test correlation
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+                testConsumer.messages, "Correlated orbitId A1 and orbitId A0")
+            || IntegrationTests.arrayListContainsInclusive(
+                testConsumer.messages, "Correlated orbitId A0 and orbitId A1"));
+    Assert.assertFalse(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Correlated orbitId A0 and orbitId A0"));
+
+    // Test track collection
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+                testConsumer.messages, "Added trackId A1 to collectedTracksMessage")
+            || IntegrationTests.arrayListContainsInclusive(
+                testConsumer.messages, "Added trackId A0 to collectedTracksMessage"));
+
+    // Test new orbit creation flow
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Created refined orbitId"));
+
+    // Ensure tracks are clearing properly
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Cleared trackId A0"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Cleared trackId A1"));
+
+    // Test that Tracks aren't being deleted prematurely
+    Assert.assertFalse(
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "cannot add orbitId"));
+  }
+
+  @Test
+  public void testMultipleUniverses() throws Exception {
+
+    // All ingress must be bound for harness to work; creating empty source
+    MockTLESourceFunction TLESource = new MockTLESourceFunction();
+    MockSensorSourceFunction sensorSourceFunction = new MockSensorSourceFunction();
+
+    ArrayList tracks = trackGeneratorA.getXSingleObjectMessages(1);
+    tracks.addAll(trackGeneratorB.getXSingleObjectMessages(1));
+
+    // Specific source function for testing
+    MockTracksSourceFunction finiteTracksSource = new MockTracksSourceFunction(tracks);
     MockConsumer testConsumer = new MockConsumer();
     finiteTracksSource.runTimeMS = 12000;
 
@@ -313,36 +390,73 @@ public class IntegrationTests {
     harness.start();
 
     // Test correlation
-    Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(
-                testConsumer.messages, "Correlated orbitId 1 and orbitId 0")
-            || IntegrationTests.arrayListContainsInclusive(
-                testConsumer.messages, "Correlated orbitId 0 and orbitId 1"));
     Assert.assertFalse(
         IntegrationTests.arrayListContainsInclusive(
-            testConsumer.messages, "Correlated orbitId 0 and orbitId 0"));
+                testConsumer.messages, "Correlated orbitId B1 and orbitId A0")
+            || IntegrationTests.arrayListContainsInclusive(
+                testConsumer.messages, "Correlated orbitId A0 and orbitId B1"));
+    Assert.assertFalse(
+        IntegrationTests.arrayListContainsInclusive(
+            testConsumer.messages, "Correlated orbitId A0 and orbitId A0"));
 
     // Test track collection
-    Assert.assertTrue(
+    Assert.assertFalse(
         IntegrationTests.arrayListContainsInclusive(
-                testConsumer.messages, "Added trackId 1 to collectedTracksMessage")
+                testConsumer.messages, "Added trackId A1 to collectedTracksMessage")
             || IntegrationTests.arrayListContainsInclusive(
-                testConsumer.messages, "Added trackId 0 to collectedTracksMessage"));
+                testConsumer.messages, "Added trackId A0 to collectedTracksMessage"));
 
     // Test new orbit creation flow
-    Assert.assertTrue(
+    Assert.assertFalse(
         IntegrationTests.arrayListContainsInclusive(
             testConsumer.messages, "Created refined orbitId"));
 
     // Ensure tracks are clearing properly
     Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Cleared trackId 0"));
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Cleared trackId A0"));
     Assert.assertTrue(
-        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Cleared trackId 1"));
+        IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "Cleared trackId B1"));
 
     // Test that Tracks aren't being deleted prematurely
     Assert.assertFalse(
         IntegrationTests.arrayListContainsInclusive(testConsumer.messages, "cannot add orbitId"));
+  }
+
+  @Test
+  public void testCRUD() throws Exception {
+
+    // All ingress must be bound for harness to work; creating empty source
+    MockTLESourceFunction TLESource = new MockTLESourceFunction();
+    MockSensorSourceFunction sensorSourceFunction = new MockSensorSourceFunction();
+    MockTracksSourceFunction finiteTracksSource = new MockTracksSourceFunction();
+
+    // Specific source function for testing
+    ArrayList<String> commands = new ArrayList<>();
+    commands.add("read universe");
+    commands.add("update universe");
+    MockCommandSourceFunction commandSourceFunction = new MockCommandSourceFunction(commands);
+    MockConsumer testConsumer = new MockConsumer();
+    MockResponseConsumer testResponseConsumer = new MockResponseConsumer();
+    finiteTracksSource.runTimeMS = 12000;
+
+    Harness harness =
+        new Harness()
+            .withKryoMessageSerializer()
+            .withFlinkSourceFunction(DemonstrationIO.TRACKS_INGRESS_ID, finiteTracksSource)
+            .withFlinkSourceFunction(DemonstrationIO.SENSOR_INGRESS_ID, sensorSourceFunction)
+            .withFlinkSourceFunction(DemonstrationIO.TLE_INGRESS_ID, TLESource)
+            .withFlinkSourceFunction(DemonstrationIO.COMMAND_INGRESS_ID, commandSourceFunction)
+            .withConsumingEgress(DemonstrationIO.DEFAULT_EGRESS_ID, testConsumer)
+            .withConsumingEgress(DemonstrationIO.COMMAND_EGRESS_ID, testResponseConsumer);
+    harness.start();
+
+    // Test CRUD
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testResponseConsumer.messages, "read universe"));
+    Assert.assertTrue(
+        IntegrationTests.arrayListContainsInclusive(
+            testResponseConsumer.messages, "update universe"));
   }
 
   @Test
@@ -353,7 +467,7 @@ public class IntegrationTests {
     tles.forEach(
         tle -> {
           int satelliteNumber = tle.getSatelliteNumber();
-          String trackObject = trackGenerator.getMessagesById(satelliteNumber).get(0);
+          String trackObject = trackGeneratorA.getMessagesById(satelliteNumber).get(0);
           Track track = Track.fromString(trackObject, "0");
 
           KeyedOrbit keyedOrbit = OrbitFactory.createKeyedOrbit(track, "0");
@@ -392,6 +506,14 @@ public class IntegrationTests {
 
           Assert.assertEquals(tle.getMeanAnomaly(), anomaly, 0.0001);
         });
+  }
+
+  @Test
+  public void testFromTrack() {
+
+    Track track = Track.fromString(trackGeneratorA.getXSingleObjectMessages(1).get(0), "0");
+
+    Assert.assertEquals(track.trackId, "0");
   }
 
   static boolean arrayListContainsInclusive(ArrayList<String> list, String string) {

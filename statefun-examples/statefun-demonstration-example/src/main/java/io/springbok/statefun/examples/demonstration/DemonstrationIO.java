@@ -4,6 +4,7 @@ import io.springbok.statefun.examples.demonstration.generated.DefaultOut;
 import io.springbok.statefun.examples.demonstration.generated.SensorIn;
 import io.springbok.statefun.examples.demonstration.generated.SingleLineTLE;
 import io.springbok.statefun.examples.demonstration.generated.TrackIn;
+import io.springbok.statefun.examples.demonstration.generated.Command;
 import org.apache.flink.statefun.sdk.io.EgressIdentifier;
 import org.apache.flink.statefun.sdk.io.EgressSpec;
 import org.apache.flink.statefun.sdk.io.IngressIdentifier;
@@ -36,9 +37,17 @@ public class DemonstrationIO {
   public static final IngressIdentifier<SensorIn> SENSOR_INGRESS_ID =
       new IngressIdentifier<>(SensorIn.class, "eft-for-ssa", "sensor-in");
 
+  // Setting controller ingress identifier
+  public static final IngressIdentifier<Command> COMMAND_INGRESS_ID =
+      new IngressIdentifier<>(Command.class, "eft-for-ssa", "front-end");
+
   // Setting egress identifier
   public static final EgressIdentifier<DefaultOut> DEFAULT_EGRESS_ID =
       new EgressIdentifier<>("eft-for-ssa", "default-out", DefaultOut.class);
+
+  // Setting egress identifier
+  public static final EgressIdentifier<Command> COMMAND_EGRESS_ID =
+      new EgressIdentifier<>("eft-for-ssa", "response-out", Command.class);
 
   // Simple constructor
   public DemonstrationIO(String kafkaAddress) {
@@ -72,6 +81,24 @@ public class DemonstrationIO {
         .withTopic("sensors")
         .withDeserializer(KafkaSensorDeserializer.class)
         .withProperty(ConsumerConfig.GROUP_ID_CONFIG, "eft-for-ssa")
+        .build();
+  }
+
+  // Build and return Command ingress spec
+  public KafkaIngressSpec<Command> getCommandIngressSpec() {
+    return KafkaIngressBuilder.forIdentifier(COMMAND_INGRESS_ID)
+        .withKafkaAddress(this.kafkaAddress)
+        .withTopic("commands")
+        .withDeserializer(KafkaCommandDeserializer.class)
+        .withProperty(ConsumerConfig.GROUP_ID_CONFIG, "eft-for-ssa")
+        .build();
+  }
+
+  // Build and return command egress spec
+  EgressSpec<Command> getCommandEgressSpec() {
+    return KafkaEgressBuilder.forIdentifier(COMMAND_EGRESS_ID)
+        .withKafkaAddress(this.kafkaAddress)
+        .withSerializer(KafkaCommandsSerializer.class)
         .build();
   }
 
@@ -117,6 +144,17 @@ public class DemonstrationIO {
     }
   }
 
+  // Simple byte deserializer for the ingress
+  private static final class KafkaCommandDeserializer implements KafkaIngressDeserializer<Command> {
+
+    @Override
+    public Command deserialize(ConsumerRecord<byte[], byte[]> input) {
+      String command = new String((byte[]) input.value(), StandardCharsets.UTF_8);
+
+      return Command.newBuilder().setCommand(command).build();
+    }
+  }
+
   // Simple byte serializer for the egress
   private static final class KafkaTracksSerializer implements KafkaEgressSerializer<DefaultOut> {
 
@@ -128,6 +166,20 @@ public class DemonstrationIO {
       byte[] value = response.getContent().getBytes(StandardCharsets.UTF_8);
 
       return new ProducerRecord<>("default", value);
+    }
+  }
+
+  // Simple byte serializer for the command egress
+  private static final class KafkaCommandsSerializer implements KafkaEgressSerializer<Command> {
+
+    private static final long serialVersionUID = 1L;
+
+    @Override
+    public ProducerRecord<byte[], byte[]> serialize(Command response) {
+      // TODO: Serialize to real keys
+      byte[] value = response.getCommand().getBytes(StandardCharsets.UTF_8);
+
+      return new ProducerRecord<>("response", value);
     }
   }
 }

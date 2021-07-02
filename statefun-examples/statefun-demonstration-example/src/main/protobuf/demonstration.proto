@@ -130,3 +130,7 @@ message DeleteTrackMessage {
   string universes = 1;
 }
 
+message Command {
+  string command = 1;
+}
+

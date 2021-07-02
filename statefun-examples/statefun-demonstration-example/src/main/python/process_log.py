@@ -61,12 +61,20 @@ def count_number_of_orbits(options):
     return seconds, number_of_orbits
 
 
+def get_universe(line):
+    try:
+        return re.search("(?<=UNIVERSE )(.+)(?=])", line).group(0)
+    # Older implementations of eft-for-ssa or messages that are universe-independent, such as errors
+    except:
+        return "0"
+
+
 def run_time_processing(options):
     # Define patterns to identify events required for analysis
-    track_ptn = re.compile('Created trackId [\d]+ from')
+    track_ptn = re.compile('Created trackId .+ from')
     created_ptn = re.compile('Created orbitId')
     propagated_ptn = re.compile('Propagated orbitId')
-    from_tracks_ptn = re.compile('Created refined orbitId \d+ from tracks')
+    from_tracks_ptn = re.compile('Created refined orbitId .+ from tracks')
     refined_ptn = re.compile('Refined orbitId')
     correlated_ptn = re.compile('Correlated orbitIds')
     cleared_ptn = re.compile('Cleared orbitId')
@@ -80,10 +88,10 @@ def run_time_processing(options):
     date_time_list = []
 
     # Keep track of orbits
-    orbit_details = []
+    orbit_details = {}
 
     # Keep track of tracks
-    track_details = []
+    track_details = {}
 
     # Key: orbit_id Value: track associated with that orbit
     orbit_track_dict = {}
@@ -98,10 +106,12 @@ def run_time_processing(options):
                     # print(track_messages_dict)
                     break
                 if track_ptn.search(line) is not None:
-                    track_id = re.search("(?<=Created trackId )(\d+)", line).group(0)
+                    track_id = re.search("(?<=\D)+(\d+)(?= from messageId)", line).group(0)
 
+                    universe = track_details.get(get_universe(line), [])
                     # Add message to track_details
-                    track_details.insert(int(track_id), {"orbit_ids": [], "messages": [line]})
+                    universe.insert(int(track_id), {"orbit_ids": [], "messages": [line]})
+                    track_details[get_universe(line)] = universe
 
                     # TODO: reimplement and delete old processing formatting
                     # add message to track_messages_dict
@@ -111,28 +121,39 @@ def run_time_processing(options):
 
                 if created_ptn.search(line) is not None:
                     num_orb += 1
-                    orbit_id = re.search("(?<=Created orbitId )(\d+)", line).group(0)
+                    orbit_id = re.search("\d+$", line).group(0)
                     # add orbit creation time
-                    orbit_details.insert(int(orbit_id), {"created": line})
+                    # add track number to orbit_details
+                    orbit_universe = orbit_details.get(get_universe(line), [])
+                    orbit_universe.insert(int(orbit_id), {"created": line})
+                    orbit_details[get_universe(line)] = universe
 
                 if propagated_ptn.search(line) is not None:
-                    orbit_id = re.search("(?<=orbitId )(\d+)", line).group(0)
-                    track_id = re.search("(?<=trackId )(\d+)", line).group(0)
+                    orbit_id = re.search("(?<=orbitId )(\D+)(\d+)(?= from)", line).group(2)
+                    track_id = re.search("(?<=trackId )(\D+)(\d+)", line).group(2)
 
                     # add track number to orbit_details
-                    orbit_details[int(orbit_id)]["track_ids"] = [track_id]
+                    orbit_universe = orbit_details.get(get_universe(line), [])
+                    orbit_universe[int(orbit_id)]["track_ids"] = [track_id]
+                    orbit_details[get_universe(line)] = universe
 
                     # add mapping between track and orbit
                     orbit_track_dict[orbit_id] = track_id
 
                     # Add orbit id and message to track_details
-                    orbit_ids = track_details[int(track_id)].get("orbit_ids", [])
-                    orbit_ids.append(orbit_id)
-                    track_details[int(track_id)]["orbit_ids"] = orbit_ids
+                    # Add message to track_details
+                    track_universe = track_details.get(get_universe(line), [])
+                    track_universe.insert(int(track_id), {"orbit_ids": [], "messages": [line]})
 
-                    messages = track_details[int(track_id)].get("messages", [])
+                    orbit_ids = track_universe[int(track_id)].get("orbit_ids", [])
+                    orbit_ids.append(orbit_id)
+                    track_universe[int(track_id)]["orbit_ids"] = orbit_ids
+
+                    messages = track_universe[int(track_id)].get("messages", [])
                     messages.append(line)
-                    track_details[int(track_id)]["messages"] = messages
+                    track_universe[int(track_id)]["messages"] = messages
+
+                    track_details[get_universe(line)] = track_universe
 
                     # TODO: change this older logic to use new details dictionaries
                     # add message to track_messages_dict
@@ -141,7 +162,7 @@ def run_time_processing(options):
                     track_messages_dict[track_id] = track_messages
 
                 if correlated_ptn.search(line) is not None:
-                    orbit_id = re.search("(?<=Correlated orbits with ids )(\d+)", line).group(0)
+                    orbit_id = re.search("(?<=Correlated orbits with ids )(.+)(?= )", line).group(0)
 
                     # get track associated with orbit_id
                     try:
@@ -159,8 +180,8 @@ def run_time_processing(options):
                     track_messages_dict[track_id] = track_messages
 
                 if from_tracks_ptn.search(line) is not None:
-                    orbit_id = re.search("(?<=orbitId )(\d+)", line).group(0)
-                    tracks_string = re.search("(?<=tracks: )\[(\d.*)\]", line).group(0)
+                    orbit_id = re.search("(?<=orbitId )(.+)(?= )", line).group(0)
+                    tracks_string = re.search("(?<=tracks: )\[(.*)\]", line).group(0)
 
                     tracks = tracks_string.strip("[]").split(", ")
 
@@ -178,7 +199,7 @@ def run_time_processing(options):
                         track_details[int(track_id)]["messages"] = messages
 
                 if refined_ptn.search(line) is not None:
-                    orbit_ids = re.findall("(?<=orbitId )(\d+)", line)
+                    orbit_ids = re.findall("(?<=orbitId )(.+)(?= )", line)
 
                     # add info to orbit_details
                     orbit0_refined_to = orbit_details[int(orbit_ids[0])].get("refined_to", [])
@@ -209,16 +230,19 @@ def run_time_processing(options):
 
                 if cleared_ptn.search(line) is not None:
                     num_orb -= 1
-                    orbit_id = re.search("(?<=Cleared orbitId )(\d+)", line).group(0)
+                    orbit_id = re.search("(?<=Cleared orbitId )(\D+)(\d+)", line).group(2)
+
+                    orbit_universe = orbit_details.get(get_universe(line), [])
 
                     creation_time = datetime.datetime.strptime(
-                        orbit_details[int(orbit_id)]["created"].split("]")[0].strip("[]"), "%Y-%m-%d %H:%M:%S.%f")
+                        orbit_universe[int(orbit_id)]["created"].split("]")[0].strip("[]"), "%Y-%m-%d %H:%M:%S.%f")
                     deletion_time = datetime.datetime.strptime(line.split("]")[0].strip("[]"), "%Y-%m-%d %H:%M:%S.%f")
                     orbit_lifespan = deletion_time - creation_time
 
                     # add details
-                    orbit_details[int(orbit_id)]["cleared"] = line
-                    orbit_details[int(orbit_id)]["lifespan"] = orbit_lifespan
+                    orbit_universe[int(orbit_id)]["cleared"] = line
+                    orbit_universe[int(orbit_id)]["lifespan"] = orbit_lifespan
+                    orbit_details[get_universe(line)] = universe
 
                     # Add message to track_details
                     append_message_to_track_details(track_details, orbit_details, line, orbit_id)
@@ -282,11 +306,17 @@ def run_time_processing(options):
 
 
 def append_message_to_track_details(track_details, orbit_details, message, orbit_id):
-    track_ids = orbit_details[int(orbit_id)]["track_ids"]
+    universe = get_universe(message)
+    orbit_universe = orbit_details[universe]
+    track_universe = track_details[universe]
+
+    track_ids = orbit_universe[int(orbit_id)]["track_ids"]
     for track_id in track_ids:
         messages = track_details[int(track_id)].get("messages", [])
         messages.append(message)
-        track_details[int(track_id)]["messages"] = messages
+        track_universe[int(track_id)]["messages"] = messages
+
+    track_details[universe] = track_universe
 
 
 def plot_count(options, seconds, number_of_orbits):
